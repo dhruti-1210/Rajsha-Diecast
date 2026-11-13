@@ -1,0 +1,26 @@
+# Dependencies
+**/node_modules/
+
+# Next.js
+client/.next/
+client/out/
+
+# Server build output
+server/dist/
+
+# Local environment files (keep templates)
+.env*
+!.env.example
+!.env.local.example
+
+# Local server data
+server/storage/*.json
+
+# Logs and tooling output
+*.log
+coverage/
+*.tsbuildinfo
+
+# Operating system files
+.DS_Store
+Thumbs.db
