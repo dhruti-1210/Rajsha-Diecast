@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { StoreProvider } from '@/context/StoreContext';
-import '../app/globals.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Rajsha Diecast | Where Dreams Drive Passion',

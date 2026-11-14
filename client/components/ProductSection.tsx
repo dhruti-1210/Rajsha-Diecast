@@ -15,7 +15,7 @@ export default function ProductSection({ id, mode, dark }: Props) {
       <div className="head">
         <h2 className="title">{isNew ? 'New' : 'Featured'} <em>{isNew ? 'Arrivals' : 'Collection'}</em></h2>
         {isNew ? <a href="#" className="more">See more →</a>
-          : <a href="#featured" className="more" onClick={() => setMaxPrice(Infinity)}>Show all →</a>}
+          : <a href="/shop" className="more" onClick={() => setMaxPrice(Infinity)}>Show all →</a>}
       </div>
       <Slider className="grid" resetKey={isNew ? 0 : maxPrice}>
         {items.map((p) => <ProductCard key={p.id} p={p} isNew={isNew} />)}

@@ -5,7 +5,7 @@ import { useStore } from '@/context/StoreContext';
 export function Logo() {
   const [failed, setFailed] = useState(false);
   return (
-    <a href="#home" className="logo logo-mark" aria-label="Rajsha Diecast home">
+    <a href="/" className="logo logo-mark" aria-label="Rajsha Diecast home">
       {failed ? <>RAJSHA<span>DIECAST</span></> :
         // eslint-disable-next-line @next/next/no-img-element
         <img src="/images/logo.png" alt="Rajsha Diecast" onError={() => setFailed(true)} />}
@@ -23,7 +23,7 @@ export default function Header() {
       <Logo />
       <form className="search" onSubmit={(e) => e.preventDefault()}><input type="search" placeholder="Search models, brands, scale..." /></form>
       <nav className={open ? 'open' : undefined} onClick={() => setOpen(false)}>
-        <a href="#featured">Shop all</a><a href="#grading">Track</a><a href="#contact">Login</a>
+        <a href="/shop">Shop all</a><a href="/#grading">Track</a><a href="/login">Login</a>
         <a href="#" className="cart" onClick={(e) => { e.preventDefault(); setDrawer(true); }}>Cart <b>{cart.length}</b></a>
       </nav>
       <button className="burger" aria-label="Menu" onClick={() => setOpen((o) => !o)}>&#9776;</button>
