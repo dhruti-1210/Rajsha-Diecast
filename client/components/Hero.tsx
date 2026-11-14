@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 const slides = [
   { img: '/images/hero1.png', eyebrow: 'New stock every week',
     h: <>Small Scale. <em>Serious</em> Collection.</>, p: 'Hot Wheels, Mini GT, Tarmac Works, Inno64 and more. Every listing states its exact packaging condition.',
-    cta: ['Shop Collection', '#featured'], cta2: ['Browse Brands', '#brands'] },
+    },
   { img: '/images/hero2.png', eyebrow: 'Premium 1:64 & 1:18',
     h: <>Supercars in the <em>Palm</em> of Your Hand</>, p: 'Limited runs from Tarmac Works, Inno64 and Bburago.', cta: ['New Arrivals', '#arrivals'] },
   { img: '/images/hero3.png', eyebrow: 'Under ₹499',
@@ -22,8 +22,8 @@ export default function Hero() {
           <div className="content">
             <p className="eyebrow">{s.eyebrow}</p><h1>{s.h}</h1><p>{s.p}</p>
             <div className="hero-actions">
-              <a href={s.cta[1]} className="btn">{s.cta[0]}</a>
-              {s.cta2 && <a href={s.cta2[1]} className="btn ghost">{s.cta2[0]}</a>}
+              {/* <a href={s.cta[1]} className="btn">{s.cta[0]}</a> */}
+              {/* {s.cta2 && <a href={s.cta2[1]} className="btn ghost">{s.cta2[0]}</a>} */}
             </div>
           </div>
         </div>

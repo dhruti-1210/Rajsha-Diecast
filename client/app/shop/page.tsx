@@ -53,7 +53,7 @@ export default function ShopPage() {
               </section>
               <FilterOptions title="Packaging condition" options={conditions} selected={selectedConditions} onToggle={(value) => toggle(selectedConditions, value as Condition, setSelectedConditions)} />
               <FilterOptions title="Brand" options={brands} selected={selectedBrands} onToggle={(value) => toggle(selectedBrands, value, setSelectedBrands)} />
-              <FilterOptions title="Scale" options={scales} selected={selectedScales} onToggle={(value) => toggle(selectedScales, value, setSelectedScales)} />
+              {/* <FilterOptions title="Scale" options={scales} selected={selectedScales} onToggle={(value) => toggle(selectedScales, value, setSelectedScales)} /> */}
             </div>
           </aside>
           <section className="col-12 col-lg-9 col-xl-10" aria-label="Product collection">

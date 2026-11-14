@@ -1218,7 +1218,7 @@ cite {
 .budget {
   display: flex;
   gap: 18px;
-  overflow-x: auto;
+  overflow-y: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   scrollbar-width: none;
