@@ -27,7 +27,10 @@ export const GetCounterMaster = async (): Promise<CounterData[]> => {
                 TotalStock: { $gt: 0 }
             }),
             BrandMaster.countDocuments({ isDeleted: false }),
-            UserMaster.countDocuments({ isDeleted: false }),
+            UserMaster.countDocuments({
+                isDeleted: false,
+                emailVerified: true
+            }),
             CollectionType.countDocuments({ isDeleted: false })
         ]);
 

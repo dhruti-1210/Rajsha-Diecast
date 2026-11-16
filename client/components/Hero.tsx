@@ -2,12 +2,12 @@
 import { useEffect, useState } from 'react';
 
 const slides = [
-  { img: '/images/hero1.png', eyebrow: 'New stock every week',
+  { img: '/images/hero1.png',
     h: <>Small Scale. <em>Serious</em> Collection.</>, p: 'Hot Wheels, Mini GT, Tarmac Works, Inno64 and more. Every listing states its exact packaging condition.',
-    },
-  { img: '/images/hero2.png', eyebrow: 'Premium 1:64 & 1:18',
+    cta : ['Shop New Arrivals', '#arrivals'], cta2: ['Shop by Budget', '#budget'] },
+  { img: '/images/hero2.png',
     h: <>Supercars in the <em>Palm</em> of Your Hand</>, p: 'Limited runs from Tarmac Works, Inno64 and Bburago.', cta: ['New Arrivals', '#arrivals'] },
-  { img: '/images/hero3.png', eyebrow: 'Under ₹499',
+  { img: '/images/hero3.png',
     h: <>Start Your <em>Garage</em> Today</>, p: 'Budget-friendly picks for every new collector.', cta: ['Shop by Budget', '#budget'] },
 ];
 
@@ -20,10 +20,10 @@ export default function Hero() {
       {slides.map((s, k) => (
         <div key={k} className={`slide${k === i ? ' on' : ''}`} style={{ '--img': `url('${s.img}')` } as React.CSSProperties}>
           <div className="content">
-            <p className="eyebrow">{s.eyebrow}</p><h1>{s.h}</h1><p>{s.p}</p>
+            <p className="eyebrow"></p><h1>{s.h}</h1><p>{s.p}</p>
             <div className="hero-actions">
-              {/* <a href={s.cta[1]} className="btn">{s.cta[0]}</a> */}
-              {/* {s.cta2 && <a href={s.cta2[1]} className="btn ghost">{s.cta2[0]}</a>} */}
+              <a href={s.cta[1]} className="btn">{s.cta[0]}</a>
+              {s.cta2 && <a href={s.cta2[1]} className="btn ghost">{s.cta2[0]}</a>}
             </div>
           </div>
         </div>

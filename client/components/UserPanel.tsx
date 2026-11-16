@@ -8,6 +8,7 @@ import { useToastify } from '@/components/Toastify';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import CarImage from '@/components/CarImage';
 import { money } from '@/lib/format';
+import { userAuthUrl } from '@/lib/user-auth';
 
 type PanelSection = 'dashboard' | 'profile' | 'orders' | 'wishlist';
 type ProfileData = {
@@ -32,9 +33,10 @@ const orders = [
 ];
 
 export default function UserPanel() {
-  const [activeSection, setActiveSection] = useState<PanelSection>('dashboard');
+  const [activeSection, setActiveSection] = useState<PanelSection>('profile');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({ fullName: '', email: '', phone: '', address: '', photoUrl: '' });
+  const [profileComplete, setProfileComplete] = useState(false);
   const [ready, setReady] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const { wishlist } = useStore();
@@ -56,16 +58,56 @@ export default function UserPanel() {
   }, [mobileSidebarOpen]);
 
   useEffect(() => {
-    const savedEmail = sessionStorage.getItem('rajsha.userEmail');
-    if (!savedEmail) {
-      router.replace('/login');
+    let active = true;
+    async function loadSession() {
+      try {
+        const response = await fetch(userAuthUrl('session'), { credentials: 'include' });
+        const result = await response.json();
+        if (response.status === 401) {
+          router.replace('/login');
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(result.message || 'Could not verify your login session.');
+        }
+
+        const user = result.data.user;
+        if (!active) return;
+        setProfile((current) => ({
+          ...current,
+          fullName: user.name,
+          email: user.email,
+          phone: user.mobile,
+          address: user.address,
+        }));
+        setProfileComplete(user.profileComplete);
+        setReady(true);
+      } catch (error) {
+        if (!active) return;
+        notify('error', error instanceof Error ? error.message : 'Could not verify your login session.');
+        router.replace('/login');
+      }
+    }
+
+    void loadSession();
+    return () => { active = false; };
+  }, [notify, router]);
+
+  async function logout() {
+    try {
+      const response = await fetch(userAuthUrl('logout'), {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Could not log out.');
+      }
+    } catch (error) {
+      notify('error', error instanceof Error ? error.message : 'Could not log out.');
+      setConfirmLogout(false);
       return;
     }
-    setProfile((current) => ({ ...current, email: savedEmail }));
-    setReady(true);
-  }, [router]);
-
-  function logout() {
     sessionStorage.removeItem('rajsha.userEmail');
     setConfirmLogout(false);
     notify('success', 'Logout successful. See you again soon!');
@@ -128,6 +170,10 @@ export default function UserPanel() {
                 className={activeSection === section.id ? 'active' : ''}
                 aria-current={activeSection === section.id ? 'page' : undefined}
                 onClick={() => {
+                  if (!profileComplete && section.id !== 'profile') {
+                    notify('error', 'Complete your profile before continuing.');
+                    return;
+                  }
                   setActiveSection(section.id);
                   setMobileSidebarOpen(false);
                 }}
@@ -155,9 +201,32 @@ export default function UserPanel() {
           {activeSection === 'profile' && (
             <Profile
               profile={profile}
+              requiredForAccess={!profileComplete}
               onPhotoChange={updateProfilePhoto}
-              onSave={(updatedProfile) => {
-                setProfile((current) => ({ ...updatedProfile, photoUrl: current.photoUrl }));
+              onSave={async (updatedProfile) => {
+                const response = await fetch(userAuthUrl('profile'), {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({
+                    name: updatedProfile.fullName,
+                    mobile: updatedProfile.phone,
+                    address: updatedProfile.address,
+                  }),
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                  throw new Error(result.message || 'Could not save your profile.');
+                }
+                const user = result.data.user;
+                setProfile((current) => ({
+                  ...current,
+                  fullName: user.name,
+                  email: user.email,
+                  phone: user.mobile,
+                  address: user.address,
+                }));
+                setProfileComplete(user.profileComplete);
                 notify('success', 'Profile details saved.');
               }}
             />
@@ -204,14 +273,18 @@ function Dashboard({ wishlistCount, onOrdersClick }: { wishlistCount: number; on
 
 function Profile({
   profile,
+  requiredForAccess,
   onPhotoChange,
   onSave,
 }: {
   profile: ProfileData;
+  requiredForAccess: boolean;
   onPhotoChange: (file: File) => void;
-  onSave: (profile: ProfileData) => void;
+  onSave: (profile: ProfileData) => Promise<void>;
 }) {
   const [form, setForm] = useState(profile);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   function updateField(field: keyof ProfileData, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -219,22 +292,36 @@ function Profile({
 
   return (
     <div className="user-panel-section">
-      <div className="user-panel-section-heading"><div><h2>User profile</h2></div></div>
+      <div className="user-panel-section-heading">
+        <div>
+          <h2>User profile</h2>
+          {requiredForAccess && <p role="status">Complete your profile to access your garage.</p>}
+        </div>
+      </div>
       <section className="user-panel-card user-panel-profile-card">
         <div className="user-panel-profile-banner"><ProfileAvatar photoUrl={profile.photoUrl} onUpload={onPhotoChange} large /><div><small>COLLECTOR PROFILE</small><h3>{form.fullName || 'Your profile'}</h3><span>Update your details below</span></div></div>
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            onSave(form);
+            setSaveError('');
+            setSaving(true);
+            void onSave(form)
+              .catch((error: unknown) => {
+                setSaveError(error instanceof Error ? error.message : 'Could not save your profile.');
+              })
+              .finally(() => setSaving(false));
           }}
         >
           <div className="user-panel-profile-grid">
             <ProfileField label="Full name" name="fullName" value={form.fullName} onChange={updateField} required />
-            <ProfileField label="Email address" name="email" type="email" value={form.email} onChange={updateField} required />
-            <ProfileField label="Phone number" name="phone" type="tel" value={form.phone} onChange={updateField} />
+            <ProfileField label="Email address" name="email" type="email" value={form.email} onChange={updateField} required disabled />
+            <ProfileField label="Phone number" name="phone" type="tel" value={form.phone} onChange={updateField} required />
             <ProfileField label="Default address" name="address" value={form.address} onChange={updateField} />
           </div>
-          <div className="user-panel-profile-actions"><button className="btn" type="submit">Save changes</button></div>
+          {saveError && <p role="alert">{saveError}</p>}
+          <div className="user-panel-profile-actions">
+            <button className="btn" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
+          </div>
         </form>
       </section>
     </div>
@@ -276,6 +363,7 @@ function ProfileField({
   value,
   type = 'text',
   required = false,
+  disabled = false,
   onChange,
 }: {
   label: string;
@@ -283,6 +371,7 @@ function ProfileField({
   value: string;
   type?: string;
   required?: boolean;
+  disabled?: boolean;
   onChange: (field: keyof ProfileData, value: string) => void;
 }) {
   return (
@@ -292,6 +381,7 @@ function ProfileField({
         name={name}
         type={type}
         value={value}
+        disabled={disabled}
         onChange={(event) => onChange(name, event.target.value)}
         required={required}
       />

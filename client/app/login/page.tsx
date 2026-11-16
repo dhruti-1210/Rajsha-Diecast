@@ -1,11 +1,12 @@
 'use client';
 
-import { useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import { useToastify } from '@/components/Toastify';
+import { userAuthUrl } from '@/lib/user-auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,13 +15,83 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
   const [notice, setNotice] = useState('');
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const otpInputs = useRef<Array<HTMLInputElement | null>>([]);
 
-  function handleEmailSubmit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    let active = true;
+
+    async function redirectIfAuthenticated() {
+      try {
+        const response = await fetch(userAuthUrl('session'), { credentials: 'include' });
+        if (response.status === 401) return;
+        if (!response.ok) throw new Error('Could not check your login session.');
+        if (active) router.replace('/user-panel');
+      } catch (error) {
+        if (active) {
+          setNotice(error instanceof Error ? error.message : 'Could not check your login session.');
+        }
+      }
+    }
+
+    void redirectIfAuthenticated();
+    return () => { active = false; };
+  }, [router]);
+
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const timer = window.setTimeout(
+      () => setResendCountdown((current) => Math.max(0, current - 1)),
+      1000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [resendCountdown]);
+
+  async function requestOtp() {
+    setIsSubmitting(true);
+    setNotice('');
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const response = await fetch(userAuthUrl('request-otp'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        if (typeof result.resendAfterSeconds === 'number') {
+          setResendCountdown(result.resendAfterSeconds);
+        }
+        throw new Error(result.message || 'Could not send a verification code.');
+      }
+
+      setEmail(normalizedEmail);
+      setOtp(Array(6).fill(''));
+      setResendCountdown(result.resendAfterSeconds ?? 120);
+      setNotice('A verification code has been sent to your email.');
+      setStep('otp');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleEmailSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setOtp(Array(6).fill(''));
-    setNotice('Demo OTP: 123456');
-    setStep('otp');
+    try {
+      await requestOtp();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not send a verification code.');
+    }
+  }
+
+  async function handleResend() {
+    try {
+      await requestOtp();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not send a verification code.');
+    }
   }
 
   function fillOtp(start: number, value: string) {
@@ -43,20 +114,34 @@ export default function LoginPage() {
     if (event.key === 'ArrowRight' && index < 5) otpInputs.current[index + 1]?.focus();
   }
 
-  function handleVerify(event: FormEvent<HTMLFormElement>) {
+  async function handleVerify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const code = otp.join('');
     if (code.length !== 6) {
       notify('error', 'Please enter all 6 digits of the verification code.');
       return;
     }
-    if (code !== '123456') {
-      notify('error', 'Incorrect demo OTP. Please use 123456.');
-      return;
+    setIsSubmitting(true);
+    setNotice('');
+    try {
+      const response = await fetch(userAuthUrl('verify-otp'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: email.trim().toLowerCase(), otp: code }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Could not verify the code.');
+      }
+      sessionStorage.removeItem('rajsha.userEmail');
+      notify('success', 'Email verified. Welcome to your garage!');
+      router.replace('/user-panel');
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not verify the code.');
+    } finally {
+      setIsSubmitting(false);
     }
-    sessionStorage.setItem('rajsha.userEmail', email.trim());
-    notify('success', 'Login successful. Welcome to your garage!');
-    router.push('/user-panel');
   }
 
   return (
@@ -73,7 +158,10 @@ export default function LoginPage() {
                 <form onSubmit={handleEmailSubmit}>
                   <label htmlFor="login-email">Email address</label>
                   <input id="login-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required />
-                  <button className="btn login-submit" type="submit">Continue with email</button>
+                  <button className="btn login-submit" type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Sending code…' : 'Continue with email'}
+                  </button>
+                  {notice && <p className="login-notice" role="status">{notice}</p>}
                 </form>
               </> : <>
                 <p className="eyebrow">EMAIL VERIFICATION</p>
@@ -106,9 +194,21 @@ export default function LoginPage() {
                       />
                     ))}
                   </div>
-                  <button className="btn login-submit" type="submit">Verify OTP</button>
+                  <button className="btn login-submit" type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Verifying…' : 'Verify OTP'}
+                  </button>
                   {notice && <p className="login-notice" role="status">{notice}</p>}
                 </form>
+                <p className="login-notice" aria-live="polite">
+                  {resendCountdown > 0
+                    ? `Resend code in ${Math.floor(resendCountdown / 60)}:${String(resendCountdown % 60).padStart(2, '0')}`
+                    : ''}
+                </p>
+                {resendCountdown === 0 && (
+                  <button className="change-email" type="button" onClick={() => void handleResend()} disabled={isSubmitting}>
+                    Resend code
+                  </button>
+                )}
                 <button className="change-email" type="button" onClick={() => { setStep('email'); setNotice(''); }}>← Change email</button>
               </>}
               <p className="login-signup">New to the garage? <a href="mailto:hello@rajshadiecast.com">Get in touch</a></p>

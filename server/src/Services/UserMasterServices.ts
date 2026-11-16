@@ -1,10 +1,28 @@
 
 import UserMaster, { IUserMaster } from "../Models/userMaster";
 
+const userAuthFields: (keyof IUserMaster)[] = [
+    "emailVerified",
+    "otpHash",
+    "otpExpiresAt",
+    "otpResendAvailableAt",
+    "otpAttempts",
+    "authSessionTokenHash",
+    "authSessionExpiresAt"
+];
+
+const withoutAuthFields = (data: Partial<IUserMaster>) => {
+    const safeData = { ...data };
+    for (const field of userAuthFields) {
+        delete safeData[field];
+    }
+    return safeData;
+};
+
 // Create User
 export const createUser = async (data: Partial<IUserMaster>) => {
     try {
-        const user = new UserMaster(data);
+        const user = new UserMaster(withoutAuthFields(data));
         return await user.save();
     } catch (error) {
         throw error;
@@ -40,14 +58,31 @@ export const updateUser = async (
     data: Partial<IUserMaster>
 ) => {
     try {
+        const emailChanged = data.email !== undefined;
+        const invalidateAuth = emailChanged || data.isActive === false || data.isDeleted === true;
         return await UserMaster.findOneAndUpdate(
             {
                 _id: id,
                 isDeleted: false
             },
             {
-                ...data,
-                updatedAt: new Date()
+                $set: {
+                    ...withoutAuthFields(data),
+                    ...(emailChanged ? { emailVerified: false } : {}),
+                    updatedAt: new Date()
+                },
+                ...(invalidateAuth
+                    ? {
+                        $unset: {
+                            authSessionTokenHash: 1,
+                            authSessionExpiresAt: 1,
+                            otpHash: 1,
+                            otpExpiresAt: 1,
+                            otpResendAvailableAt: 1,
+                            otpAttempts: 1
+                        }
+                    }
+                    : {})
             },
             {
                 new: true,
@@ -71,9 +106,19 @@ export const deleteUser = async (
                 isDeleted: false
             },
             {
-                isDeleted: true,
-                updatedBy,
-                updatedAt: new Date()
+                $set: {
+                    isDeleted: true,
+                    updatedBy,
+                    updatedAt: new Date()
+                },
+                $unset: {
+                    authSessionTokenHash: 1,
+                    authSessionExpiresAt: 1,
+                    otpHash: 1,
+                    otpExpiresAt: 1,
+                    otpResendAvailableAt: 1,
+                    otpAttempts: 1
+                }
             },
             {
                 new: true
@@ -97,9 +142,23 @@ export const changeUserStatus = async (
                 isDeleted: false
             },
             {
-                isActive,
-                updatedBy,
-                updatedAt: new Date()
+                $set: {
+                    isActive,
+                    updatedBy,
+                    updatedAt: new Date()
+                },
+                ...(!isActive
+                    ? {
+                        $unset: {
+                            authSessionTokenHash: 1,
+                            authSessionExpiresAt: 1,
+                            otpHash: 1,
+                            otpExpiresAt: 1,
+                            otpResendAvailableAt: 1,
+                            otpAttempts: 1
+                        }
+                    }
+                    : {})
             },
             {
                 new: true

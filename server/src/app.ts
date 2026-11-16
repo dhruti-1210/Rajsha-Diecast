@@ -30,7 +30,14 @@ import FooterLinkMasterRoutes from "./Routes/footerLinkRoutes";
 
 const app = express(); 
 
-app.use(cors({ origin: process.env.CLIENT_URL || true }));
+const clientOrigin = (
+  process.env.CLIENT_URL || "http://localhost:3001"
+).replace(/\/+$/, "");
+
+app.use(cors({
+  origin: clientOrigin,
+  credentials: true
+}));
 app.use(express.json());
 
 app.use("/api/banners", BannerRoutes);

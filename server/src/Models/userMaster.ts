@@ -6,6 +6,13 @@ export interface IUserMaster extends Document {
     mobile: string;
     email: string;
     address: string;
+    emailVerified: boolean;
+    otpHash?: string;
+    otpExpiresAt?: Date;
+    otpResendAvailableAt?: Date;
+    otpAttempts: number;
+    authSessionTokenHash?: string;
+    authSessionExpiresAt?: Date;
 
     createdAt: Date;
     updatedAt: Date;
@@ -21,12 +28,12 @@ const UserMasterSchema: Schema = new Schema(
     {
         name: {
             type: String,
-            required: true,
+            default: "",
             trim: true
         },
         mobile: {
             type: String,
-            required: true,
+            default: "",
             trim: true
         },
         email: {
@@ -39,6 +46,35 @@ const UserMasterSchema: Schema = new Schema(
             type: String,
             default: ""
         },
+        emailVerified: {
+            type: Boolean,
+            default: false
+        },
+        otpHash: {
+            type: String,
+            select: false
+        },
+        otpExpiresAt: {
+            type: Date,
+            select: false
+        },
+        otpResendAvailableAt: {
+            type: Date,
+            select: false
+        },
+        otpAttempts: {
+            type: Number,
+            default: 0,
+            select: false
+        },
+        authSessionTokenHash: {
+            type: String,
+            select: false
+        },
+        authSessionExpiresAt: {
+            type: Date,
+            select: false
+        },
         createdAt: {
             type: Date,
             default: Date.now
@@ -49,11 +85,13 @@ const UserMasterSchema: Schema = new Schema(
         },
         createdBy: {
             type: String,
-            required: true
+            required: true,
+            default: "system"
         },
         updatedBy: {
             type: String,
-            required: true
+            required: true,
+            default: "system"
         },
         isActive: {
             type: Boolean,

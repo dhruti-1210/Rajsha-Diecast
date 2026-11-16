@@ -16,6 +16,21 @@ export const createUserController = async (
     res: Response
 ) => {
     try {
+        const { name, mobile, email } = req.body ?? {};
+        if (
+            typeof name !== "string" ||
+            !name.trim() ||
+            typeof mobile !== "string" ||
+            !mobile.trim() ||
+            typeof email !== "string" ||
+            !email.trim()
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Name, phone number, and email are required."
+            });
+        }
+
         const user = await createUser(req.body);
 
         return res.status(201).json({

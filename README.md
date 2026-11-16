@@ -7,7 +7,11 @@ server/   Express + TypeScript API          (port 3000)
 
 ## Run
 Terminal 1 — API
-    cd server && cp .env.example .env && npm install && npm run dev
+    cd server
+    cp .env 
+    # Edit .env and set DB_URL (and SMTP/OTP settings for email OTP login).
+    npm install
+    npm run dev
 
 Terminal 2 — Website
     cd client && cp .env.local.example .env.local && npm install && npm run dev
