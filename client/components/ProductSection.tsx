@@ -18,7 +18,7 @@ export default function ProductSection({ id, mode, dark }: Props) {
           : <a href="/shop" className="more" onClick={() => setMaxPrice(Infinity)}>Show all →</a>}
       </div>
       <Slider className="grid" resetKey={isNew ? 0 : maxPrice}>
-        {items.map((p) => <ProductCard key={p.id} p={p} isNew={isNew} />)}
+        {items.map((p) => <ProductCard key={p.id} p={p} />)}
       </Slider>
       {items.length === 0 && <p>No models in this range yet.</p>}
     </section>

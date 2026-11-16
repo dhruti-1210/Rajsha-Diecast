@@ -6,12 +6,11 @@ import CarImage from './CarImage';
 import FavoriteButton from './FavoriteButton';
 import Link from 'next/link';
 
-export default function ProductCard({ p, isNew }: { p: Product; isNew?: boolean }) {
+export default function ProductCard({ p }: { p: Product }) {
   const { add } = useStore();
   return (
     <article className="card">
       {p.left > 0 && <span className="tag l">ONLY {p.left} LEFT</span>}
-      {isNew && <span className="tag r">NEW</span>}
       <Link className="thumb" href={`/shop/${p.id}`} aria-label={`View ${p.name}`}><CarImage p={p} /></Link>
       <FavoriteButton p={p} />
       <div className="info">

@@ -578,11 +578,6 @@ nav a:hover {
   color: #ff7a33
 }
 
-.tag.r {
-  right: 52px;
-  color: #fff
-}
-
 .favorite-button {
   position: absolute;
   top: 10px;
@@ -615,10 +610,13 @@ nav a:hover {
 }
 
 .info h3 {
+  overflow: hidden;
   font-family: Poppins;
   font-size: 1rem;
   margin: 4px 0 12px;
-  font-weight: 500
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap
 }
 
 .row {
@@ -1665,10 +1663,12 @@ cite {
 
 .shop-product-name {
   display: block;
+  overflow: hidden;
   font-size: .9rem;
   line-height: 1.4;
   margin: 5px 0 14px;
-  min-height: 2.5em
+  text-overflow: ellipsis;
+  white-space: nowrap
 }
 
 .shop-card-bottom {
@@ -1693,6 +1693,37 @@ cite {
   text-align: center;
   border: 1px dashed var(--line);
   color: var(--mut)
+}
+
+.shop-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 28px
+}
+
+.shop-pagination button {
+  min-width: 40px;
+  padding: 8px 12px;
+  color: var(--text);
+  background: #141414;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: .2s
+}
+
+.shop-pagination button:hover:not(:disabled),
+.shop-pagination button[aria-current="page"] {
+  color: #000;
+  background: var(--gold);
+  border-color: var(--gold)
+}
+
+.shop-pagination button:disabled {
+  opacity: .45;
+  cursor: not-allowed
 }
 
 .back-arrow {
@@ -2058,7 +2089,6 @@ cite {
 }
 
 .related-heading h2 {
-  font: 700 italic clamp(1.5rem, 3vw, 2.1rem) Cinzel, serif;
   text-transform: uppercase;
   margin: 0
 }
@@ -2080,7 +2110,6 @@ cite {
   height: 100%;
   overflow: hidden;
   border: 1px solid #2a2926;
-  border-radius: 12px;
   background: linear-gradient(155deg, #171615, #0d0d0d);
   transition: transform .25s, border-color .25s, box-shadow .25s
 }
@@ -2310,7 +2339,10 @@ cite {
   overflow: hidden;
   min-height: calc(100vh - 100px);
   padding: 80px clamp(30px, 7vw, 100px);
-  background: linear-gradient(90deg, rgba(0, 0, 0, .91), rgba(0, 0, 0, .46)), url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1600&q=85') center/cover, #17130a
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, .91), rgba(0, 0, 0, .46)),
+    url('/images/login-bg.avif') center/cover no-repeat,
+    #17130a;
 }
 
 .login-art-panel::after {
