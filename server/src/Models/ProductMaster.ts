@@ -3,7 +3,8 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IProductMaster extends Document {
     Name: string;
-    Company_Id: mongoose.Types.ObjectId;
+    BrandName?: string;
+    Company_Id?: mongoose.Types.ObjectId;
     TotalStock: number;
     Price: number;
     ModelCode: string;
@@ -11,7 +12,8 @@ export interface IProductMaster extends Document {
     Description: string;
     Packagingtype_Id: mongoose.Types.ObjectId;
     Image: string[];
-    Collectiontype_id: mongoose.Types.ObjectId;
+    CollectionName?: string;
+    Collectiontype_id?: mongoose.Types.ObjectId;
 
     createdAt: Date;
     updatedAt: Date;
@@ -32,9 +34,14 @@ const ProductMasterSchema: Schema = new Schema(
             required: true,
             trim: true
         },
+        BrandName: {
+            type: String,
+            trim: true,
+            default: ""
+        },
         Company_Id: {
             type: Schema.Types.ObjectId,
-            required: true
+            required: false
         },
         TotalStock: {
             type: Number,
@@ -65,9 +72,14 @@ const ProductMasterSchema: Schema = new Schema(
             type: [String],
             default: []
         },
+        CollectionName: {
+            type: String,
+            trim: true,
+            default: ""
+        },
         Collectiontype_id: {
             type: Schema.Types.ObjectId,
-            required: true
+            required: false
         },
         createdAt: {
             type: Date,

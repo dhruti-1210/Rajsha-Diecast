@@ -1,58 +1,114 @@
 'use client';
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { products as storeProducts } from '@/data/products';
-import type { Condition } from '@/types';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import Header from '../common/header';
 import Icon from '../common/icon';
+import {
+  createProductMaster,
+  createPackagingType,
+  deleteProductMaster,
+  getProductMasterList,
+  getProductMasterReferences,
+  updateProductMaster,
+  type BrandReference,
+  type CollectionReference,
+  type PackagingReference,
+} from '../api/ProductApi';
+import type { ProductMaster, ProductMasterInput } from '../types/Product';
 
 type AdminProduct = {
-  id: number;
+  id: string;
   name: string;
   brand: string;
+  collection: string;
+  collectionTypeId: string;
   scale: string;
   price: number;
-  condition: Condition;
+  condition: string;
+  packagingTypeId: string;
   stock: number;
   sku: string;
+  description: string;
+  images: string[];
+  isActive: boolean;
+  isDisplay: boolean;
 };
 
-type ProductDraft = Omit<AdminProduct, 'id'>;
+type ProductDraft = {
+  name: string;
+  brand: string;
+  collectionTypeId: string;
+  scale: string;
+  price: number;
+  packagingType: string;
+  stock: number;
+  sku: string;
+  description: string;
+  images: string[];
+  isActive: boolean;
+  isDisplay: boolean;
+};
 
 type Filter = 'All products' | 'In stock' | 'Low stock' | 'Out of stock';
+type ProductReferences = {
+  brands: BrandReference[];
+  packagingTypes: PackagingReference[];
+  collectionTypes: CollectionReference[];
+};
 
-const STORAGE_KEY = 'rajsha_admin_products';
 const PAGE_SIZE = 5;
+const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_PRODUCT_IMAGE_DATA_SIZE = 12 * 1024 * 1024;
 const filters: Filter[] = ['All products', 'In stock', 'Low stock', 'Out of stock'];
 const emptyDraft: ProductDraft = {
   name: '',
   brand: '',
+  collectionTypeId: '',
   scale: '1:64',
   price: 0,
-  condition: 'Sealed',
+  packagingType: '',
   stock: 0,
   sku: '',
+  description: '',
+  images: [''],
+  isActive: true,
+  isDisplay: true,
 };
 
-const initialProducts: AdminProduct[] = storeProducts.map((product) => ({
-  id: product.id,
-  name: product.name,
-  brand: product.brand,
-  scale: product.scale,
-  price: product.price,
-  condition: product.condition,
-  stock: product.left,
-  sku: `RD-${String(product.id).padStart(3, '0')}`,
-}));
-
-function readAdminProducts(): AdminProduct[] {
-  const saved = window.localStorage.getItem(STORAGE_KEY);
-  if (!saved) return initialProducts;
-
-  const parsed: unknown = JSON.parse(saved);
-  if (!Array.isArray(parsed)) throw new Error('Saved product data is invalid.');
-  return parsed as AdminProduct[];
-}
+const mapProduct = (
+  product: ProductMaster,
+  references: ProductReferences,
+): AdminProduct => ({
+  id: product._id,
+  name: product.Name,
+  brand: product.BrandName
+    || references.brands.find((brand) => brand._id === product.Company_Id)?.companyName
+    || product.Company_Id
+    || '',
+  collection: references.collectionTypes.find(
+    (collection) => collection._id === product.Collectiontype_id,
+  )?.collectionName
+    || product.CollectionName
+    || product.Collectiontype_id
+    || '',
+  collectionTypeId: product.Collectiontype_id
+    || references.collectionTypes.find(
+      (collection) => collection.collectionName === product.CollectionName,
+    )?._id
+    || '',
+  scale: product.Size,
+  price: product.Price,
+  condition: references.packagingTypes.find(
+    (packaging) => packaging._id === product.Packagingtype_Id,
+  )?.packagingName ?? product.Packagingtype_Id,
+  packagingTypeId: product.Packagingtype_Id,
+  stock: product.TotalStock,
+  sku: product.ModelCode,
+  description: product.Description,
+  images: product.Image ?? [],
+  isActive: product.isActive,
+  isDisplay: product.isDisplay,
+});
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -62,27 +118,58 @@ function formatPrice(price: number) {
   }).format(price);
 }
 
+function readImageAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Could not load that image.'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Could not load that image.'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function InventoryPage() {
-  const [items, setItems] = useState<AdminProduct[]>(initialProducts);
+  const [items, setItems] = useState<AdminProduct[]>([]);
+  const [references, setReferences] = useState<ProductReferences>({
+    brands: [],
+    packagingTypes: [],
+    collectionTypes: [],
+  });
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('All products');
   const [currentPage, setCurrentPage] = useState(1);
   const [draft, setDraft] = useState<ProductDraft>(emptyDraft);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
-  const [storageReady, setStorageReady] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    try {
-      setItems(readAdminProducts());
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Could not load saved inventory.');
-      setNoticeIsError(true);
-    } finally {
-      setStorageReady(true);
+    async function loadInventory() {
+      try {
+        const [productResponse, productReferences] = await Promise.all([
+          getProductMasterList(),
+          getProductMasterReferences(),
+        ]);
+        setReferences(productReferences);
+        setItems(productResponse.data.map((product) => mapProduct(product, productReferences)));
+      } catch (error) {
+        setNotice(error instanceof Error ? error.message : 'Could not load product inventory.');
+        setNoticeIsError(true);
+      } finally {
+        setLoading(false);
+      }
     }
+
+    void loadInventory();
   }, []);
 
   const visibleItems = useMemo(() => {
@@ -109,18 +196,6 @@ export default function InventoryPage() {
   const pageItems = visibleItems.slice(pageStart, pageStart + PAGE_SIZE);
   const outOfStockCount = items.filter((product) => product.stock === 0).length;
 
-  function persist(nextItems: AdminProduct[], message: string) {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextItems));
-      setItems(nextItems);
-      setNotice(message);
-      setNoticeIsError(false);
-    } catch {
-      setNotice('Could not save your changes in this browser. Check available storage and try again.');
-      setNoticeIsError(true);
-    }
-  }
-
   function openCreate() {
     setEditingId(null);
     setDraft(emptyDraft);
@@ -128,28 +203,179 @@ export default function InventoryPage() {
   }
 
   function openEdit(product: AdminProduct) {
-    const { id, ...productDraft } = product;
-    setEditingId(id);
-    setDraft(productDraft);
+    setEditingId(product.id);
+    setDraft({
+      name: product.name,
+      brand: product.brand,
+      collectionTypeId: product.collectionTypeId,
+      scale: product.scale,
+      price: product.price,
+      packagingType: references.packagingTypes.find(
+        (packaging) => packaging._id === product.packagingTypeId,
+      )?.packagingName ?? '',
+      stock: product.stock,
+      sku: product.sku,
+      description: product.description,
+      images: product.images.length ? [...product.images] : [''],
+      isActive: product.isActive,
+      isDisplay: product.isDisplay,
+    });
     setModalOpen(true);
   }
 
-  function saveProduct(event: FormEvent<HTMLFormElement>) {
+  async function saveProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const nextItems = editingId === null
-      ? [{ ...draft, id: Date.now() }, ...items]
-      : items.map((product) => product.id === editingId ? { ...draft, id: editingId } : product);
-    persist(nextItems, editingId === null ? 'Product added to your inventory.' : 'Product changes saved.');
-    setModalOpen(false);
+    const collectionType = references.collectionTypes.find(
+      (item) => item._id === draft.collectionTypeId,
+    );
+    if (!collectionType) {
+      setNotice('Choose a collection type from the collection types list.');
+      setNoticeIsError(true);
+      return;
+    }
+
+    const packagingName = draft.packagingType.trim();
+    if (!packagingName) {
+      setNotice('Enter a packaging type.');
+      setNoticeIsError(true);
+      return;
+    }
+
+    const actor = 'admin';
+
+    setSaving(true);
+    try {
+      let packagingType = references.packagingTypes.find(
+        (item) => item.packagingName.trim().toLowerCase() === packagingName.toLowerCase(),
+      );
+      if (!packagingType) {
+        const response = await createPackagingType({
+          packagingName,
+          Description: packagingName,
+          createdBy: actor,
+          updatedBy: actor,
+          isActive: true,
+        });
+        packagingType = response.data;
+        setReferences((current) => ({
+          ...current,
+          packagingTypes: [response.data, ...current.packagingTypes],
+        }));
+      }
+
+      const payload: ProductMasterInput = {
+        Name: draft.name.trim(),
+        BrandName: draft.brand.trim(),
+        TotalStock: draft.stock,
+        Price: draft.price,
+        ModelCode: draft.sku.trim(),
+        Size: draft.scale.trim(),
+        Description: draft.description.trim(),
+        Packagingtype_Id: packagingType._id,
+        Image: draft.images.map((image) => image.trim()).filter(Boolean),
+        CollectionName: collectionType.collectionName,
+        Collectiontype_id: collectionType._id,
+        createdBy: actor,
+        updatedBy: actor,
+        isActive: draft.isActive,
+        isDisplay: draft.isDisplay,
+      };
+
+      if (editingId === null) {
+        await createProductMaster(payload);
+      } else {
+        await updateProductMaster(editingId, payload);
+      }
+      const response = await getProductMasterList();
+      setItems(response.data.map((product) => mapProduct(product, references)));
+      setNotice(editingId === null ? 'Product added to the database.' : 'Product changes saved.');
+      setNoticeIsError(false);
+      setModalOpen(false);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not save the product.');
+      setNoticeIsError(true);
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function deleteProduct(product: AdminProduct) {
+  async function deleteProduct(product: AdminProduct) {
     if (!window.confirm(`Remove "${product.name}" from the inventory?`)) return;
-    persist(items.filter((item) => item.id !== product.id), 'Product removed from your inventory.');
+    try {
+      await deleteProductMaster(product.id);
+      const response = await getProductMasterList();
+      setItems(response.data.map((item) => mapProduct(item, references)));
+      setNotice('Product removed from the database.');
+      setNoticeIsError(false);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not delete the product.');
+      setNoticeIsError(true);
+    }
   }
 
   function updateDraft<Key extends keyof ProductDraft>(key: Key, value: ProductDraft[Key]) {
     setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateImage(index: number, value: string) {
+    setDraft((current) => ({
+      ...current,
+      images: current.images.map((image, imageIndex) => imageIndex === index ? value : image),
+    }));
+  }
+
+  async function addImageFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setNotice('Please choose an image file.');
+      setNoticeIsError(true);
+      return;
+    }
+    if (file.size > MAX_IMAGE_FILE_SIZE) {
+      setNotice('Choose an image smaller than 5 MB.');
+      setNoticeIsError(true);
+      return;
+    }
+
+    try {
+      const imageData = await readImageAsDataUrl(file);
+      const existingImageDataSize = draft.images.reduce(
+        (total, image) => total + (image.startsWith('data:image/') ? image.length : 0),
+        0,
+      );
+      if (existingImageDataSize + imageData.length > MAX_PRODUCT_IMAGE_DATA_SIZE) {
+        setNotice('Uploaded product images must total less than 12 MB.');
+        setNoticeIsError(true);
+        return;
+      }
+
+      setDraft((current) => {
+        const emptyImageIndex = current.images.findIndex((image) => !image.trim());
+        if (emptyImageIndex === -1) {
+          return { ...current, images: [...current.images, imageData] };
+        }
+        return {
+          ...current,
+          images: current.images.map((image, index) => index === emptyImageIndex ? imageData : image),
+        };
+      });
+      setNotice('');
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not load that image.');
+      setNoticeIsError(true);
+    }
+  }
+
+  function removeImage(index: number) {
+    setDraft((current) => ({
+      ...current,
+      images: current.images.length === 1
+        ? ['']
+        : current.images.filter((_, imageIndex) => imageIndex !== index),
+    }));
   }
 
   return (
@@ -160,7 +386,11 @@ export default function InventoryPage() {
             highlight="inventory"
             subtitle="Manage your diecast collection and availability."
             action={(
-              <button type="button" className="admin-primary-button" onClick={openCreate}>
+              <button
+                type="button"
+                className="admin-primary-button"
+                onClick={openCreate}
+              >
                 <Icon name="plus" size={17} /> Add product
               </button>
             )}
@@ -174,7 +404,6 @@ export default function InventoryPage() {
               </button>
             </div>
           )}
-
           <section className="admin-inventory-card">
             <div className="admin-inventory-header">
               <div>
@@ -245,11 +474,11 @@ export default function InventoryPage() {
                       </td>
                     </tr>
                   ))}
-                  {visibleItems.length === 0 && (
+                  {visibleItems.length === 0 && !loading && (
                     <tr><td className="admin-empty" colSpan={6}>No products match your search. Try another term or filter.</td></tr>
                   )}
-                  {!storageReady && (
-                    <tr><td className="admin-loading" colSpan={6}>Loading saved inventory…</td></tr>
+                  {loading && (
+                    <tr><td className="admin-loading" colSpan={6}>Loading products from the database…</td></tr>
                   )}
                 </tbody>
               </table>
@@ -291,26 +520,95 @@ export default function InventoryPage() {
                 <Icon name="close" />
               </button>
             </div>
+            {!references.collectionTypes.length && (
+              <p className="admin-reference-warning" role="status">
+                Create an active collection type before adding or editing products.
+              </p>
+            )}
             <div className="admin-form-grid">
               <label className="admin-form-field admin-form-wide"><span>Product name</span><input required maxLength={100} value={draft.name} onChange={(event) => updateDraft('name', event.target.value)} placeholder="e.g. Nissan GT-R Nismo" /></label>
-              <label className="admin-form-field"><span>Brand</span><input required maxLength={60} value={draft.brand} onChange={(event) => updateDraft('brand', event.target.value)} placeholder="e.g. Mini GT" /></label>
+              <label className="admin-form-field"><span>Brand</span><input required maxLength={100} value={draft.brand} onChange={(event) => updateDraft('brand', event.target.value)} placeholder="e.g. Mini GT" /></label>
               <label className="admin-form-field"><span>SKU</span><input required maxLength={32} value={draft.sku} onChange={(event) => updateDraft('sku', event.target.value)} placeholder="e.g. RD-009" /></label>
-              <label className="admin-form-field"><span>Scale</span>
-                <select value={draft.scale} onChange={(event) => updateDraft('scale', event.target.value)}>
-                  <option>1:64</option><option>1:43</option><option>1:24</option><option>1:18</option>
-                </select>
-              </label>
-              <label className="admin-form-field"><span>Condition</span>
-                <select value={draft.condition} onChange={(event) => updateDraft('condition', event.target.value as Condition)}>
-                  <option>Sealed</option><option>Opened</option><option>Damage</option>
+              <label className="admin-form-field"><span>Scale</span><input required maxLength={20} value={draft.scale} onChange={(event) => updateDraft('scale', event.target.value)} placeholder="e.g. 1:64" /></label>
+              <label className="admin-form-field"><span>Packaging condition</span><input required maxLength={100} value={draft.packagingType} onChange={(event) => updateDraft('packagingType', event.target.value)} placeholder="e.g. Sealed" /></label>
+              <label className="admin-form-field"><span>Collection type</span>
+                <select
+                  required
+                  value={draft.collectionTypeId}
+                  onChange={(event) => updateDraft('collectionTypeId', event.target.value)}
+                >
+                  <option value="" disabled>Select a collection type</option>
+                  {references.collectionTypes.map((collection) => (
+                    <option key={collection._id} value={collection._id}>{collection.collectionName}</option>
+                  ))}
                 </select>
               </label>
               <label className="admin-form-field"><span>Price (INR)</span><input required type="number" min="0" step="1" value={draft.price} onChange={(event) => updateDraft('price', Number(event.target.value))} /></label>
               <label className="admin-form-field"><span>Stock quantity</span><input required type="number" min="0" step="1" value={draft.stock} onChange={(event) => updateDraft('stock', Number(event.target.value))} /></label>
+              <label className="admin-form-field admin-form-wide"><span>Description</span><textarea rows={3} value={draft.description} onChange={(event) => updateDraft('description', event.target.value)} /></label>
+              <div className="admin-form-field admin-form-wide">
+                <span>Product images</span>
+                {draft.images.map((image, index) => (
+                  <div className="admin-image-input-row" key={`image-${index}`}>
+                    {image.startsWith('data:image/') ? (
+                      <div className="admin-image-preview">
+                        <img src={image} alt={`Product image ${index + 1}`} />
+                        <span>Uploaded image</span>
+                      </div>
+                    ) : (
+                      <input
+                        type="url"
+                        aria-label={`Image URL ${index + 1}`}
+                        value={image}
+                        onChange={(event) => updateImage(index, event.target.value)}
+                        placeholder="https://example.com/model-front.jpg"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      className="admin-image-remove"
+                      onClick={() => removeImage(index)}
+                      aria-label={`Remove image ${index + 1}`}
+                      disabled={draft.images.length === 1}
+                    >
+                      <Icon name="trash" size={16} />
+                    </button>
+                  </div>
+                ))}
+                <input
+                  ref={imageFileInputRef}
+                  className="admin-image-file-input"
+                  type="file"
+                  accept="image/*"
+                  aria-label="Upload product image"
+                  onChange={addImageFile}
+                />
+                <button
+                  type="button"
+                  className="admin-add-image"
+                  onClick={() => imageFileInputRef.current?.click()}
+                >
+                  <Icon name="plus" size={15} /> Add another image
+                </button>
+              </div>
+              <label className="admin-status-toggle">
+                <input type="checkbox" checked={draft.isActive} onChange={(event) => updateDraft('isActive', event.target.checked)} />
+                <span>Active</span>
+              </label>
+              <label className="admin-status-toggle">
+                <input type="checkbox" checked={draft.isDisplay} onChange={(event) => updateDraft('isDisplay', event.target.checked)} />
+                <span>Display on storefront</span>
+              </label>
             </div>
             <div className="admin-modal-actions">
               <button type="button" className="admin-secondary-button" onClick={() => setModalOpen(false)}>Cancel</button>
-              <button type="submit" className="admin-primary-button">{editingId === null ? 'Add to inventory' : 'Save changes'}</button>
+              <button
+                type="submit"
+                className="admin-primary-button"
+                disabled={saving || !references.collectionTypes.length}
+              >
+                {saving ? 'Saving…' : editingId === null ? 'Add to inventory' : 'Save changes'}
+              </button>
             </div>
           </form>
         </div>

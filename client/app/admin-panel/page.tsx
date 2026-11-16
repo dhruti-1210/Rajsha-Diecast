@@ -12,6 +12,7 @@ import {
 import AdminLoginPage from './pages/AdminLoginPage';
 import DashboardPage from './pages/DashboardPage';
 import InventoryPage from './pages/InventoryPage';
+import CollectionTypesPage from './pages/CollectionTypes';
 import './admin-panel.css';
 
 export default function AdminPanelPage() {
@@ -32,12 +33,19 @@ export default function AdminPanelPage() {
 
   useEffect(() => {
     const syncPage = () => {
-      setActivePage(window.location.hash === '#inventory' ? 'inventory' : 'dashboard');
+      const currentPage = navConfig
+        .flatMap((section) => section.items)
+        .find((item) => item.href === window.location.hash);
+      setActivePage(currentPage?.id ?? 'dashboard');
     };
 
     syncPage();
     window.addEventListener('hashchange', syncPage);
-    return () => window.removeEventListener('hashchange', syncPage);
+    window.addEventListener('popstate', syncPage);
+    return () => {
+      window.removeEventListener('hashchange', syncPage);
+      window.removeEventListener('popstate', syncPage);
+    };
   }, []);
 
   function signOut() {
@@ -89,6 +97,14 @@ export default function AdminPanelPage() {
                 href={item.href}
                 aria-current={activePage === item.id ? 'page' : undefined}
                 key={item.id}
+                onClick={(event) => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                  event.preventDefault();
+                  if (window.location.hash !== item.href) {
+                    window.history.pushState(null, '', item.href);
+                  }
+                  setActivePage(item.id);
+                }}
               >
                 <Icon name={item.icon} /> {item.label}
               </a>
@@ -106,7 +122,11 @@ export default function AdminPanelPage() {
       <section className="admin-workspace">
         <div className="admin-content">
           {authError && <div className="admin-notice admin-notice-error" role="alert">{authError}</div>}
-          {activePage === 'inventory' ? <InventoryPage /> : <DashboardPage />}
+          {activePage === 'inventory'
+            ? <InventoryPage />
+            : activePage === 'collection-types'
+              ? <CollectionTypesPage />
+                : <DashboardPage />}
         </div>
       </section>
     </main>

@@ -1,6 +1,6 @@
 import type { IconName } from '../common/icon';
 
-export type AdminView = 'dashboard' | 'inventory';
+export type AdminView = 'dashboard' | 'inventory' | 'collection-types';
 
 export type AdminNavSection = {
   title: string;
@@ -18,6 +18,7 @@ const navConfig: AdminNavSection[] = [
     items: [
       { label: 'Dashboard', href: '#dashboard', id: 'dashboard', icon: 'box' },
       { label: 'Inventory', href: '#inventory', id: 'inventory', icon: 'car' },
+      { label: 'Collection types', href: '#collection-types', id: 'collection-types', icon: 'tag' },
     ],
   },
 ];

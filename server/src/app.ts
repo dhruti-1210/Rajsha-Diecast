@@ -38,6 +38,7 @@ app.use(cors({
   origin: clientOrigin,
   credentials: true
 }));
+app.use("/api/products", express.json({ limit: "20mb" }));
 app.use(express.json());
 
 app.use("/api/banners", BannerRoutes);
