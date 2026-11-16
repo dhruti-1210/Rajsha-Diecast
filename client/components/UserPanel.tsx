@@ -6,24 +6,21 @@ import { useRouter } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { useToastify } from '@/components/Toastify';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import CarImage from '@/components/CarImage';
 import { money } from '@/lib/format';
 import { userAuthUrl } from '@/lib/user-auth';
 
-type PanelSection = 'dashboard' | 'profile' | 'orders' | 'wishlist';
+type PanelSection = 'dashboard' | 'profile' | 'orders';
 type ProfileData = {
   fullName: string;
   email: string;
   phone: string;
   address: string;
-  photoUrl: string;
 };
 
 const sections: { id: PanelSection; label: string; icon: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'M3 3h7v7H3z M14 3h7v5h-7z M14 12h7v9h-7z M3 14h7v7H3z' },
   { id: 'profile', label: 'User profile', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21a8 8 0 0 1 16 0' },
   { id: 'orders', label: 'Orders', icon: 'M3 7h18v14H3z M7 7V4h10v3 M3 11h18 M10 11v3h4v-3' },
-  { id: 'wishlist', label: 'Wishlist', icon: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z' },
 ];
 
 const orders = [
@@ -35,11 +32,11 @@ const orders = [
 export default function UserPanel() {
   const [activeSection, setActiveSection] = useState<PanelSection>('profile');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [profile, setProfile] = useState<ProfileData>({ fullName: '', email: '', phone: '', address: '', photoUrl: '' });
+  const [profile, setProfile] = useState<ProfileData>({ fullName: '', email: '', phone: '', address: '' });
   const [profileComplete, setProfileComplete] = useState(false);
   const [ready, setReady] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
-  const { wishlist } = useStore();
+  const { setAuthStatus } = useStore();
   const { notify } = useToastify();
   const router = useRouter();
 
@@ -64,6 +61,7 @@ export default function UserPanel() {
         const response = await fetch(userAuthUrl('session'), { credentials: 'include' });
         const result = await response.json();
         if (response.status === 401) {
+          setAuthStatus('unauthenticated');
           router.replace('/login');
           return;
         }
@@ -73,6 +71,7 @@ export default function UserPanel() {
 
         const user = result.data.user;
         if (!active) return;
+        setAuthStatus('authenticated');
         setProfile((current) => ({
           ...current,
           fullName: user.name,
@@ -91,7 +90,7 @@ export default function UserPanel() {
 
     void loadSession();
     return () => { active = false; };
-  }, [notify, router]);
+  }, [notify, router, setAuthStatus]);
 
   async function logout() {
     try {
@@ -109,32 +108,22 @@ export default function UserPanel() {
       return;
     }
     sessionStorage.removeItem('rajsha.userEmail');
+    setAuthStatus('unauthenticated');
     setConfirmLogout(false);
     notify('success', 'Logout successful. See you again soon!');
     router.push('/login');
   }
 
-  function updateProfilePhoto(file: File) {
-    if (!file.type.startsWith('image/')) {
-      notify('error', 'Please choose an image file.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const photoUrl = reader.result;
-      if (typeof photoUrl !== 'string') {
-        notify('error', 'Could not load that profile photo.');
-        return;
-      }
-      setProfile((current) => ({ ...current, photoUrl }));
-      notify('success', 'Profile photo updated.');
-    };
-    reader.onerror = () => notify('error', 'Could not load that profile photo.');
-    reader.readAsDataURL(file);
+  if (!ready) {
+    return (
+      <main className="user-panel-page user-panel-loading" role="status" aria-live="polite">
+        <div className="user-panel-loader">
+          <span className="user-panel-loader-spinner" aria-hidden="true" />
+          <p>Loading your profile...</p>
+        </div>
+      </main>
+    );
   }
-
-  if (!ready) return null;
 
   return (
     <main className="user-panel-page">
@@ -180,7 +169,6 @@ export default function UserPanel() {
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d={section.icon} /></svg>
                 <span>{section.label}</span>
-                {section.id === 'wishlist' && <small>{wishlist.length}</small>}
               </button>
             ))}
           </nav>
@@ -197,12 +185,11 @@ export default function UserPanel() {
         </aside>
 
         <section className="user-panel-content" aria-live="polite">
-          {activeSection === 'dashboard' && <Dashboard wishlistCount={wishlist.length} onOrdersClick={() => setActiveSection('orders')} />}
+          {activeSection === 'dashboard' && <Dashboard onOrdersClick={() => setActiveSection('orders')} />}
           {activeSection === 'profile' && (
             <Profile
               profile={profile}
               requiredForAccess={!profileComplete}
-              onPhotoChange={updateProfilePhoto}
               onSave={async (updatedProfile) => {
                 const response = await fetch(userAuthUrl('profile'), {
                   method: 'PUT',
@@ -232,7 +219,6 @@ export default function UserPanel() {
             />
           )}
           {activeSection === 'orders' && <Orders />}
-          {activeSection === 'wishlist' && <Wishlist />}
         </section>
       </div>
 
@@ -249,7 +235,7 @@ export default function UserPanel() {
   );
 }
 
-function Dashboard({ wishlistCount, onOrdersClick }: { wishlistCount: number; onOrdersClick: () => void }) {
+function Dashboard({ onOrdersClick }: { onOrdersClick: () => void }) {
   return (
     <div className="user-panel-section">
       <div className="user-panel-section-heading">
@@ -257,7 +243,6 @@ function Dashboard({ wishlistCount, onOrdersClick }: { wishlistCount: number; on
       </div>
       <div className="user-panel-stats">
         <article className="user-panel-stat"><small>ORDERS PLACED</small><strong>03</strong><span>Across your garage</span></article>
-        <article className="user-panel-stat"><small>WISHLIST MODELS</small><strong>{String(wishlistCount).padStart(2, '0')}</strong><span>Saved for later</span></article>
         <article className="user-panel-stat"><small>COLLECTOR STATUS</small><strong className="user-panel-gold">Gold</strong><span>Thank you for collecting</span></article>
       </div>
       <section className="user-panel-card">
@@ -274,12 +259,10 @@ function Dashboard({ wishlistCount, onOrdersClick }: { wishlistCount: number; on
 function Profile({
   profile,
   requiredForAccess,
-  onPhotoChange,
   onSave,
 }: {
   profile: ProfileData;
   requiredForAccess: boolean;
-  onPhotoChange: (file: File) => void;
   onSave: (profile: ProfileData) => Promise<void>;
 }) {
   const [form, setForm] = useState(profile);
@@ -299,7 +282,7 @@ function Profile({
         </div>
       </div>
       <section className="user-panel-card user-panel-profile-card">
-        <div className="user-panel-profile-banner"><ProfileAvatar photoUrl={profile.photoUrl} onUpload={onPhotoChange} large /><div><small>COLLECTOR PROFILE</small><h3>{form.fullName || 'Your profile'}</h3><span>Update your details below</span></div></div>
+        <div className="user-panel-profile-banner"><div><small>COLLECTOR PROFILE</small><h3>{form.fullName || 'Your profile'}</h3><span>Update your details below</span></div></div>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -325,35 +308,6 @@ function Profile({
         </form>
       </section>
     </div>
-  );
-}
-
-function ProfileAvatar({
-  photoUrl,
-  onUpload,
-  large = false,
-}: {
-  photoUrl: string;
-  onUpload: (file: File) => void;
-  large?: boolean;
-}) {
-  return (
-    <label className={`user-panel-avatar user-panel-avatar-upload${large ? ' large' : ''}`}>
-      {photoUrl ? <img src={photoUrl} alt="Profile" /> : <span aria-hidden="true">RC</span>}
-      <span className="user-panel-avatar-edit" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" /></svg>
-      </span>
-      <input
-        type="file"
-        accept="image/*"
-        aria-label="Add or edit profile photo"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) onUpload(file);
-          event.target.value = '';
-        }}
-      />
-    </label>
   );
 }
 
@@ -411,26 +365,5 @@ function OrderRow({ order }: { order: typeof orders[number] }) {
       <span className={`user-panel-order-status${delivered ? ' delivered' : ''}`}><i />{order.status}</span>
       <strong className="user-panel-order-price">{money(order.price)}</strong>
     </article>
-  );
-}
-
-function Wishlist() {
-  const { wishlist, removeFromWishlist } = useStore();
-  return (
-    <div className="user-panel-section">
-      <div className="user-panel-section-heading"><div><h2>Wishlist</h2></div></div>
-      {wishlist.length === 0
-        ? <section className="user-panel-card user-panel-empty"><span aria-hidden="true">♡</span><h3>Your wishlist is waiting</h3><p>Save models from the collection and they will show up here.</p><Link className="btn" href="/shop">Explore models</Link></section>
-        : <div className="user-panel-wishlist">
-          {wishlist.map((product) => (
-            <article className="user-panel-product" key={product.id}>
-              <Link href={`/shop/${product.id}`} className="user-panel-product-image" aria-label={`View ${product.name}`}><CarImage p={product} /></Link>
-              <div className="user-panel-product-info"><small>{product.brand.toUpperCase()} · {product.scale}</small><Link href={`/shop/${product.id}`}>{product.name}</Link><strong>{money(product.price)}</strong>
-                <button type="button" onClick={() => removeFromWishlist(product.id)}>Remove from wishlist</button>
-              </div>
-            </article>
-          ))}
-        </div>}
-    </div>
   );
 }

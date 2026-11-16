@@ -6,11 +6,13 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import { useToastify } from '@/components/Toastify';
+import { useStore } from '@/context/StoreContext';
 import { userAuthUrl } from '@/lib/user-auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const { notify } = useToastify();
+  const { setAuthStatus } = useStore();
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
@@ -25,9 +27,15 @@ export default function LoginPage() {
     async function redirectIfAuthenticated() {
       try {
         const response = await fetch(userAuthUrl('session'), { credentials: 'include' });
-        if (response.status === 401) return;
+        if (response.status === 401) {
+          setAuthStatus('unauthenticated');
+          return;
+        }
         if (!response.ok) throw new Error('Could not check your login session.');
-        if (active) router.replace('/user-panel');
+        if (active) {
+          setAuthStatus('authenticated');
+          router.replace('/user-panel');
+        }
       } catch (error) {
         if (active) {
           setNotice(error instanceof Error ? error.message : 'Could not check your login session.');
@@ -37,7 +45,7 @@ export default function LoginPage() {
 
     void redirectIfAuthenticated();
     return () => { active = false; };
-  }, [router]);
+  }, [router, setAuthStatus]);
 
   useEffect(() => {
     if (resendCountdown <= 0) return;
@@ -135,6 +143,7 @@ export default function LoginPage() {
         throw new Error(result.message || 'Could not verify the code.');
       }
       sessionStorage.removeItem('rajsha.userEmail');
+      setAuthStatus('authenticated');
       notify('success', 'Email verified. Welcome to your garage!');
       router.replace('/user-panel');
     } catch (error) {

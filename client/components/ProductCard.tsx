@@ -3,7 +3,6 @@ import type { Product } from '@/types';
 import { useStore } from '@/context/StoreContext';
 import { money } from '@/lib/format';
 import CarImage from './CarImage';
-import FavoriteButton from './FavoriteButton';
 import Link from 'next/link';
 
 export default function ProductCard({ p }: { p: Product }) {
@@ -12,7 +11,6 @@ export default function ProductCard({ p }: { p: Product }) {
     <article className="card">
       {p.left > 0 && <span className="tag l">ONLY {p.left} LEFT</span>}
       <Link className="thumb" href={`/shop/${p.id}`} aria-label={`View ${p.name}`}><CarImage p={p} /></Link>
-      <FavoriteButton p={p} />
       <div className="info">
         <small>{p.brand.toUpperCase()} · {p.scale}</small>
         <h3>{p.name}</h3>

@@ -195,76 +195,31 @@ nav a:hover {
   font-size: .75rem
 }
 
-.nav-actions {
-  display: flex;
+.profile-link {
+  display: inline-flex;
   align-items: center;
-  gap: 18px
+  gap: 7px
 }
 
-.wishlist-trigger {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  color: #fff;
-  background: transparent;
-  border: 0;
-  cursor: pointer
-}
-
-.wishlist-trigger svg,
-.favorite-button svg {
-  width: 21px;
-  height: 21px;
+.profile-link svg {
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
-  transition: .2s
+  stroke-width: 1.6
 }
 
-.wishlist-trigger:hover,
-.favorite-button:hover,
-.favorite-button.active {
-  color: var(--gold)
+.nav-account-pending {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(212, 175, 55, .25);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: account-spin .7s linear infinite
 }
 
-.wishlist-trigger b {
-  position: absolute;
-  top: -2px;
-  right: -5px;
-  min-width: 17px;
-  padding: 1px 4px;
-  color: #000;
-  background: var(--gold);
-  border-radius: 12px;
-  font-size: .65rem;
-  line-height: 1.3;
-  text-align: center
-}
-
-.wishlist-trigger::after {
-  content: "Wishlist";
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  padding: 5px 9px;
-  color: #fff;
-  background: #171717;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  font-size: .72rem;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-3px);
-  transition: .2s
-}
-
-.wishlist-trigger:hover::after,
-.wishlist-trigger:focus-visible::after {
-  opacity: 1;
-  transform: translateY(0)
+@keyframes account-spin {
+  to { transform: rotate(360deg) }
 }
 
 .burger {
@@ -576,27 +531,6 @@ nav a:hover {
 .tag.l {
   left: 10px;
   color: #ff7a33
-}
-
-.favorite-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 4;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  color: #fff;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  transition: .2s
-}
-
-.favorite-button.active svg {
-  fill: currentColor
 }
 
 .info {
