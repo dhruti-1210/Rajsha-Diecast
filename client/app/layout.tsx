@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { StoreProvider } from '@/context/StoreContext';
+import { ToastifyProvider } from '@/components/Toastify';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './globals.css';
+import './theme-compat.css';
+import './toastify.css';
 
 export const metadata: Metadata = {
   title: 'Rajsha Diecast | Where Dreams Drive Passion',
@@ -17,7 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
       </head>
-      <body><StoreProvider>{children}</StoreProvider></body>
+      <body><ToastifyProvider><StoreProvider>{children}</StoreProvider></ToastifyProvider></body>
     </html>
   );
 }

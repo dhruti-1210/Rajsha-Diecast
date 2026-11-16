@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import CarImage from '@/components/CarImage';
+import FavoriteButton from '@/components/FavoriteButton';
 import { products } from '@/data/products';
 import { money } from '@/lib/format';
 import type { Condition } from '@/types';
@@ -66,6 +67,7 @@ export default function ShopPage() {
                       {product.left > 0 && <span className="shop-stock">ONLY {product.left} LEFT</span>}
                       <CarImage p={product} />
                     </Link>
+                    <FavoriteButton p={product} />
                     <div className="shop-card-info">
                       <small>{product.brand.toUpperCase()} · {product.scale}</small>
                       <Link href={`/shop/${product.id}`} className="shop-product-name">{product.name}</Link>

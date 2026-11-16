@@ -1,13 +1,15 @@
 'use client';
 
 import { useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from 'react';
-import CarImage from '@/components/CarImage';
-import { products } from '@/data/products';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
+import { useToastify } from '@/components/Toastify';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { notify } = useToastify();
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
@@ -17,7 +19,7 @@ export default function LoginPage() {
   function handleEmailSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setOtp(Array(6).fill(''));
-    setNotice('Email delivery is not configured yet, so no code was sent.');
+    setNotice('Demo OTP: 123456');
     setStep('otp');
   }
 
@@ -43,7 +45,18 @@ export default function LoginPage() {
 
   function handleVerify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setNotice('Static demo only: OTP verification is not connected yet.');
+    const code = otp.join('');
+    if (code.length !== 6) {
+      notify('error', 'Please enter all 6 digits of the verification code.');
+      return;
+    }
+    if (code !== '123456') {
+      notify('error', 'Incorrect demo OTP. Please use 123456.');
+      return;
+    }
+    sessionStorage.setItem('rajsha.userEmail', email.trim());
+    notify('success', 'Login successful. Welcome to your garage!');
+    router.push('/user-panel');
   }
 
   return (
@@ -90,11 +103,10 @@ export default function LoginPage() {
                         }}
                         onPaste={(event) => handleOtpPaste(event, index)}
                         onKeyDown={(event) => handleOtpKeyDown(event, index)}
-                        required
                       />
                     ))}
                   </div>
-                  <button className="btn login-submit" type="submit" disabled={otp.some((digit) => !digit)}>Verify OTP</button>
+                  <button className="btn login-submit" type="submit">Verify OTP</button>
                   {notice && <p className="login-notice" role="status">{notice}</p>}
                 </form>
                 <button className="change-email" type="button" onClick={() => { setStep('email'); setNotice(''); }}>← Change email</button>
@@ -104,7 +116,6 @@ export default function LoginPage() {
           </section>
           <aside className="col-12 col-lg-6 login-art-panel">
             <div className="login-art-copy"><p className="eyebrow">BUILT FOR THE LOVE OF THE DRIVE</p><h2>Big passion.<br /><em>Small scale.</em></h2><p>Your next favourite model is waiting in the collection.</p></div>
-            {/* <div className="login-car-art"><CarImage p={products[0]} /></div> */}
             <span className="login-art-caption">THE COLLECTOR'S GARAGE · EST. 2024</span>
           </aside>
         </div>

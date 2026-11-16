@@ -1,0 +1,920 @@
+.user-panel-page {
+  min-height: 100vh;
+  padding: 126px 5% 72px;
+  background: var(--bg)
+}
+
+.user-panel-card-heading button:hover {
+  color: var(--text)
+}
+
+.user-panel-layout {
+  display: grid;
+  grid-template-columns: minmax(230px, 270px) minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  max-width: 1440px;
+  margin: 0 auto
+}
+
+.user-panel-sidebar-toggle,
+.user-panel-sidebar-backdrop,
+.user-panel-sidebar-close {
+  display: none
+}
+
+.user-panel-sidebar,
+.user-panel-card,
+.user-panel-stat,
+.user-panel-product {
+  background: var(--card);
+  border: 1px solid var(--line)
+}
+
+.user-panel-sidebar {
+  position: sticky;
+  top: 108px;
+  display: flex;
+  min-height: 520px;
+  flex-direction: column;
+  padding: 20px 14px 14px;
+  border-radius: 8px
+}
+
+.user-panel-sidebar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between
+}
+
+.user-panel-avatar {
+  display: grid;
+  flex: 0 0 44px;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--gold2);
+  background: var(--bg2);
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  font-family: Cinzel, serif;
+  font-size: .82rem
+}
+
+.user-panel-avatar-upload {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer
+}
+
+.user-panel-avatar-upload>img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover
+}
+
+.user-panel-avatar-edit {
+  position: absolute;
+  z-index: 2;
+  right: 1px;
+  bottom: 1px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: #111;
+  background: var(--gold);
+  border: 1px solid var(--card);
+  border-radius: 50%
+}
+
+.user-panel-avatar-edit svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8
+}
+
+.user-panel-avatar-upload.large .user-panel-avatar-edit {
+  width: 22px;
+  height: 22px
+}
+
+.user-panel-avatar-upload.large .user-panel-avatar-edit svg {
+  width: 13px;
+  height: 13px
+}
+
+.user-panel-avatar-upload input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer
+}
+
+.user-panel-avatar-upload:focus-within {
+  outline: 2px solid var(--gold2);
+  outline-offset: 3px
+}
+
+.user-panel-nav-label {
+  margin: 20px 10px 8px;
+  color: var(--mut);
+  font-size: .62rem;
+  letter-spacing: 1.8px
+}
+
+.user-panel-nav {
+  display: grid;
+  gap: 5px
+}
+
+.user-panel-nav button,
+.user-panel-logout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 10px;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  text-align: left;
+  cursor: pointer;
+  transition: color .2s, background .2s, border-color .2s
+}
+
+.user-panel-nav button:hover,
+.user-panel-logout:hover {
+  color: var(--gold2);
+  background: var(--bg2)
+}
+
+.user-panel-nav button.active {
+  color: var(--gold2);
+  background: var(--bg2);
+  border-color: var(--line)
+}
+
+.user-panel-nav svg,
+.user-panel-logout svg {
+  flex: 0 0 19px;
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6
+}
+
+.user-panel-nav button span,
+.user-panel-logout span {
+  flex: 1;
+  font-size: .84rem
+}
+
+.user-panel-nav button small {
+  color: var(--mut);
+  font-size: .7rem
+}
+
+.user-panel-sidebar-footer {
+  margin-top: auto;
+  padding-top: 18px
+}
+
+.user-panel-logout {
+  color: var(--text)
+}
+
+.user-panel-sidebar-footer>small {
+  display: block;
+  padding: 15px 10px 0;
+  color: var(--mut);
+  border-top: 1px solid var(--line);
+  font-size: .57rem;
+  letter-spacing: 1.4px
+}
+
+.user-panel-content {
+  min-width: 0
+}
+
+.user-panel-section {
+  display: grid;
+  gap: 20px
+}
+
+.user-panel-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 2px
+}
+
+.user-panel-section-heading h2 {
+  margin: 0;
+  font-size: clamp(1.55rem, 3vw, 2.15rem)
+}
+
+.user-panel-order-status i {
+  width: 7px;
+  height: 7px;
+  background: var(--gold);
+  border-radius: 50%
+}
+
+.user-panel-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px
+}
+
+.user-panel-stat {
+  position: relative;
+  display: flex;
+  min-height: 150px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 18px;
+  overflow: hidden;
+  border-radius: 7px
+}
+
+.user-panel-stat::after {
+  position: absolute;
+  right: -25px;
+  bottom: -48px;
+  width: 120px;
+  height: 120px;
+  content: "";
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  box-shadow: 0 0 0 12px var(--bg2)
+}
+
+.user-panel-stat>small {
+  color: var(--mut);
+  font-size: .61rem;
+  letter-spacing: 1.1px
+}
+
+.user-panel-stat>strong {
+  color: var(--text);
+  font-family: Cinzel, serif;
+  font-size: 1.65rem;
+  line-height: 1.25
+}
+
+.user-panel-stat>strong.user-panel-gold {
+  color: var(--gold2)
+}
+
+.user-panel-stat>span {
+  color: var(--mut);
+  font-size: .7rem
+}
+
+.user-panel-card {
+  padding: 20px;
+  border-radius: 7px
+}
+
+.user-panel-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px
+}
+
+.user-panel-card-heading .eyebrow {
+  margin: 0 0 3px;
+  font-size: .58rem
+}
+
+.user-panel-card-heading h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.1rem
+}
+
+.user-panel-card-heading button {
+  padding: 5px 0;
+  color: var(--gold2);
+  background: transparent;
+  border: 0;
+  font-size: .75rem;
+  cursor: pointer
+}
+
+.user-panel-order-list {
+  display: grid
+}
+
+.user-panel-order-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line)
+}
+
+.user-panel-order-row:last-child {
+  border-bottom: 0
+}
+
+.user-panel-order-art {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: var(--gold2);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  font-family: Cinzel, serif;
+  font-size: .68rem
+}
+
+.user-panel-order-product {
+  display: grid;
+  min-width: 0;
+  gap: 3px
+}
+
+.user-panel-order-product strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: .82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.user-panel-order-product small {
+  color: var(--mut);
+  font-size: .68rem
+}
+
+.user-panel-order-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gold2);
+  font-size: .68rem;
+  white-space: nowrap
+}
+
+.user-panel-order-status.delivered {
+  color: var(--text)
+}
+
+.user-panel-order-status.delivered i {
+  background: var(--gold2)
+}
+
+.user-panel-order-price {
+  color: var(--text);
+  font-size: .78rem;
+  white-space: nowrap
+}
+
+.user-panel-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 18px;
+  background: var(--bg2);
+  border-left: 2px solid var(--gold)
+}
+
+.user-panel-note>span {
+  color: var(--gold2)
+}
+
+.user-panel-note p {
+  flex: 1;
+  margin: 0;
+  color: var(--text);
+  font-size: .78rem
+}
+
+.user-panel-note a {
+  color: var(--gold2);
+  font-size: .73rem;
+  white-space: nowrap
+}
+
+.user-panel-profile-card {
+  padding: 0 22px 18px
+}
+
+.user-panel-profile-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line)
+}
+
+.user-panel-avatar.large {
+  flex-basis: 62px;
+  width: 62px;
+  height: 62px;
+  font-size: 1rem
+}
+
+.user-panel-profile-banner small {
+  color: var(--gold);
+  font-size: .6rem;
+  letter-spacing: 1.5px
+}
+
+.user-panel-profile-banner h3 {
+  margin: 2px 0;
+  font-size: 1.2rem
+}
+
+.user-panel-profile-banner span:last-child {
+  color: var(--mut);
+  font-size: .75rem
+}
+
+.user-panel-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 30px
+}
+
+.user-panel-profile-field {
+  display: grid;
+  gap: 5px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line)
+}
+
+.user-panel-profile-field small {
+  color: var(--mut);
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: 1px
+}
+
+.user-panel-profile-field input {
+  width: 100%;
+  padding: 10px 12px;
+  color: var(--text);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: inherit;
+  font-size: .84rem;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s
+}
+
+.user-panel-profile-field input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(196, 162, 85, .12)
+}
+
+.user-panel-profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 18px
+}
+
+.user-panel-profile-actions .btn {
+  padding: 10px 18px;
+  font-size: .72rem
+}
+
+.user-panel-empty {
+  display: grid;
+  justify-items: center;
+  padding: 50px 20px;
+  text-align: center
+}
+
+.user-panel-empty>span {
+  color: var(--gold);
+  font-size: 2.4rem
+}
+
+.user-panel-empty h3 {
+  margin: 8px 0 4px;
+  font-size: 1.2rem
+}
+
+.user-panel-empty p {
+  margin-bottom: 18px;
+  color: var(--mut);
+  font-size: .8rem
+}
+
+.user-panel-empty .btn {
+  padding: 10px 18px;
+  font-size: .72rem
+}
+
+.user-panel-wishlist {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
+  gap: 16px
+}
+
+.user-panel-product {
+  overflow: hidden;
+  border-radius: 6px
+}
+
+.user-panel-product-image {
+  display: grid;
+  place-items: center;
+  height: 145px;
+  background: var(--bg2)
+}
+
+.user-panel-product-image img {
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  object-fit: contain
+}
+
+.user-panel-product-image svg {
+  width: 72%
+}
+
+.user-panel-product-info {
+  display: grid;
+  gap: 7px;
+  padding: 13px
+}
+
+.user-panel-product-info small {
+  color: var(--gold);
+  font-size: .62rem;
+  letter-spacing: 1px
+}
+
+.user-panel-product-info>a {
+  min-height: 2.5em;
+  color: var(--text);
+  font-size: .83rem
+}
+
+.user-panel-product-info>a:hover {
+  color: var(--gold2)
+}
+
+.user-panel-product-info strong {
+  color: var(--gold2)
+}
+
+.user-panel-product-info button {
+  padding: 7px 0 0;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  font-size: .72rem;
+  text-align: left;
+  cursor: pointer
+}
+
+.account-confirm-backdrop {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .76);
+  backdrop-filter: blur(5px)
+}
+
+.account-confirm {
+  width: min(100%, 430px);
+  padding: 34px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, .6)
+}
+
+.account-confirm-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 19px;
+  color: var(--gold2);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 50%
+}
+
+.account-confirm .eyebrow {
+  margin-bottom: 4px
+}
+
+.account-confirm h2 {
+  margin-bottom: 8px;
+  font-size: 1.55rem
+}
+
+.account-confirm>p:last-of-type {
+  color: var(--mut);
+  font-size: .86rem
+}
+
+.account-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px
+}
+
+.account-confirm-actions .btn {
+  padding: 10px 15px;
+  font-size: .7rem;
+  letter-spacing: .3px
+}
+
+.account-confirm-actions .btn.ghost {
+  margin: 0
+}
+
+.account-confirm-actions .account-confirm-logout {
+  color: var(--text);
+  background: var(--bg2);
+  border: 1px solid var(--line)
+}
+
+.account-confirm-actions .account-confirm-logout:hover {
+  color: var(--gold2);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, .22)
+}
+
+
+
+@media(max-width:900px) {
+  .user-panel-layout {
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 16px
+  }
+
+  .user-panel-stats {
+    grid-template-columns: 1fr
+  }
+
+  .user-panel-stat {
+    min-height: 120px
+  }
+}
+
+@media(max-width:700px) {
+  .user-panel-page {
+    padding: 108px 18px 55px
+  }
+
+  .user-panel-layout {
+    grid-template-columns: 1fr
+  }
+
+  .user-panel-sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    width: max-content;
+    margin-bottom: 16px;
+    padding: 10px 13px;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    cursor: pointer
+  }
+
+  .user-panel-sidebar-toggle svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.8
+  }
+
+  .user-panel-sidebar-backdrop {
+    position: fixed;
+    z-index: 109;
+    inset: 0;
+    display: block;
+    background: rgba(0, 0, 0, .68);
+    border: 0
+  }
+
+  .user-panel-sidebar {
+    position: fixed;
+    z-index: 110;
+    top: 0;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    width: min(84vw, 320px);
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100dvh;
+    padding: 22px 16px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-radius: 0 9px 9px 0;
+    transform: translateX(-105%);
+    visibility: hidden;
+    transition: transform .28s ease, visibility .28s ease
+  }
+
+  .user-panel-sidebar.is-open {
+    transform: translateX(0);
+    visibility: visible
+  }
+
+  .user-panel-sidebar-heading {
+    margin-bottom: 20px
+  }
+
+  .user-panel-nav-label {
+    margin: 0 10px;
+    font-size: .65rem
+  }
+
+  .user-panel-sidebar-close {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    color: var(--text);
+    background: var(--bg2);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer
+  }
+
+  .user-panel-nav {
+    display: grid;
+    gap: 5px
+  }
+
+  .user-panel-nav button {
+    width: 100%;
+    gap: 12px;
+    padding: 11px 10px
+  }
+
+  .user-panel-nav button span {
+    font-size: .84rem
+  }
+
+  .user-panel-nav svg {
+    width: 19px;
+    height: 19px
+  }
+
+  .user-panel-sidebar-footer {
+    margin-top: auto;
+    padding-top: 18px;
+    border-top: 1px solid var(--line)
+  }
+
+  .user-panel-logout {
+    width: 100%;
+    padding: 11px 10px
+  }
+
+  .user-panel-logout span {
+    flex: 1;
+    font-size: .84rem
+  }
+
+  .user-panel-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px
+  }
+
+  .user-panel-stat {
+    min-height: 130px;
+    padding: 12px 10px
+  }
+
+  .user-panel-stat>small {
+    min-height: 2.4em;
+    font-size: .52rem;
+    letter-spacing: .5px
+  }
+
+  .user-panel-stat>strong {
+    font-size: 1.3rem
+  }
+
+  .user-panel-stat>span {
+    font-size: .62rem
+  }
+
+  .user-panel-card {
+    padding: 15px
+  }
+
+  .user-panel-order-row {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 9px
+  }
+
+  .user-panel-order-art {
+    width: 34px;
+    height: 36px
+  }
+
+  .user-panel-order-status {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: .62rem
+  }
+
+  .user-panel-order-price {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: center;
+    font-size: .7rem
+  }
+
+  .user-panel-order-product strong {
+    font-size: .72rem
+  }
+
+  .user-panel-order-product small {
+    font-size: .58rem
+  }
+
+  .user-panel-note {
+    flex-wrap: wrap;
+    gap: 8px
+  }
+
+  .user-panel-note p {
+    flex-basis: calc(100% - 30px)
+  }
+
+  .user-panel-note a {
+    margin-left: 30px
+  }
+
+  .user-panel-profile-grid {
+    grid-template-columns: 1fr
+  }
+
+  .user-panel-section-heading {
+    align-items: flex-start
+  }
+}
+
+@media(max-width:420px) {
+  .user-panel-stats {
+    grid-template-columns: 1fr
+  }
+
+  .user-panel-stat {
+    min-height: 105px
+  }
+
+  .user-panel-section-heading {
+    flex-direction: column
+  }
+
+  .account-confirm {
+    padding: 27px 22px
+  }
+
+  .account-confirm-actions {
+    flex-direction: column-reverse
+  }
+
+  .account-confirm-actions .btn {
+    width: 100%;
+    text-align: center
+  }
+}

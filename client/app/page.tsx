@@ -3,7 +3,6 @@ import Hero from '@/components/Hero';
 import BrandStrip from '@/components/BrandStrip';
 import BrandsSection from '@/components/BrandsSection';
 import ProductSection from '@/components/ProductSection';
-import BudgetSection from '@/components/BudgetSection';
 import { Grading, Reviews } from '@/components/Sections';
 import Stats from '@/components/Stats';
 import Footer from '@/components/Footer';
@@ -20,7 +19,6 @@ export default function Home() {
         <Hero />
         <BrandStrip />
         <BrandsSection />
-        <BudgetSection />
         <ProductSection id="featured" mode="featured" />
         <ProductSection id="arrivals" mode="new" dark />
         <Grading />

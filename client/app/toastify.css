@@ -1,0 +1,65 @@
+.account-toast-host {
+  position: fixed;
+  z-index: 300;
+  top: 22px;
+  right: 22px;
+  width: min(390px, calc(100vw - 32px));
+  pointer-events: none
+}
+
+.account-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 15px;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: 5px;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, .48);
+  animation: account-toast-enter .25s ease-out;
+  pointer-events: auto
+}
+
+.account-toast.error {
+  border-left-color: var(--mut)
+}
+
+.account-toast-mark {
+  display: grid;
+  flex: 0 0 25px;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  color: var(--bg);
+  background: var(--gold2);
+  border-radius: 50%;
+  font-weight: 700
+}
+
+.account-toast.error .account-toast-mark {
+  color: var(--text);
+  background: var(--mut)
+}
+
+.account-toast p {
+  flex: 1;
+  margin: 0;
+  font-size: .8rem
+}
+
+.account-toast button {
+  padding: 0 2px;
+  color: var(--mut);
+  background: transparent;
+  border: 0;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer
+}
+
+@keyframes account-toast-enter {
+  from { opacity: 0; transform: translateY(-8px) }
+  to { opacity: 1; transform: translateY(0) }
+}
