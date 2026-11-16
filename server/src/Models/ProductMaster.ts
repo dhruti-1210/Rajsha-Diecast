@@ -6,6 +6,7 @@ export interface IProductMaster extends Document {
     Company_Id: mongoose.Types.ObjectId;
     TotalStock: number;
     Price: number;
+    discountPrice: number;
     ModelCode: string;
     Size: string;
     Description: string;
