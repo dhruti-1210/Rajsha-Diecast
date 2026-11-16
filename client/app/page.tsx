@@ -9,7 +9,6 @@ import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import ProductModal from '@/components/ProductModal';
 import ScrollFX from '@/components/ScrollFX';
-import { WHATSAPP } from '@/lib/format';
 
 export default function Home() {
   return (
@@ -28,7 +27,6 @@ export default function Home() {
       <Footer />
       <CartDrawer />
       <ProductModal />
-      <a href={`https://wa.me/${WHATSAPP}`} className="wa" aria-label="WhatsApp">WhatsApp</a>
       <ScrollFX />
     </>
   );
