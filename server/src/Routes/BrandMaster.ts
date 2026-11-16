@@ -7,7 +7,7 @@ import {
     UpdateCompanyController,
     DeleteCompanyController,
     ChangeActiveStatusController
-} from "../controller/CompanyMasterController";
+} from "../controller/BrandMasterController";
 
 const router = Router();
 

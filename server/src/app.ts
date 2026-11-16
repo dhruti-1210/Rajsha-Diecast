@@ -7,7 +7,7 @@ import CMSRoutes from "./Routes/CMSRoutes";
 import UserRoutes from "./Routes/UserRoutes";
 
 import CollectionMasterRoutes from "./Routes/CollectionMaster";
-import CompanyMasterRoutes from "./Routes/CompanyMaster";
+import BrandMasterRoutes from "./Routes/BrandMaster";
 
 import OrderLineRoutes from "./Routes/OrderLineRoutes";
 import OrderMasterRoutes from "./Routes/OrderMasterRoutes";
@@ -18,7 +18,16 @@ import ProductMasterRoutes from "./Routes/ProductMasterRoutes";
 import TransactionHistoryRoutes from "./Routes/TransactionHistoryRoutes";
 import ReviewRoutes from "./Routes/ReviewRoutes";
 
-import ProductImgRoutes from "./Routes/ProductImgRoutes";
+import ScaleSizeRoutes from "./Routes/ScaleSizeRoutes";
+import CounterMasterRoutes from "./Routes/CounterMasterRoutes";
+
+import CompanySetupRoutes from "./Routes/CompanySetupRoutes";
+import CartRoutes from "./Routes/CartRoutes";
+
+import CheckoutRoutes from "./Routes/CheckOutRoutes";
+import FooterLinkGroupRoutes from "./Routes/footerLinkGroupRoutes";
+import FooterLinkMasterRoutes from "./Routes/footerLinkRoutes";
+
 const app = express(); 
 
 app.use(cors({ origin: process.env.CLIENT_URL || true }));
@@ -30,7 +39,7 @@ app.use("/api/cms", CMSRoutes);
 app.use("/api/users", UserRoutes);
 
 app.use("/api/collection-types", CollectionMasterRoutes);
-app.use("/api/companies", CompanyMasterRoutes);
+app.use("/api/brands", BrandMasterRoutes);
 
 app.use("/api/order-lines", OrderLineRoutes);
 app.use("/api/orders", OrderMasterRoutes);
@@ -41,7 +50,16 @@ app.use("/api/products", ProductMasterRoutes);
 app.use("/api/reviews", ReviewRoutes);
 app.use("/api/transaction-history", TransactionHistoryRoutes);
 
-app.use("/api/product-images", ProductImgRoutes);
+app.use("/api/scale-sizes", ScaleSizeRoutes);
+app.use("/api/counters", CounterMasterRoutes);
+
+
+app.use("/api/company-setup", CompanySetupRoutes);
+app.use("/api/cart", CartRoutes);
+
+app.use("/api/checkout", CheckoutRoutes);
+app.use("/api/footer-link-groups", FooterLinkGroupRoutes);
+app.use("/api/footer-links", FooterLinkMasterRoutes);
 
 app.get("/health", (_request, response) => {
   response.status(200).json({ status: "ok" });

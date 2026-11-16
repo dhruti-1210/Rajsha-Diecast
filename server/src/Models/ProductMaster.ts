@@ -6,12 +6,11 @@ export interface IProductMaster extends Document {
     Company_Id: mongoose.Types.ObjectId;
     TotalStock: number;
     Price: number;
-    discountPrice: number;
     ModelCode: string;
     Size: string;
     Description: string;
     Packagingtype_Id: mongoose.Types.ObjectId;
-    Image: string;
+    Image: string[];
     Collectiontype_id: mongoose.Types.ObjectId;
 
     createdAt: Date;
@@ -23,6 +22,8 @@ export interface IProductMaster extends Document {
     isDisplay: boolean;
     isDeleted: boolean;
 }
+
+export type ProductMasterInput = Partial<IProductMaster>;
 
 const ProductMasterSchema: Schema = new Schema(
     {
@@ -61,8 +62,8 @@ const ProductMasterSchema: Schema = new Schema(
             required: true
         },
         Image: {
-            type: String,
-            default: ""
+            type: [String],
+            default: []
         },
         Collectiontype_id: {
             type: Schema.Types.ObjectId,

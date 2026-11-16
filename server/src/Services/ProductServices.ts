@@ -1,8 +1,8 @@
 
-import ProductMaster, { IProductMaster } from "../Models/ProductMaster";
+import ProductMaster, { ProductMasterInput } from "../Models/ProductMaster";
 
 // Create Product
-export const CreateProductMaster = async (data: Partial<IProductMaster>) => {
+export const CreateProductMaster = async (data: ProductMasterInput) => {
     try {
         const product = new ProductMaster(data);
         return await product.save();
@@ -35,7 +35,7 @@ export const GetProductMasterById = async (id: string) => {
 // Update Product
 export const UpdateProductMaster = async (
     id: string,
-    data: Partial<IProductMaster>
+    data: ProductMasterInput
 ) => {
     try {
         return await ProductMaster.findOneAndUpdate(

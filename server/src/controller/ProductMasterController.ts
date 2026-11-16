@@ -9,11 +9,41 @@ import {
     ChangeProductActiveStatus,
     ChangeProductDisplayStatus
 } from "../Services/ProductServices";
+import { ProductMasterInput } from "../Models/ProductMaster";
+
+const normalizeProductImageField = (body: unknown): ProductMasterInput | null => {
+    if (typeof body !== "object" || body === null || Array.isArray(body)) {
+        return null;
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(body, "Image")) {
+        return body as ProductMasterInput;
+    }
+
+    const image = (body as Record<string, unknown>).Image;
+    if (typeof image === "string") {
+        return { ...body, Image: [image] } as ProductMasterInput;
+    }
+
+    if (Array.isArray(image) && image.every((item) => typeof item === "string")) {
+        return body as ProductMasterInput;
+    }
+
+    return null;
+};
 
 // Create Product
 export const CreateProductMasterController = async (req: Request, res: Response) => {
     try {
-        const product = await CreateProductMaster(req.body);
+        const productData = normalizeProductImageField(req.body);
+        if (!productData) {
+            return res.status(400).json({
+                success: false,
+                message: "Image must be a string or an array of strings"
+            });
+        }
+
+        const product = await CreateProductMaster(productData);
 
         return res.status(201).json({
             success: true,
@@ -74,7 +104,15 @@ export const GetProductMasterByIdController = async (req: Request, res: Response
 // Update Product
 export const UpdateProductMasterController = async (req: Request, res: Response) => {
     try {
-        const product = await UpdateProductMaster(req.params.id, req.body);
+        const productData = normalizeProductImageField(req.body);
+        if (!productData) {
+            return res.status(400).json({
+                success: false,
+                message: "Image must be a string or an array of strings"
+            });
+        }
+
+        const product = await UpdateProductMaster(req.params.id, productData);
 
         if (!product) {
             return res.status(404).json({

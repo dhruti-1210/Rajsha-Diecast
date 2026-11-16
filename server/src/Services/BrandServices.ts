@@ -1,5 +1,5 @@
 
-import Company, { ICompany } from "../Models/CompanyMaster";
+import Company, { ICompany } from "../Models/BrandMaster";
 
 // Create Company
 export const CreateCompany = async (data: Partial<ICompany>) => {

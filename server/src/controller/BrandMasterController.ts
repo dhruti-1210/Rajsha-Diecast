@@ -7,7 +7,7 @@ import {
     UpdateCompany,
     DeleteCompany,
     ChangeActiveStatus
-} from "../Services/CompanyServices";
+} from "../Services/BrandServices";
 
 // Create Company
 export const CreateCompanyController = async (req: Request, res: Response) => {

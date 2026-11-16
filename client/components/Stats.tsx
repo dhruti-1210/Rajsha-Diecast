@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 
-const stats: [number, string][] = [[500, 'Models in stock'], [8, 'Top brands'], [2000, 'Happy collectors'], [28, 'States delivered']];
+const stats: [number, string][] = [[500, 'Models in stock'], [8, 'Top brands'], [2000, 'Happy collectors'], [28, 'Premium collections']];
 
 function Count({ to, run }: { to: number; run: boolean }) {
   const [v, setV] = useState(0);
