@@ -187,12 +187,61 @@ nav a:hover {
   color: var(--gold)
 }
 
+.nav-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px
+}
+
+.nav-home svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7
+}
+
 .cart b {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  display: grid;
+  min-width: 15px;
+  height: 15px;
+  place-items: center;
+  padding: 0 3px;
   background: var(--gold);
   color: #000;
   border-radius: 50%;
-  padding: 1px 7px;
-  font-size: .75rem
+  font-size: .6rem;
+  line-height: 1
+}
+
+.cart {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px
+}
+
+.cart-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  width: 23px;
+  height: 23px;
+  align-items: center;
+  justify-content: center
+}
+
+.cart-icon-wrap svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6
 }
 
 .profile-link {

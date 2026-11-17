@@ -30,6 +30,10 @@ export default function Header() {
       <Logo />
       <form className="search" onSubmit={(e) => e.preventDefault()}><input type="search" placeholder="Search models, brands, scale..." /></form>
       <nav className={open ? 'open' : undefined} onClick={() => setOpen(false)}>
+        <Link href="/" className="nav-home">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v11h14V9M9 20v-6h6v6" /></svg>
+          <span>Home</span>
+        </Link>
         <Link href="/shop">Shop all</Link><Link href="/#grading">Track</Link>
         {authStatus === 'checking' ? (
           <span className="nav-account-pending" role="status" aria-label="Checking account" />
@@ -39,7 +43,13 @@ export default function Header() {
             <span>My profile</span>
           </> : 'Login'}
         </Link>}
-        <a href="#" className="cart" onClick={(e) => { e.preventDefault(); setDrawer('cart'); }}>Cart <b>{cart.length}</b></a>
+        <a href="#" className="cart" aria-label={`Cart, ${cart.length} items`} onClick={(e) => { e.preventDefault(); setDrawer('cart'); }}>
+          <span>Cart</span>
+          <span className="cart-icon-wrap">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h2l2.2 11.2a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 2-1.6L22 7H6" /><circle cx="10" cy="20" r="1" /><circle cx="18" cy="20" r="1" /></svg>
+            <b>{cart.length}</b>
+          </span>
+        </a>
       </nav>
       <button className="burger" aria-label="Menu" onClick={() => setOpen((o) => !o)}>&#9776;</button>
     </header>

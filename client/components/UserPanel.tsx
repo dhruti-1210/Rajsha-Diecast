@@ -35,7 +35,7 @@ export default function UserPanel() {
   const [profile, setProfile] = useState<ProfileData>({ fullName: '', email: '', phone: '', address: '' });
   const [profileComplete, setProfileComplete] = useState(false);
   const [ready, setReady] = useState(false);
-  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'logout' | 'delete' | null>(null);
   const { setAuthStatus } = useStore();
   const { notify } = useToastify();
   const router = useRouter();
@@ -104,12 +104,12 @@ export default function UserPanel() {
       }
     } catch (error) {
       notify('error', error instanceof Error ? error.message : 'Could not log out.');
-      setConfirmLogout(false);
+      setConfirmAction(null);
       return;
     }
     sessionStorage.removeItem('rajsha.userEmail');
     setAuthStatus('unauthenticated');
-    setConfirmLogout(false);
+    setConfirmAction(null);
     notify('success', 'Logout successful. See you again soon!');
     router.push('/login');
   }
@@ -175,10 +175,18 @@ export default function UserPanel() {
           <div className="user-panel-sidebar-footer">
             <button type="button" className="user-panel-logout" onClick={() => {
               setMobileSidebarOpen(false);
-              setConfirmLogout(true);
+              setConfirmAction('logout');
             }}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5 M15 12H3 M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7" /></svg>
               <span>Logout</span>
+            </button>
+
+            <button type="button" className="user-panel-delete" onClick={() => {
+              setMobileSidebarOpen(false);
+              setConfirmAction('delete');
+            }}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5" /></svg>
+              <span>Delete account</span>
             </button>
             <small>RAJSHA DIECAST · MEMBER</small>
           </div>
@@ -223,13 +231,21 @@ export default function UserPanel() {
       </div>
 
       <ConfirmDialog
-        open={confirmLogout}
-        title="Leaving the garage?"
-        message="Are you sure you want to log out of your account?"
-        confirmLabel="Yes, log out"
-        cancelLabel="Stay logged in"
-        onConfirm={logout}
-        onCancel={() => setConfirmLogout(false)}
+        open={confirmAction !== null}
+        title={confirmAction === 'delete' ? 'Delete your account?' : 'Leaving the garage?'}
+        message={confirmAction === 'delete'
+          ? 'Are you sure you want to delete your account? This preview will not delete your account.'
+          : 'Are you sure you want to log out of your account?'}
+        confirmLabel={confirmAction === 'delete' ? 'Got it' : 'Yes, log out'}
+        cancelLabel={confirmAction === 'delete' ? 'Cancel' : 'Stay logged in'}
+        onConfirm={() => {
+          if (confirmAction === 'delete') {
+            setConfirmAction(null);
+            return;
+          }
+          void logout();
+        }}
+        onCancel={() => setConfirmAction(null)}
       />
     </main>
   );
