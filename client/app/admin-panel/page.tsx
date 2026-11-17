@@ -13,6 +13,7 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import DashboardPage from './pages/DashboardPage';
 import InventoryPage from './pages/InventoryPage';
 import CollectionTypesPage from './pages/CollectionTypes';
+import PackagingTypePage from './pages/PackagingType';
 import './admin-panel.css';
 
 export default function AdminPanelPage() {
@@ -126,6 +127,8 @@ export default function AdminPanelPage() {
             ? <InventoryPage />
             : activePage === 'collection-types'
               ? <CollectionTypesPage />
+              : activePage === 'packaging-types'
+                ? <PackagingTypePage />
                 : <DashboardPage />}
         </div>
       </section>

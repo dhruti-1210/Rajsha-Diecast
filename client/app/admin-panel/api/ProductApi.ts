@@ -22,14 +22,6 @@ export interface PackagingReference extends ProductReference {
   Description: string;
 }
 
-export interface PackagingTypeInput {
-  packagingName: string;
-  Description: string;
-  createdBy: string;
-  updatedBy: string;
-  isActive?: boolean;
-}
-
 export interface CollectionReference extends ProductReference {
   collectionName: string;
 }
@@ -91,13 +83,5 @@ export const getProductMasterReferences = async () => {
       (item) => item.isActive && !item.isDeleted,
     ),
   };
-};
-
-export const createPackagingType = async (packagingType: PackagingTypeInput) => {
-  const response = await api.post<ProductApiResponse<PackagingReference>>(
-    '/packaging-types/create',
-    packagingType,
-  );
-  return response.data;
 };
 

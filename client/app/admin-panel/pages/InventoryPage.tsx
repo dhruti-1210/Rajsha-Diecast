@@ -5,7 +5,6 @@ import Header from '../common/header';
 import Icon from '../common/icon';
 import {
   createProductMaster,
-  createPackagingType,
   deleteProductMaster,
   getProductMasterList,
   getProductMasterReferences,
@@ -40,7 +39,7 @@ type ProductDraft = {
   collectionTypeId: string;
   scale: string;
   price: number;
-  packagingType: string;
+  packagingTypeId: string;
   stock: number;
   sku: string;
   description: string;
@@ -66,7 +65,7 @@ const emptyDraft: ProductDraft = {
   collectionTypeId: '',
   scale: '1:64',
   price: 0,
-  packagingType: '',
+  packagingTypeId: '',
   stock: 0,
   sku: '',
   description: '',
@@ -210,9 +209,7 @@ export default function InventoryPage() {
       collectionTypeId: product.collectionTypeId,
       scale: product.scale,
       price: product.price,
-      packagingType: references.packagingTypes.find(
-        (packaging) => packaging._id === product.packagingTypeId,
-      )?.packagingName ?? '',
+      packagingTypeId: product.packagingTypeId,
       stock: product.stock,
       sku: product.sku,
       description: product.description,
@@ -234,9 +231,18 @@ export default function InventoryPage() {
       return;
     }
 
-    const packagingName = draft.packagingType.trim();
-    if (!packagingName) {
-      setNotice('Enter a packaging type.');
+    const packagingType = references.packagingTypes.find(
+      (item) => item._id === draft.packagingTypeId,
+    );
+    const existingProduct = editingId
+      ? items.find((item) => item.id === editingId)
+      : undefined;
+    const packagingTypeId = packagingType?._id
+      ?? (existingProduct?.packagingTypeId === draft.packagingTypeId
+        ? draft.packagingTypeId
+        : '');
+    if (!packagingTypeId) {
+      setNotice('Choose an active packaging condition.');
       setNoticeIsError(true);
       return;
     }
@@ -245,24 +251,6 @@ export default function InventoryPage() {
 
     setSaving(true);
     try {
-      let packagingType = references.packagingTypes.find(
-        (item) => item.packagingName.trim().toLowerCase() === packagingName.toLowerCase(),
-      );
-      if (!packagingType) {
-        const response = await createPackagingType({
-          packagingName,
-          Description: packagingName,
-          createdBy: actor,
-          updatedBy: actor,
-          isActive: true,
-        });
-        packagingType = response.data;
-        setReferences((current) => ({
-          ...current,
-          packagingTypes: [response.data, ...current.packagingTypes],
-        }));
-      }
-
       const payload: ProductMasterInput = {
         Name: draft.name.trim(),
         BrandName: draft.brand.trim(),
@@ -271,7 +259,7 @@ export default function InventoryPage() {
         ModelCode: draft.sku.trim(),
         Size: draft.scale.trim(),
         Description: draft.description.trim(),
-        Packagingtype_Id: packagingType._id,
+        Packagingtype_Id: packagingTypeId,
         Image: draft.images.map((image) => image.trim()).filter(Boolean),
         CollectionName: collectionType.collectionName,
         Collectiontype_id: collectionType._id,
@@ -525,12 +513,36 @@ export default function InventoryPage() {
                 Create an active collection type before adding or editing products.
               </p>
             )}
+            {!references.packagingTypes.length && (
+              <p className="admin-reference-warning" role="status">
+                No active packaging conditions are available. Add or activate one from Packaging types.
+              </p>
+            )}
             <div className="admin-form-grid">
               <label className="admin-form-field admin-form-wide"><span>Product name</span><input required maxLength={100} value={draft.name} onChange={(event) => updateDraft('name', event.target.value)} placeholder="e.g. Nissan GT-R Nismo" /></label>
               <label className="admin-form-field"><span>Brand</span><input required maxLength={100} value={draft.brand} onChange={(event) => updateDraft('brand', event.target.value)} placeholder="e.g. Mini GT" /></label>
               <label className="admin-form-field"><span>SKU</span><input required maxLength={32} value={draft.sku} onChange={(event) => updateDraft('sku', event.target.value)} placeholder="e.g. RD-009" /></label>
               <label className="admin-form-field"><span>Scale</span><input required maxLength={20} value={draft.scale} onChange={(event) => updateDraft('scale', event.target.value)} placeholder="e.g. 1:64" /></label>
-              <label className="admin-form-field"><span>Packaging condition</span><input required maxLength={100} value={draft.packagingType} onChange={(event) => updateDraft('packagingType', event.target.value)} placeholder="e.g. Sealed" /></label>
+              <label className="admin-form-field"><span>Packaging condition</span>
+                <select
+                  required
+                  value={draft.packagingTypeId}
+                  onChange={(event) => updateDraft('packagingTypeId', event.target.value)}
+                >
+                  <option value="" disabled>Select a packaging condition</option>
+                  {editingId
+                    && draft.packagingTypeId
+                    && !references.packagingTypes.some((packaging) => packaging._id === draft.packagingTypeId)
+                    && (
+                      <option value={draft.packagingTypeId}>
+                        {items.find((item) => item.id === editingId)?.condition || 'Inactive packaging type'}
+                      </option>
+                    )}
+                  {references.packagingTypes.map((packaging) => (
+                    <option key={packaging._id} value={packaging._id}>{packaging.packagingName}</option>
+                  ))}
+                </select>
+              </label>
               <label className="admin-form-field"><span>Collection type</span>
                 <select
                   required
