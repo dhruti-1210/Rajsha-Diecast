@@ -224,7 +224,7 @@ export default function LoginPage() {
             </div>
           </section>
           <aside className="col-12 col-lg-6 login-art-panel">
-            <div className="login-art-copy"><p className="eyebrow">BUILT FOR THE LOVE OF THE DRIVE</p><h2>Big passion.<br /><em>Small scale.</em></h2><p>Your next favourite model is waiting in the collection.</p></div>
+            <div className="login-art-copy px-5"><p className="eyebrow">BUILT FOR THE LOVE OF THE DRIVE</p><h2>Big passion.<br /><em>Small scale.</em></h2><p>Your next favourite model is waiting in the collection.</p></div>
             <span className="login-art-caption">THE COLLECTOR'S GARAGE · EST. 2024</span>
           </aside>
         </div>

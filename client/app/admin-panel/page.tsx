@@ -17,6 +17,8 @@ import PackagingTypePage from './pages/PackagingType';
 import ScaleSizesPage from './pages/scaleSize';
 import CompanySetupPage from './pages/companysetup';
 import BannerPage from './pages/banner';
+import CmsPage from './pages/cms';
+import CheckoutPage from './pages/checkout';
 import './admin-panel.css';
 
 export default function AdminPanelPage() {
@@ -138,6 +140,10 @@ export default function AdminPanelPage() {
                     ? <CompanySetupPage />
                     : activePage === 'banners'
                       ? <BannerPage />
+                      : activePage === 'cms'
+                        ? <CmsPage />
+                        : activePage === 'checkout'
+                          ? <CheckoutPage />
                     : <DashboardPage />}
         </div>
       </section>
