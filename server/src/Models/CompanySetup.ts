@@ -14,6 +14,7 @@ export interface ICompanySetup extends Document {
 
     isActive: boolean;
     isDisplay: boolean;
+    isDeleted: boolean;
 }
 
 const CompanySetupSchema: Schema = new Schema(
@@ -64,6 +65,10 @@ const CompanySetupSchema: Schema = new Schema(
             default: true
         },
         isDisplay: {
+            type: Boolean,
+            default: false
+        },
+        isDeleted: {
             type: Boolean,
             default: false
         }

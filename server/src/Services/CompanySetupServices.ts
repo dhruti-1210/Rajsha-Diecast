@@ -15,7 +15,7 @@ export const CreateCompanySetup = async (
 // Get All Company Setup
 export const GetAllCompanySetup = async () => {
     try {
-        const companySetup = await CompanySetup.find().sort({
+        const companySetup = await CompanySetup.find({ isDeleted: { $ne: true } }).sort({
             createdAt: -1
         });
 
