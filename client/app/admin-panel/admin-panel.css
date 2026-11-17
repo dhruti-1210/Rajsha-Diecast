@@ -605,6 +605,29 @@
   text-align: center;
 }
 
+.admin-banner-thumbnail {
+  display: block;
+  width: 92px;
+  height: 50px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.admin-banner-image-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-banner-image-preview img {
+  width: min(100%, 360px);
+  height: 120px;
+  border: 1px solid #e4e6ea;
+  border-radius: 5px;
+  background: #f7f7f7;
+  object-fit: contain;
+}
+
 .admin-reference-modal textarea {
   width: 100%;
   min-height: 84px;
@@ -1372,4 +1395,208 @@
   .admin-form-wide {
     grid-column: auto;
   }
+}
+
+.company-setup-page {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
+  margin: -20px -42px -12px;
+  padding: 28px 24px;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+.company-setup-card {
+  width: min(100%, 1100px);
+  margin: 0 auto;
+  padding: 0 22px 18px;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  background: var(--admin-surface);
+}
+
+.company-setup-banner {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.company-setup-banner > small {
+  color: var(--admin-accent);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+}
+
+.company-setup-banner h1 {
+  margin: 3px 0;
+  color: #232a34;
+  font-family: Cinzel, Georgia, serif;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.company-setup-banner > span {
+  color: var(--admin-muted);
+  font-size: 13px;
+}
+
+.company-setup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 30px;
+}
+
+.company-setup-field {
+  display: grid;
+  gap: 7px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.company-setup-field > small {
+  color: #606874;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.company-setup-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #e4e6ea;
+  border-radius: 4px;
+  outline: 0;
+  background: #fff;
+  color: #333a44;
+  font-size: 14px;
+}
+
+.company-setup-field input:focus {
+  border-color: #c7a86c;
+  box-shadow: 0 0 0 2px #c7a86c1c;
+}
+
+.company-setup-file-input {
+  display: none;
+}
+
+.company-setup-logo-control {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 1px dashed #d8dbe0;
+  border-radius: 5px;
+  background: #fbfbfc;
+}
+
+.company-setup-logo-control > img {
+  width: 100px;
+  height: 58px;
+  flex: 0 0 auto;
+  border: 1px solid var(--admin-line);
+  border-radius: 4px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.company-setup-logo-placeholder {
+  flex: 1;
+  color: var(--admin-muted);
+  font-size: 12px;
+}
+
+.company-setup-logo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.company-setup-remove-logo {
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: #a44f47;
+  font-size: 11px;
+}
+
+.company-setup-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 24px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.company-setup-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #606874;
+  font-size: 12px;
+}
+
+.company-setup-options input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--admin-accent);
+}
+
+.company-setup-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 18px;
+}
+
+.company-setup-actions button {
+  min-height: 40px;
+  padding: 0 15px;
+  font-size: 12px;
+}
+
+.company-setup-actions button:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.company-setup-message {
+  margin: 16px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+}
+
+.company-setup-message.is-error {
+  color: #b45d56;
+}
+
+@media (max-width: 1050px) {
+  .company-setup-page {
+    margin-right: -25px;
+    margin-left: -25px;
+  }
+}
+
+@media (max-width: 760px) {
+  .company-setup-page {
+    margin: -25px -16px -18px;
+    padding: 18px 12px;
+  }
+
+  .company-setup-card {
+    padding-right: 17px;
+    padding-left: 17px;
+  }
+
+  .company-setup-grid {
+    grid-template-columns: 1fr;
+  }
+
 }

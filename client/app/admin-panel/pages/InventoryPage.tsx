@@ -13,7 +13,10 @@ import {
   type CollectionReference,
   type PackagingReference,
 } from '../api/ProductApi';
+import { getScaleSizeList } from '../api/scaleSize';
+import type { ScaleSize } from '../types/ScaleSize';
 import type { ProductMaster, ProductMasterInput } from '../types/Product';
+import { readImageAsDataUrl } from '../utils/images';
 
 type AdminProduct = {
   id: string;
@@ -53,6 +56,7 @@ type ProductReferences = {
   brands: BrandReference[];
   packagingTypes: PackagingReference[];
   collectionTypes: CollectionReference[];
+  scaleSizes: ScaleSize[];
 };
 
 const PAGE_SIZE = 5;
@@ -63,7 +67,7 @@ const emptyDraft: ProductDraft = {
   name: '',
   brand: '',
   collectionTypeId: '',
-  scale: '1:64',
+  scale: '',
   price: 0,
   packagingTypeId: '',
   stock: 0,
@@ -117,27 +121,13 @@ function formatPrice(price: number) {
   }).format(price);
 }
 
-function readImageAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        resolve(reader.result);
-      } else {
-        reject(new Error('Could not load that image.'));
-      }
-    };
-    reader.onerror = () => reject(new Error('Could not load that image.'));
-    reader.readAsDataURL(file);
-  });
-}
-
 export default function InventoryPage() {
   const [items, setItems] = useState<AdminProduct[]>([]);
   const [references, setReferences] = useState<ProductReferences>({
     brands: [],
     packagingTypes: [],
     collectionTypes: [],
+    scaleSizes: [],
   });
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('All products');
@@ -154,12 +144,17 @@ export default function InventoryPage() {
   useEffect(() => {
     async function loadInventory() {
       try {
-        const [productResponse, productReferences] = await Promise.all([
+        const [productResponse, productReferences, scaleSizeResponse] = await Promise.all([
           getProductMasterList(),
           getProductMasterReferences(),
+          getScaleSizeList(),
         ]);
-        setReferences(productReferences);
-        setItems(productResponse.data.map((product) => mapProduct(product, productReferences)));
+        const activeScaleSizes = scaleSizeResponse.data.filter(
+          (scaleSize) => scaleSize.isActive && !scaleSize.isDeleted,
+        );
+        const loadedReferences = { ...productReferences, scaleSizes: activeScaleSizes };
+        setReferences(loadedReferences);
+        setItems(productResponse.data.map((product) => mapProduct(product, loadedReferences)));
       } catch (error) {
         setNotice(error instanceof Error ? error.message : 'Could not load product inventory.');
         setNoticeIsError(true);
@@ -231,12 +226,22 @@ export default function InventoryPage() {
       return;
     }
 
-    const packagingType = references.packagingTypes.find(
-      (item) => item._id === draft.packagingTypeId,
-    );
     const existingProduct = editingId
       ? items.find((item) => item.id === editingId)
       : undefined;
+    const scale = references.scaleSizes.some((item) => item.ScaleSize === draft.scale)
+      || existingProduct?.scale === draft.scale
+      ? draft.scale.trim()
+      : '';
+    if (!scale) {
+      setNotice('Choose an active scale size.');
+      setNoticeIsError(true);
+      return;
+    }
+
+    const packagingType = references.packagingTypes.find(
+      (item) => item._id === draft.packagingTypeId,
+    );
     const packagingTypeId = packagingType?._id
       ?? (existingProduct?.packagingTypeId === draft.packagingTypeId
         ? draft.packagingTypeId
@@ -257,7 +262,7 @@ export default function InventoryPage() {
         TotalStock: draft.stock,
         Price: draft.price,
         ModelCode: draft.sku.trim(),
-        Size: draft.scale.trim(),
+        Size: scale,
         Description: draft.description.trim(),
         Packagingtype_Id: packagingTypeId,
         Image: draft.images.map((image) => image.trim()).filter(Boolean),
@@ -518,11 +523,35 @@ export default function InventoryPage() {
                 No active packaging conditions are available. Add or activate one from Packaging types.
               </p>
             )}
+            {!references.scaleSizes.length && (
+              <p className="admin-reference-warning" role="status">
+                No active scale sizes are available. Add or activate one from Scale sizes.
+              </p>
+            )}
             <div className="admin-form-grid">
               <label className="admin-form-field admin-form-wide"><span>Product name</span><input required maxLength={100} value={draft.name} onChange={(event) => updateDraft('name', event.target.value)} placeholder="e.g. Nissan GT-R Nismo" /></label>
               <label className="admin-form-field"><span>Brand</span><input required maxLength={100} value={draft.brand} onChange={(event) => updateDraft('brand', event.target.value)} placeholder="e.g. Mini GT" /></label>
               <label className="admin-form-field"><span>SKU</span><input required maxLength={32} value={draft.sku} onChange={(event) => updateDraft('sku', event.target.value)} placeholder="e.g. RD-009" /></label>
-              <label className="admin-form-field"><span>Scale</span><input required maxLength={20} value={draft.scale} onChange={(event) => updateDraft('scale', event.target.value)} placeholder="e.g. 1:64" /></label>
+              <label className="admin-form-field"><span>Scale</span>
+                <select
+                  required
+                  value={draft.scale}
+                  onChange={(event) => updateDraft('scale', event.target.value)}
+                >
+                  <option value="" disabled>Select a scale size</option>
+                  {editingId
+                    && draft.scale
+                    && !references.scaleSizes.some((scaleSize) => scaleSize.ScaleSize === draft.scale)
+                    && (
+                      <option value={draft.scale}>{draft.scale} (currently assigned)</option>
+                    )}
+                  {references.scaleSizes.map((scaleSize) => (
+                    <option key={scaleSize._id} value={scaleSize.ScaleSize}>
+                      {scaleSize.ScaleSize}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label className="admin-form-field"><span>Packaging condition</span>
                 <select
                   required

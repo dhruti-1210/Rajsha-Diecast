@@ -14,6 +14,9 @@ import DashboardPage from './pages/DashboardPage';
 import InventoryPage from './pages/InventoryPage';
 import CollectionTypesPage from './pages/CollectionTypes';
 import PackagingTypePage from './pages/PackagingType';
+import ScaleSizesPage from './pages/scaleSize';
+import CompanySetupPage from './pages/companysetup';
+import BannerPage from './pages/banner';
 import './admin-panel.css';
 
 export default function AdminPanelPage() {
@@ -129,7 +132,13 @@ export default function AdminPanelPage() {
               ? <CollectionTypesPage />
               : activePage === 'packaging-types'
                 ? <PackagingTypePage />
-                : <DashboardPage />}
+                : activePage === 'scale-sizes'
+                  ? <ScaleSizesPage />
+                  : activePage === 'company-setup'
+                    ? <CompanySetupPage />
+                    : activePage === 'banners'
+                      ? <BannerPage />
+                    : <DashboardPage />}
         </div>
       </section>
     </main>
