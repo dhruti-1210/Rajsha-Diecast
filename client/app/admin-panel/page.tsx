@@ -18,6 +18,9 @@ import BannerPage from './pages/banner';
 import CmsPage from './pages/cms';
 import CheckoutPage from './pages/checkout';
 import BrandMasterPage from './pages/brandMaster';
+import ReviewMasterPage from './pages/reviewMaster';
+import FooterLinkGroupPage from './pages/FooterLinkGroup';
+import FooterLinkPage from './pages/FooterLink';
 import './admin-panel.css';
 
 export default function AdminPanelPage() {
@@ -115,6 +118,12 @@ export default function AdminPanelPage() {
                         ? <CmsPage />
                         : activePage === 'checkout'
                           ? <CheckoutPage />
+                          : activePage === 'review-master'
+                            ? <ReviewMasterPage />
+                            : activePage === 'footer-link-groups'
+                              ? <FooterLinkGroupPage />
+                              : activePage === 'footer-links'
+                                ? <FooterLinkPage />
                     : <DashboardPage />}
         </div>
       </section>

@@ -2,6 +2,13 @@ import FooterLinkGroup, {
     IFooterLinkGroup
 } from "../Models/footerLinkGroupMaster";
 
+const notDeletedFilter = {
+    $or: [
+        { isDeleted: false },
+        { isDeleted: { $exists: false } }
+    ]
+};
+
 // Create Footer Link Group
 export const CreateFooterLinkGroup = async (
     data: Partial<IFooterLinkGroup>
@@ -17,9 +24,8 @@ export const CreateFooterLinkGroup = async (
 // Get All Footer Link Groups
 export const GetAllFooterLinkGroup = async () => {
     try {
-        const footerLinkGroups = await FooterLinkGroup.find({
-            isDeleted: false
-        }).sort({ createdAt: -1 });
+        const footerLinkGroups = await FooterLinkGroup.find(notDeletedFilter)
+            .sort({ createdAt: -1 });
 
         return footerLinkGroups;
     } catch (error: any) {
@@ -32,7 +38,7 @@ export const GetFooterLinkGroupById = async (id: string) => {
     try {
         const footerLinkGroup = await FooterLinkGroup.findOne({
             _id: id,
-            isDeleted: false
+            ...notDeletedFilter
         });
 
         return footerLinkGroup;
@@ -50,7 +56,7 @@ export const UpdateFooterLinkGroup = async (
         const footerLinkGroup = await FooterLinkGroup.findOneAndUpdate(
             {
                 _id: id,
-                isDeleted: false
+                ...notDeletedFilter
             },
             {
                 ...data,
@@ -77,7 +83,7 @@ export const DeleteFooterLinkGroup = async (
         const footerLinkGroup = await FooterLinkGroup.findOneAndUpdate(
             {
                 _id: id,
-                isDeleted: false
+                ...notDeletedFilter
             },
             {
                 isDeleted: true,
@@ -103,7 +109,7 @@ export const ChangeFooterLinkGroupActiveStatus = async (
         const footerLinkGroup = await FooterLinkGroup.findOneAndUpdate(
             {
                 _id: id,
-                isDeleted: false
+                ...notDeletedFilter
             },
             {
                 isActive,

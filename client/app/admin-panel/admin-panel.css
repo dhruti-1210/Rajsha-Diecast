@@ -639,6 +639,15 @@ button.admin-reference-status {
   white-space: nowrap;
 }
 
+.admin-review-message,
+.admin-footer-link-url {
+  max-width: 380px;
+  overflow: hidden;
+  color: #858d99;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .admin-brand-logo {
   display: block;
   width: 52px;
@@ -1280,6 +1289,11 @@ button.admin-reference-status {
   background: #fff7ec;
   color: #9b6720;
   font-size: 12px;
+}
+
+.admin-reference-warning a {
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .admin-modal-actions {

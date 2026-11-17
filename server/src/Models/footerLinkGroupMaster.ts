@@ -10,6 +10,7 @@ export interface IFooterLinkGroup extends Document {
 
     isActive: boolean;
     isDisplay: boolean;
+    isDeleted: boolean;
 }
 
 const FooterLinkGroupSchema: Schema = new Schema(
@@ -42,6 +43,10 @@ const FooterLinkGroupSchema: Schema = new Schema(
         isDisplay: {
             type: Boolean,
             default: true
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false
         }
     }
 );

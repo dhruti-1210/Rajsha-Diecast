@@ -10,7 +10,10 @@ export type AdminView =
   | 'banners'
   | 'cms'
   | 'checkout'
-  | 'brands';
+  | 'brands'
+  | 'review-master'
+  | 'footer-link-groups'
+  | 'footer-links';
 
 export type AdminNavSection = {
   title: string;
@@ -36,6 +39,9 @@ const navConfig: AdminNavSection[] = [
       { label: 'Banners', href: '#banners', id: 'banners', icon: 'box' },
       { label: 'CMS', href: '#cms', id: 'cms', icon: 'tag' },
       { label: 'Checkout', href: '#checkout', id: 'checkout', icon: 'box' },
+      { label: 'Reviews', href: '#review-master', id: 'review-master', icon: 'tag' },
+      { label: 'Footer link groups', href: '#footer-link-groups', id: 'footer-link-groups', icon: 'tag' },
+      { label: 'Footer links', href: '#footer-links', id: 'footer-links', icon: 'tag' },
     ],
   },
 ];
