@@ -1,21 +1,21 @@
 
 import { Router } from "express";
 import {
-    CreateCompanyController,
-    GetAllCompaniesController,
-    GetCompanyByIdController,
-    UpdateCompanyController,
-    DeleteCompanyController,
-    ChangeActiveStatusController
+   CreateBrandController,
+   GetAllBrandsController,
+   GetBrandByIdController,
+   UpdateBrandController,
+   DeleteBrandController,
+  ChangeActiveStatusController
 } from "../controller/BrandMasterController";
 
 const router = Router();
 
-router.post("/create", CreateCompanyController);
-router.get("/list", GetAllCompaniesController);
-router.get("/:id", GetCompanyByIdController);
-router.put("/update/:id", UpdateCompanyController);
-router.delete("/delete/:id", DeleteCompanyController);
+router.post("/create", CreateBrandController);
+router.get("/list", GetAllBrandsController);
+router.get("/:id", GetBrandByIdController);
+router.put("/update/:id", UpdateBrandController);
+router.delete("/delete/:id", DeleteBrandController);
 router.patch("/status/:id", ChangeActiveStatusController);
 
 export default router;

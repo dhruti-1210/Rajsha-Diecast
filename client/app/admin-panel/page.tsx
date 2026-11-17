@@ -1,10 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import Icon from './common/icon';
 import navConfig, { type AdminView } from './data/navConfig';
+import Navbar from './common/navbar';
 import {
   hasAdminSession,
   signOutAdmin,
@@ -19,6 +17,7 @@ import CompanySetupPage from './pages/companysetup';
 import BannerPage from './pages/banner';
 import CmsPage from './pages/cms';
 import CheckoutPage from './pages/checkout';
+import BrandMasterPage from './pages/brandMaster';
 import './admin-panel.css';
 
 export default function AdminPanelPage() {
@@ -90,46 +89,18 @@ export default function AdminPanelPage() {
 
   return (
     <main className="admin-dashboard">
-      <aside className="admin-sidebar">
-        <Link className="admin-brand" href="/" onClick={signOut} aria-label="Rajsha Diecast home">
-          <Image src="/images/logo.png" alt="Rajsha Diecast" width={140} height={100} priority />
-        </Link>
-        {navConfig.map((section) => (
-          <div key={section.title}>
-            <p className="admin-nav-label">{section.title}</p>
-            {section.items.map((item) => (
-              <a
-                className={`admin-nav-item ${activePage === item.id ? 'admin-nav-active' : ''}`}
-                href={item.href}
-                aria-current={activePage === item.id ? 'page' : undefined}
-                key={item.id}
-                onClick={(event) => {
-                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                  event.preventDefault();
-                  if (window.location.hash !== item.href) {
-                    window.history.pushState(null, '', item.href);
-                  }
-                  setActivePage(item.id);
-                }}
-              >
-                <Icon name={item.icon} /> {item.label}
-              </a>
-            ))}
-          </div>
-        ))}
-        <div className="admin-sidebar-bottom">
-          <span className="admin-avatar">RD</span>
-          <span><strong>Store admin</strong><small>Rajsha Diecast</small></span>
-          <button type="button" className="admin-logout" onClick={signOut} aria-label="Sign out" title="Sign out">
-            <Icon name="logout" size={16} />
-          </button>
-        </div>
-      </aside>
+      <Navbar
+        activePage={activePage}
+        onNavigate={setActivePage}
+        onSignOut={signOut}
+      />
       <section className="admin-workspace">
         <div className="admin-content">
           {authError && <div className="admin-notice admin-notice-error" role="alert">{authError}</div>}
           {activePage === 'inventory'
             ? <InventoryPage />
+            : activePage === 'brands'
+              ? <BrandMasterPage />
             : activePage === 'collection-types'
               ? <CollectionTypesPage />
               : activePage === 'packaging-types'

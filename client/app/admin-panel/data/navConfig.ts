@@ -9,7 +9,8 @@ export type AdminView =
   | 'company-setup'
   | 'banners'
   | 'cms'
-  | 'checkout';
+  | 'checkout'
+  | 'brands';
 
 export type AdminNavSection = {
   title: string;
@@ -27,6 +28,7 @@ const navConfig: AdminNavSection[] = [
     items: [
       { label: 'Dashboard', href: '#dashboard', id: 'dashboard', icon: 'box' },
       { label: 'Inventory', href: '#inventory', id: 'inventory', icon: 'car' },
+      { label: 'Brand master', href: '#brands', id: 'brands', icon: 'tag' },
       { label: 'Collection types', href: '#collection-types', id: 'collection-types', icon: 'tag' },
       { label: 'Packaging types', href: '#packaging-types', id: 'packaging-types', icon: 'box' },
       { label: 'Scale sizes', href: '#scale-sizes', id: 'scale-sizes', icon: 'box' },

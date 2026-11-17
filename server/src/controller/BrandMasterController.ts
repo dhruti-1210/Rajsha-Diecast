@@ -1,23 +1,23 @@
 
 import { Request, Response } from "express";
 import {
-    CreateCompany,
-    GetAllCompanies,
-    GetCompanyById,
-    UpdateCompany,
-    DeleteCompany,
+    CreateBrand,
+    GetAllBrands,
+    GetBrandById,
+    UpdateBrand,
+    DeleteBrand,
     ChangeActiveStatus
 } from "../Services/BrandServices";
 
-// Create Company
-export const CreateCompanyController = async (req: Request, res: Response) => {
+// Create Brand
+export const CreateBrandController = async (req: Request, res: Response) => {
     try {
-        const company = await CreateCompany(req.body);
+        const brand = await CreateBrand(req.body);
 
         return res.status(201).json({
             success: true,
-            message: "Company created successfully",
-            data: company
+            message: "Brand created successfully",
+            data: brand
         });
     } catch (error: any) {
         return res.status(500).json({
@@ -27,15 +27,15 @@ export const CreateCompanyController = async (req: Request, res: Response) => {
     }
 };
 
-// Get All Companies
-export const GetAllCompaniesController = async (req: Request, res: Response) => {
+// Get All Brands
+export const GetAllBrandsController = async (req: Request, res: Response) => {
     try {
-        const companies = await GetAllCompanies();
+        const brands = await GetAllBrands();
 
         return res.status(200).json({
             success: true,
-            message: "Companies fetched successfully",
-            data: companies
+            message: "Brands fetched successfully",
+            data: brands
         });
     } catch (error: any) {
         return res.status(500).json({
@@ -45,22 +45,22 @@ export const GetAllCompaniesController = async (req: Request, res: Response) => 
     }
 };
 
-// Get Company By ID
-export const GetCompanyByIdController = async (req: Request, res: Response) => {
+// Get Brand By ID
+export const GetBrandByIdController = async (req: Request, res: Response) => {
     try {
-        const company = await GetCompanyById(req.params.id);
+        const brand = await GetBrandById(req.params.id);
 
-        if (!company) {
+        if (!brand) {
             return res.status(404).json({
                 success: false,
-                message: "Company not found"
+                message: "Brand not found"
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: "Company fetched successfully",
-            data: company
+            message: "Brand fetched successfully",
+            data: brand
         });
     } catch (error: any) {
         return res.status(500).json({
@@ -70,22 +70,22 @@ export const GetCompanyByIdController = async (req: Request, res: Response) => {
     }
 };
 
-// Update Company
-export const UpdateCompanyController = async (req: Request, res: Response) => {
+// Update Brand
+export const UpdateBrandController = async (req: Request, res: Response) => {
     try {
-        const company = await UpdateCompany(req.params.id, req.body);
+        const brand = await UpdateBrand(req.params.id, req.body);
 
-        if (!company) {
+        if (!brand) {
             return res.status(404).json({
                 success: false,
-                message: "Company not found"
+                message: "Brand not found"
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: "Company updated successfully",
-            data: company
+            message: "Brand updated successfully",
+            data: brand
         });
     } catch (error: any) {
         return res.status(500).json({
@@ -95,22 +95,22 @@ export const UpdateCompanyController = async (req: Request, res: Response) => {
     }
 };
 
-// Delete Company
-export const DeleteCompanyController = async (req: Request, res: Response) => {
+// Delete Brand
+export const DeleteBrandController = async (req: Request, res: Response) => {
     try {
-        const company = await DeleteCompany(req.params.id, req.body.updatedBy);
+        const brand = await DeleteBrand(req.params.id, req.body.updatedBy);
 
-        if (!company) {
+        if (!brand) {
             return res.status(404).json({
                 success: false,
-                message: "Company not found"
+                message: "Brand not found"
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: "Company deleted successfully",
-            data: company
+            message: "Brand deleted successfully",
+            data: brand
         });
     } catch (error: any) {
         return res.status(500).json({
@@ -123,23 +123,23 @@ export const DeleteCompanyController = async (req: Request, res: Response) => {
 // Change Active Status
 export const ChangeActiveStatusController = async (req: Request, res: Response) => {
     try {
-        const company = await ChangeActiveStatus(
+        const brand = await ChangeActiveStatus(
             req.params.id,
             req.body.isActive,
             req.body.updatedBy
         );
 
-        if (!company) {
+        if (!brand) {
             return res.status(404).json({
                 success: false,
-                message: "Company not found"
+                message: "Brand not found"
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: "Company status changed successfully",
-            data: company
+            message: "Brand status changed successfully",
+            data: brand
         });
     } catch (error: any) {
         return res.status(500).json({

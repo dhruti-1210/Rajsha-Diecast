@@ -1,38 +1,37 @@
+import Brand, { IBrand } from "../Models/BrandMaster";
 
-import Company, { ICompany } from "../Models/BrandMaster";
-
-// Create Company
-export const CreateCompany = async (data: Partial<ICompany>) => {
+// Create Brand
+export const CreateBrand = async (data: Partial<IBrand>) => {
     try {
-        const company = new Company(data);
-        return await company.save();
+        const brand = new Brand(data);
+        return await brand.save();
     } catch (error) {
         throw error;
     }
 };
 
-// Get All Companies
-export const GetAllCompanies = async () => {
+// Get All Brands
+export const GetAllBrands = async () => {
     try {
-        return await Company.find({ isDeleted: false }).sort({ createdAt: -1 });
+        return await Brand.find({ isDeleted: false }).sort({ createdAt: -1 });
     } catch (error) {
         throw error;
     }
 };
 
 // Get Company By ID
-export const GetCompanyById = async (id: string) => {
+export const GetBrandById = async (id: string) => {
     try {
-        return await Company.findOne({ _id: id, isDeleted: false });
+        return await Brand.findOne({ _id: id, isDeleted: false });
     } catch (error) {
         throw error;
     }
 };
 
-// Update Company
-export const UpdateCompany = async (id: string, data: Partial<ICompany>) => {
+// Update Brand
+export const UpdateBrand = async (id: string, data: Partial<IBrand>) => {
     try {
-        return await Company.findOneAndUpdate(
+        return await Brand.findOneAndUpdate(
             { _id: id, isDeleted: false },
             {
                 ...data,
@@ -45,10 +44,10 @@ export const UpdateCompany = async (id: string, data: Partial<ICompany>) => {
     }
 };
 
-// Soft Delete Company
-export const DeleteCompany = async (id: string, updatedBy: string) => {
+// Soft Delete Brand
+export const DeleteBrand = async (id: string, updatedBy: string) => {
     try {
-        return await Company.findOneAndUpdate(
+        return await Brand.findOneAndUpdate(
             { _id: id, isDeleted: false },
             {
                 isDeleted: true,
@@ -69,7 +68,7 @@ export const ChangeActiveStatus = async (
     updatedBy: string
 ) => {
     try {
-        return await Company.findOneAndUpdate(
+        return await Brand.findOneAndUpdate(
             { _id: id, isDeleted: false },
             {
                 isActive,

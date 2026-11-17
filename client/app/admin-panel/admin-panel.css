@@ -40,7 +40,10 @@
   z-index: 3;
   display: flex;
   width: 248px;
+  height: 100vh;
+  min-height: 0;
   flex-direction: column;
+  overflow: hidden;
   padding: 28px 18px 18px;
   background: #171a20;
   color: #fff;
@@ -48,6 +51,7 @@
 
 .admin-brand {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   padding: 0;
@@ -57,6 +61,21 @@
   display: block;
   width: min(100%, 140px);
   height: auto;
+}
+
+.admin-sidebar-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 -7px;
+  padding: 0 7px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.admin-sidebar-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .admin-nav-label {
@@ -92,6 +111,7 @@
 
 .admin-sidebar-bottom {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 10px;
   margin-top: auto;
@@ -617,6 +637,30 @@ button.admin-reference-status {
   color: #858d99;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.admin-brand-logo {
+  display: block;
+  width: 52px;
+  height: 38px;
+  border: 1px solid #e4e6ea;
+  border-radius: 4px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.admin-brand-logo-preview {
+  grid-column: 1 / -1;
+}
+
+.admin-brand-logo-preview img {
+  display: block;
+  width: 120px;
+  height: 72px;
+  border: 1px solid #e4e6ea;
+  border-radius: 5px;
+  background: #fff;
+  object-fit: contain;
 }
 
 .admin-checkout-status-select {
@@ -1289,6 +1333,10 @@ button.admin-reference-status {
     flex-direction: row;
     align-items: center;
     padding: 12px 16px;
+  }
+
+  .admin-sidebar-nav {
+    display: none;
   }
 
   .admin-nav-label,

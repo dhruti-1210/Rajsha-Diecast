@@ -41,6 +41,7 @@ app.use(cors({
 app.use("/api/products", express.json({ limit: "20mb" }));
 app.use("/api/banners", express.json({ limit: "20mb" }));
 app.use("/api/company-setup", express.json({ limit: "20mb" }));
+app.use("/api/brands", express.json({ limit: "20mb" }));
 app.use(express.json());
 
 app.use("/api/banners", BannerRoutes);

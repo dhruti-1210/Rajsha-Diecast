@@ -1,8 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface ICompany extends Document {
-    companyName: string;
-    companyLogo: string;
+export interface IBrand extends Document {
+    brandName: string;
+    brandLogo: string;
     modelCount: number;
     scaleSize: number;
 
@@ -14,13 +14,13 @@ export interface ICompany extends Document {
     isDeleted: boolean;
 }
 
-const CompanySchema: Schema = new Schema(
+const BrandSchema: Schema = new Schema(
     {
-        companyName: {
+        brandName: {
             type: String,
             required: true
         },
-        companyLogo: {
+        brandLogo: {
             type: String,
             required: true
         },  
@@ -60,6 +60,6 @@ const CompanySchema: Schema = new Schema(
 )
 
 
-const Company = mongoose.model<ICompany>('Company', CompanySchema);
+const Brand = mongoose.model<IBrand>('Brand', BrandSchema);
 
-export default Company;
+export default Brand;
