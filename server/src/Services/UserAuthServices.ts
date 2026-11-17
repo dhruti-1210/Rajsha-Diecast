@@ -1,10 +1,10 @@
 import {
     createHash,
     createHmac,
-    randomBytes,
     randomInt,
     timingSafeEqual
 } from "crypto";
+import jwt, { type SignOptions } from "jsonwebtoken";
 import mongoose from "mongoose";
 import UserMaster from "../Models/userMaster";
 import { sendOtpEmail } from "./EmailService";
@@ -12,7 +12,6 @@ import { sendOtpEmail } from "./EmailService";
 const OTP_LIFETIME_MS = 10 * 60 * 1000;
 const OTP_RESEND_DELAY_MS = 2 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
-export const AUTH_SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
 export class UserAuthError extends Error {
     constructor(
@@ -65,6 +64,52 @@ const clearOtp = async (
 
 const resendDelay = (availableAt: Date) =>
     Math.max(1, Math.ceil((availableAt.getTime() - Date.now()) / 1000));
+
+const createUserSessionToken = (userId: string, email: string) => {
+    const secret = process.env.JWT_SECRET;
+    const expiresIn = process.env.JWT_EXPIRES_IN?.trim();
+    if (!secret || !expiresIn) {
+        throw new UserAuthError(
+            "JWT authentication is not configured on the server.",
+            503
+        );
+    }
+
+    let sessionToken: string;
+    try {
+        sessionToken = jwt.sign(
+            { id: userId, username: email, role: "user" },
+            secret,
+            { expiresIn: expiresIn as SignOptions["expiresIn"] }
+        );
+    } catch {
+        throw new UserAuthError(
+            "JWT authentication is not configured correctly.",
+            503
+        );
+    }
+
+    const decoded = jwt.decode(sessionToken);
+    if (!decoded || typeof decoded === "string" || typeof decoded.exp !== "number") {
+        throw new UserAuthError(
+            "JWT expiration is not configured correctly.",
+            503
+        );
+    }
+
+    const expiresAt = new Date(decoded.exp * 1000);
+    if (expiresAt <= new Date()) {
+        throw new UserAuthError(
+            "JWT expiration must be set in the future.",
+            503
+        );
+    }
+
+    return {
+        sessionToken,
+        expiresAt
+    };
+};
 
 export const requestUserOtp = async (email: string) => {
     const normalizedEmail = normalizeEmail(email);
@@ -203,7 +248,10 @@ export const verifyUserOtp = async (email: string, otp: string) => {
         throw new UserAuthError("The verification code is incorrect.", 400);
     }
 
-    const sessionToken = randomBytes(32).toString("base64url");
+    const { sessionToken, expiresAt } = createUserSessionToken(
+        user._id.toString(),
+        normalizedEmail
+    );
     const now = new Date();
     const authenticatedUser = await UserMaster.findOneAndUpdate(
         {
@@ -218,9 +266,7 @@ export const verifyUserOtp = async (email: string, otp: string) => {
             $set: {
                 emailVerified: true,
                 authSessionTokenHash: hashSessionToken(sessionToken),
-                authSessionExpiresAt: new Date(
-                    now.getTime() + AUTH_SESSION_MAX_AGE_SECONDS * 1000
-                )
+                authSessionExpiresAt: expiresAt
             },
             $unset: {
                 otpHash: 1,
@@ -241,6 +287,10 @@ export const verifyUserOtp = async (email: string, otp: string) => {
 
     return {
         sessionToken,
+        sessionMaxAgeSeconds: Math.max(
+            1,
+            Math.floor((expiresAt.getTime() - Date.now()) / 1000)
+        ),
         user: {
             email: authenticatedUser.email,
             name: authenticatedUser.name,

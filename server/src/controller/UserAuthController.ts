@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import {
-    AUTH_SESSION_MAX_AGE_SECONDS,
     getUserSession,
     logoutUser,
     requestUserOtp,
@@ -24,11 +23,15 @@ const getSessionToken = (req: Request) => {
     return cookie?.slice(SESSION_COOKIE.length + 1);
 };
 
-const setSessionCookie = (res: Response, token: string) => {
+const setSessionCookie = (
+    res: Response,
+    token: string,
+    maxAgeSeconds: number
+) => {
     const secure = process.env.NODE_ENV === "production";
     res.setHeader(
         "Set-Cookie",
-        `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; Max-Age=${AUTH_SESSION_MAX_AGE_SECONDS}; SameSite=${secure ? "None" : "Lax"}${secure ? "; Secure" : ""}`
+        `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; Max-Age=${maxAgeSeconds}; SameSite=${secure ? "None" : "Lax"}${secure ? "; Secure" : ""}`
     );
 };
 
@@ -94,7 +97,7 @@ export const verifyUserOtpController = async (req: Request, res: Response) => {
         const email = typeof req.body?.email === "string" ? req.body.email : "";
         const otp = typeof req.body?.otp === "string" ? req.body.otp : "";
         const result = await verifyUserOtp(email, otp);
-        setSessionCookie(res, result.sessionToken);
+        setSessionCookie(res, result.sessionToken, result.sessionMaxAgeSeconds);
         return res.status(200).json({
             success: true,
             message: "Email verified successfully.",

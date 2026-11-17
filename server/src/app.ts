@@ -28,6 +28,8 @@ import CheckoutRoutes from "./Routes/CheckOutRoutes";
 import FooterLinkGroupRoutes from "./Routes/footerLinkGroupRoutes";
 import FooterLinkMasterRoutes from "./Routes/footerLinkRoutes";
 
+import AdminUserRoutes from "./Routes/AdminRoutes";
+
 const app = express(); 
 
 const clientOrigin = (
@@ -71,6 +73,8 @@ app.use("/api/cart", CartRoutes);
 app.use("/api/checkout", CheckoutRoutes);
 app.use("/api/footer-link-groups", FooterLinkGroupRoutes);
 app.use("/api/footer-links", FooterLinkMasterRoutes);
+
+app.use("/api/admin-users", AdminUserRoutes);
 
 app.get("/health", (_request, response) => {
   response.status(200).json({ status: "ok" });

@@ -16,6 +16,7 @@ import {
     saveUserProfileController,
     verifyUserOtpController
 } from "../controller/UserAuthController";
+import { authMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
@@ -39,9 +40,14 @@ router.use("/auth", (_req, res, next) => {
 
 router.post("/auth/request-otp", requireClientOrigin, requestUserOtpController);
 router.post("/auth/verify-otp", requireClientOrigin, verifyUserOtpController);
-router.get("/auth/session", getUserSessionController);
+router.get("/auth/session", authMiddleware, getUserSessionController);
 router.post("/auth/logout", requireClientOrigin, logoutUserController);
-router.put("/auth/profile", requireClientOrigin, saveUserProfileController);
+router.put(
+    "/auth/profile",
+    requireClientOrigin,
+    authMiddleware,
+    saveUserProfileController
+);
 
 router.post("/create", createUserController);
 
