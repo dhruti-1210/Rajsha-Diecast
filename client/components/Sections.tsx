@@ -1,13 +1,70 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { getPackagingTypeList } from '@/api/PackagingApi';
+import type { PackagingType } from '@/types/PackagingType';
+
 export function Grading() {
+  const [packagingTypes, setPackagingTypes] = useState<PackagingType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPackagingTypes() {
+      try {
+        const response = await getPackagingTypeList();
+        if (!response.success) {
+          throw new Error(response.message || 'Could not load packaging types.');
+        }
+        if (active) {
+          setPackagingTypes(response.data.filter(
+            (packagingType) => packagingType.isActive && !packagingType.isDeleted,
+          ));
+        }
+      } catch (loadError) {
+        if (active) {
+          setError(loadError instanceof Error
+            ? loadError.message
+            : 'Could not load packaging types.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadPackagingTypes();
+    return () => { active = false; };
+  }, []);
+
   return (
     <section className="section" id="grading">
       <p className="eyebrow center">Condition grading</p>
       <h2 className="title">Know the Box <em>Before You Buy</em></h2>
       <div className="grades">
-        <div className="g sealed"><h3>Sealed</h3><p>Factory sealed card or box. Any shelf wear is described in the listing.</p></div>
-        <div className="g opened"><h3>Opened</h3><p>Opened for inspection or photos. Car and all parts present unless stated.</p></div>
-        <div className="g damage"><h3>Packaging Damage</h3><p>Creased card, cracked blister or dented box. The car itself is untouched.</p></div>
+        {packagingTypes.map((packagingType) => {
+          const name = packagingType.packagingName.trim().toLowerCase();
+          const variant = name.includes('sealed')
+            ? 'sealed'
+            : name.includes('open')
+              ? 'opened'
+              : name.includes('damage')
+                ? 'damage'
+                : '';
+
+          return (
+            <div className={`g${variant ? ` ${variant}` : ''}`} key={packagingType._id}>
+              <h3>{packagingType.packagingName}</h3>
+              <p>{packagingType.Description}</p>
+            </div>
+          );
+        })}
       </div>
+      {loading && <p role="status">Loading packaging types…</p>}
+      {!loading && error && <p role="alert">{error}</p>}
+      {!loading && !error && packagingTypes.length === 0 && (
+        <p>No active packaging types available.</p>
+      )}
     </section>
   );
 }

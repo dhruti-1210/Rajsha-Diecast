@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
@@ -10,21 +10,81 @@ import CarImage from '@/components/CarImage';
 import { products } from '@/data/products';
 import { useStore } from '@/context/StoreContext';
 import { money } from '@/lib/format';
+import type { Product } from '@/types';
+import { getProductById, getProductPackagingTypes } from '@/api/ProductApi';
 
 export default function ProductPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { add } = useStore();
+  const staticProduct = products.find((item) => String(item.id) === params.id);
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [added, setAdded] = useState(false);
-  const product = products.find((item) => item.id === Number(params.id));
+  const [serverProduct, setServerProduct] = useState<Product | null>(null);
+  const [loadingServerProduct, setLoadingServerProduct] = useState(!staticProduct);
+  const [serverProductError, setServerProductError] = useState('');
+
+  useEffect(() => {
+    if (staticProduct) return;
+    let active = true;
+
+    async function loadProduct() {
+      setServerProduct(null);
+      setLoadingServerProduct(true);
+      setServerProductError('');
+      try {
+        const [productResponse, packagingResponse] = await Promise.all([
+          getProductById(params.id),
+          getProductPackagingTypes(),
+        ]);
+        if (!productResponse.success || !packagingResponse.success) {
+          throw new Error('Could not load this product.');
+        }
+
+        const record = productResponse.data;
+        if (!record.isActive || !record.isDisplay || record.isDeleted) {
+          throw new Error('This product is not currently available.');
+        }
+
+        const serverProduct: Product = {
+          id: record._id,
+          name: record.Name,
+          brand: record.BrandName || record.Company_Id || '',
+          scale: record.Size,
+          price: record.Price,
+          condition: packagingResponse.data.find(
+            (packaging) => packaging._id === record.Packagingtype_Id,
+          )?.packagingName || 'Sealed',
+          color: '#d4af37',
+          left: record.TotalStock > 0 && record.TotalStock <= 2 ? record.TotalStock : 0,
+          image: record.Image?.[0] || '',
+        };
+        if (active) setServerProduct(serverProduct);
+      } catch (error) {
+        if (active) {
+          setServerProductError(error instanceof Error ? error.message : 'Could not load this product.');
+        }
+      } finally {
+        if (active) setLoadingServerProduct(false);
+      }
+    }
+
+    void loadProduct();
+    return () => { active = false; };
+  }, [params.id, staticProduct]);
+
+  const product = staticProduct ?? serverProduct;
 
   if (!product) {
     return (
       <>
         <Header />
-        <main className="product-not-found"><Link className="back-arrow" href="/shop" aria-label="Back to shop">←</Link><h1>Model not found</h1><Link href="/shop">Browse all models</Link></main>
+        <main className="product-not-found">
+          <Link className="back-arrow" href="/shop" aria-label="Back to shop">←</Link>
+          <h1>{loadingServerProduct ? 'Loading model…' : serverProductError || 'Model not found'}</h1>
+          <Link href="/shop">Browse all models</Link>
+        </main>
         <Footer />
         <CartDrawer />
       </>
@@ -32,7 +92,7 @@ export default function ProductPage() {
   }
 
   const relatedProducts = [...products]
-    .filter((item) => item.id !== product.id)
+    .filter((item) => String(item.id) !== String(product.id))
     .sort((a, b) => {
       const score = (item: typeof product) =>
         Number(item.brand === product.brand) * 2 + Number(item.scale === product.scale);

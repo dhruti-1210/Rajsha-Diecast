@@ -26,7 +26,7 @@ export default function ShopPage() {
     product.price <= maxPrice &&
     (!selectedBrands.length || selectedBrands.includes(product.brand)) &&
     (!selectedScales.length || selectedScales.includes(product.scale)) &&
-    (!selectedConditions.length || selectedConditions.includes(product.condition)),
+    (!selectedConditions.length || selectedConditions.some((condition) => condition === product.condition)),
   ), [maxPrice, selectedBrands, selectedScales, selectedConditions]);
   const pageCount = Math.ceil(filteredProducts.length / PAGE_SIZE);
   const pageProducts = filteredProducts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);

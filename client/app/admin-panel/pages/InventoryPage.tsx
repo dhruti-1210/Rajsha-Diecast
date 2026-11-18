@@ -22,6 +22,8 @@ type AdminProduct = {
   id: string;
   name: string;
   brand: string;
+  brandId: string;
+  companyId: string;
   collection: string;
   collectionTypeId: string;
   scale: string;
@@ -81,37 +83,47 @@ const emptyDraft: ProductDraft = {
 const mapProduct = (
   product: ProductMaster,
   references: ProductReferences,
-): AdminProduct => ({
-  id: product._id,
-  name: product.Name,
-  brand: product.BrandName
-    || references.brands.find((brand) => brand._id === product.Company_Id)?.companyName
-    || product.Company_Id
-    || '',
-  collection: references.collectionTypes.find(
-    (collection) => collection._id === product.Collectiontype_id,
-  )?.collectionName
-    || product.CollectionName
-    || product.Collectiontype_id
-    || '',
-  collectionTypeId: product.Collectiontype_id
-    || references.collectionTypes.find(
-      (collection) => collection.collectionName === product.CollectionName,
-    )?._id
-    || '',
-  scale: product.Size,
-  price: product.Price,
-  condition: references.packagingTypes.find(
-    (packaging) => packaging._id === product.Packagingtype_Id,
-  )?.packagingName ?? product.Packagingtype_Id,
-  packagingTypeId: product.Packagingtype_Id,
-  stock: product.TotalStock,
-  sku: product.ModelCode,
-  description: product.Description,
-  images: product.Image ?? [],
-  isActive: product.isActive,
-  isDisplay: product.isDisplay,
-});
+): AdminProduct => {
+  const brandReference = references.brands.find(
+    (brand) => brand._id === product.Company_Id,
+  ) ?? references.brands.find(
+    (brand) => brand.brandName === product.BrandName,
+  );
+
+  return {
+    id: product._id,
+    name: product.Name,
+    brand: product.BrandName
+      || brandReference?.brandName
+      || product.Company_Id
+      || '',
+    brandId: brandReference?._id || product.Company_Id || product.BrandName || '',
+    companyId: product.Company_Id ?? '',
+    collection: references.collectionTypes.find(
+      (collection) => collection._id === product.Collectiontype_id,
+    )?.collectionName
+      || product.CollectionName
+      || product.Collectiontype_id
+      || '',
+    collectionTypeId: product.Collectiontype_id
+      || references.collectionTypes.find(
+        (collection) => collection.collectionName === product.CollectionName,
+      )?._id
+      || '',
+    scale: product.Size,
+    price: product.Price,
+    condition: references.packagingTypes.find(
+      (packaging) => packaging._id === product.Packagingtype_Id,
+    )?.packagingName ?? product.Packagingtype_Id,
+    packagingTypeId: product.Packagingtype_Id,
+    stock: product.TotalStock,
+    sku: product.ModelCode,
+    description: product.Description,
+    images: product.Image ?? [],
+    isActive: product.isActive,
+    isDisplay: product.isDisplay,
+  };
+};
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -200,7 +212,7 @@ export default function InventoryPage() {
     setEditingId(product.id);
     setDraft({
       name: product.name,
-      brand: product.brand,
+      brand: product.brandId,
       collectionTypeId: product.collectionTypeId,
       scale: product.scale,
       price: product.price,
@@ -217,6 +229,19 @@ export default function InventoryPage() {
 
   async function saveProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const existingProduct = editingId
+      ? items.find((item) => item.id === editingId)
+      : undefined;
+    const selectedBrand = references.brands.find(
+      (brand) => brand._id === draft.brand,
+    );
+    const existingBrandCanBeKept = existingProduct?.brandId === draft.brand;
+    if (!selectedBrand && !existingBrandCanBeKept) {
+      setNotice('Choose a brand from the brand list.');
+      setNoticeIsError(true);
+      return;
+    }
+
     const collectionType = references.collectionTypes.find(
       (item) => item._id === draft.collectionTypeId,
     );
@@ -226,9 +251,6 @@ export default function InventoryPage() {
       return;
     }
 
-    const existingProduct = editingId
-      ? items.find((item) => item.id === editingId)
-      : undefined;
     const scale = references.scaleSizes.some((item) => item.ScaleSize === draft.scale)
       || existingProduct?.scale === draft.scale
       ? draft.scale.trim()
@@ -258,7 +280,8 @@ export default function InventoryPage() {
     try {
       const payload: ProductMasterInput = {
         Name: draft.name.trim(),
-        BrandName: draft.brand.trim(),
+        BrandName: selectedBrand?.brandName ?? existingProduct?.brand ?? '',
+        Company_Id: selectedBrand?._id ?? existingProduct?.companyId,
         TotalStock: draft.stock,
         Price: draft.price,
         ModelCode: draft.sku.trim(),
@@ -523,6 +546,11 @@ export default function InventoryPage() {
                 No active packaging conditions are available. Add or activate one from Packaging types.
               </p>
             )}
+            {!references.brands.length && (
+              <p className="admin-reference-warning" role="status">
+                No active brands are available. Add or activate one from Brand master.
+              </p>
+            )}
             {!references.scaleSizes.length && (
               <p className="admin-reference-warning" role="status">
                 No active scale sizes are available. Add or activate one from Scale sizes.
@@ -530,7 +558,26 @@ export default function InventoryPage() {
             )}
             <div className="admin-form-grid">
               <label className="admin-form-field admin-form-wide"><span>Product name</span><input required maxLength={100} value={draft.name} onChange={(event) => updateDraft('name', event.target.value)} placeholder="e.g. Nissan GT-R Nismo" /></label>
-              <label className="admin-form-field"><span>Brand</span><input required maxLength={100} value={draft.brand} onChange={(event) => updateDraft('brand', event.target.value)} placeholder="e.g. Mini GT" /></label>
+              <label className="admin-form-field"><span>Brand</span>
+                <select
+                  required
+                  value={draft.brand}
+                  onChange={(event) => updateDraft('brand', event.target.value)}
+                >
+                  <option value="" disabled>Select a brand</option>
+                  {editingId
+                    && draft.brand
+                    && !references.brands.some((brand) => brand._id === draft.brand)
+                    && (
+                      <option value={draft.brand}>
+                        {items.find((item) => item.id === editingId)?.brand || draft.brand} (currently assigned)
+                      </option>
+                    )}
+                  {references.brands.map((brand) => (
+                    <option key={brand._id} value={brand._id}>{brand.brandName}</option>
+                  ))}
+                </select>
+              </label>
               <label className="admin-form-field"><span>SKU</span><input required maxLength={32} value={draft.sku} onChange={(event) => updateDraft('sku', event.target.value)} placeholder="e.g. RD-009" /></label>
               <label className="admin-form-field"><span>Scale</span>
                 <select

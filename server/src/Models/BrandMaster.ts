@@ -2,7 +2,6 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IBrand extends Document {
     brandName: string;
-    brandLogo: string;
     modelCount: number;
     scaleSize: number;
 
@@ -20,10 +19,6 @@ const BrandSchema: Schema = new Schema(
             type: String,
             required: true
         },
-        brandLogo: {
-            type: String,
-            required: true
-        },  
         modelCount: {
             type: Number,
             required: true

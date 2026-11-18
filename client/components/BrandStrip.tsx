@@ -1,4 +1,4 @@
-import { brands } from '@/data/brands';
+import type { Brand } from '@/types/Brand';
 
 function BrandName({ name }: { name: string }) {
   return (
@@ -8,13 +8,17 @@ function BrandName({ name }: { name: string }) {
   );
 }
 
-export default function BrandStrip() {
-  const row = brands.map((b) => <BrandName key={b.name} name={b.name} />);
+export default function BrandStrip({ brands }: { brands: Brand[] }) {
+  const row = brands.map((brand) => (
+    <BrandName key={brand._id} name={brand.brandName} />
+  ));
   return (
     <div className="brand-strip">
       <div className="track">
         {row}
-        {brands.map((b) => <BrandName key={`d-${b.name}`} name={b.name} />)}
+        {brands.map((brand) => (
+          <BrandName key={`d-${brand._id}`} name={brand.brandName} />
+        ))}
       </div>
     </div>
   );

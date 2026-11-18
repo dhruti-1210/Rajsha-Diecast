@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   changeBrandMasterStatus,
   createBrandMaster,
@@ -11,13 +11,8 @@ import {
 import type { BrandMaster, BrandMasterInput } from '../types/brandMaster';
 import Header from '../common/header';
 import Icon from '../common/icon';
-import { readImageAsDataUrl } from '../utils/images';
-
-const MAX_BRAND_LOGO_FILE_SIZE = 5 * 1024 * 1024;
-
 type BrandMasterDraft = {
   brandName: string;
-  brandLogo: string;
   modelCount: string;
   scaleSize: string;
   isActive: boolean;
@@ -25,7 +20,6 @@ type BrandMasterDraft = {
 
 const emptyDraft: BrandMasterDraft = {
   brandName: '',
-  brandLogo: '',
   modelCount: '',
   scaleSize: '',
   isActive: true,
@@ -41,7 +35,6 @@ export default function BrandMasterPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
-  const logoFileInputRef = useRef<HTMLInputElement>(null);
 
   async function loadBrands() {
     const response = await getBrandMasterList();
@@ -84,7 +77,6 @@ export default function BrandMasterPage() {
     setEditingId(brand._id);
     setDraft({
       brandName: brand.brandName,
-      brandLogo: brand.brandLogo,
       modelCount: String(brand.modelCount),
       scaleSize: String(brand.scaleSize),
       isActive: brand.isActive,
@@ -92,41 +84,13 @@ export default function BrandMasterPage() {
     setModalOpen(true);
   }
 
-  async function selectBrandLogo(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setNotice('Choose an image file for the brand logo.');
-      setNoticeIsError(true);
-      return;
-    }
-    if (file.size > MAX_BRAND_LOGO_FILE_SIZE) {
-      setNotice('Choose a brand logo smaller than 5 MB.');
-      setNoticeIsError(true);
-      return;
-    }
-
-    try {
-      const brandLogo = await readImageAsDataUrl(file);
-      setDraft((current) => ({ ...current, brandLogo }));
-      setNotice('');
-      setNoticeIsError(false);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Could not load the brand logo.');
-      setNoticeIsError(true);
-    }
-  }
-
   async function saveBrand(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const brandName = draft.brandName.trim();
-    const brandLogo = draft.brandLogo.trim();
     const modelCount = Number(draft.modelCount);
     const scaleSize = Number(draft.scaleSize);
 
-    if (!brandName || !brandLogo || draft.modelCount === '' || draft.scaleSize === '') {
+    if (!brandName || draft.modelCount === '' || draft.scaleSize === '') {
       setNotice('Complete all brand fields before saving.');
       setNoticeIsError(true);
       return;
@@ -140,7 +104,6 @@ export default function BrandMasterPage() {
     const actor = 'admin';
     const payload: BrandMasterInput = {
       brandName,
-      brandLogo,
       modelCount,
       scaleSize,
       updatedBy: actor,
@@ -207,7 +170,7 @@ export default function BrandMasterPage() {
         eyebrow="CATALOG MANAGEMENT"
         title="Brand"
         highlight="master"
-        subtitle="Manage brands, their logos, model counts, and scale sizes."
+        subtitle="Manage brands, model counts, and scale sizes."
         action={(
           <button type="button" className="admin-primary-button" onClick={openCreate}>
             <Icon name="plus" size={17} /> Add brand
@@ -251,7 +214,6 @@ export default function BrandMasterPage() {
           <table className="admin-table admin-reference-table">
             <thead>
               <tr>
-                <th>LOGO</th>
                 <th>BRAND</th>
                 <th>MODELS</th>
                 <th>SCALE SIZE</th>
@@ -262,7 +224,6 @@ export default function BrandMasterPage() {
             <tbody>
               {visibleItems.map((brand) => (
                 <tr key={brand._id}>
-                  <td><img className="admin-brand-logo" src={brand.brandLogo} alt={`${brand.brandName} logo`} /></td>
                   <td><strong className="admin-reference-name">{brand.brandName}</strong></td>
                   <td>{brand.modelCount}</td>
                   <td>{brand.scaleSize}</td>
@@ -293,13 +254,13 @@ export default function BrandMasterPage() {
               ))}
               {visibleItems.length === 0 && !loading && (
                 <tr>
-                  <td className="admin-reference-empty" colSpan={6}>
+                  <td className="admin-reference-empty" colSpan={5}>
                     {items.length ? 'No brands match your search.' : 'No brands yet. Add one to get started.'}
                   </td>
                 </tr>
               )}
               {loading && (
-                <tr><td className="admin-reference-empty" colSpan={6}>Loading brands…</td></tr>
+                <tr><td className="admin-reference-empty" colSpan={5}>Loading brands…</td></tr>
               )}
             </tbody>
           </table>
@@ -331,42 +292,6 @@ export default function BrandMasterPage() {
                   placeholder="e.g. Mini GT"
                 />
               </label>
-              <div className="admin-form-field admin-form-wide">
-                <span>Brand logo</span>
-                <div className="company-setup-logo-control">
-                  {draft.brandLogo ? (
-                    <img src={draft.brandLogo} alt="Brand logo preview" />
-                  ) : (
-                    <span className="company-setup-logo-placeholder">Select a logo image</span>
-                  )}
-                  <input
-                    ref={logoFileInputRef}
-                    className="company-setup-file-input"
-                    type="file"
-                    accept="image/*"
-                    aria-label="Upload brand logo"
-                    onChange={(event) => void selectBrandLogo(event)}
-                  />
-                  <div className="company-setup-logo-actions">
-                    <button
-                      type="button"
-                      className="admin-secondary-button"
-                      onClick={() => logoFileInputRef.current?.click()}
-                    >
-                      Choose image
-                    </button>
-                    {draft.brandLogo && (
-                      <button
-                        type="button"
-                        className="company-setup-remove-logo"
-                        onClick={() => setDraft((current) => ({ ...current, brandLogo: '' }))}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
               <label className="admin-form-field">
                 <span>Model count</span>
                 <input

@@ -1,7 +1,6 @@
 export interface BrandMaster {
   _id: string;
   brandName: string;
-  brandLogo: string;
   modelCount: number;
   scaleSize: number;
   createdAt?: string;
@@ -14,7 +13,6 @@ export interface BrandMaster {
 
 export interface BrandMasterInput {
   brandName: string;
-  brandLogo: string;
   modelCount: number;
   scaleSize: number;
   createdBy?: string;

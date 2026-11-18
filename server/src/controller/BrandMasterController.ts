@@ -12,7 +12,8 @@ import {
 // Create Brand
 export const CreateBrandController = async (req: Request, res: Response) => {
     try {
-        const brand = await CreateBrand(req.body);
+        const { brandLogo: _brandLogo, ...brandData } = req.body;
+        const brand = await CreateBrand(brandData);
 
         return res.status(201).json({
             success: true,
@@ -73,7 +74,8 @@ export const GetBrandByIdController = async (req: Request, res: Response) => {
 // Update Brand
 export const UpdateBrandController = async (req: Request, res: Response) => {
     try {
-        const brand = await UpdateBrand(req.params.id, req.body);
+        const { brandLogo: _brandLogo, ...brandData } = req.body;
+        const brand = await UpdateBrand(req.params.id, brandData);
 
         if (!brand) {
             return res.status(404).json({

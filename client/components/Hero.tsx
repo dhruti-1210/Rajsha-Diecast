@@ -1,23 +1,43 @@
 'use client';
 import { useEffect, useState } from 'react';
-
-const slides = [
-  { img: '/images/hero1.png',
-    h: <>Small Scale. <em>Serious</em> Collection.</>, p: 'Hot Wheels, Mini GT, Tarmac Works, Inno64 and more. Every listing states its exact packaging condition.',
-    cta : ['Shop New Arrivals', '#arrivals'], cta2: ['Shop by Budget', '#budget'] },
-  { img: '/images/hero2.png',
-    h: <>Supercars in the <em>Palm</em> of Your Hand</>, p: 'Limited runs from Tarmac Works, Inno64 and Bburago.', cta: ['New Arrivals', '#arrivals'] },
-  { img: '/images/hero3.png',
-    h: <>Start Your <em>Garage</em> Today</>, p: 'Budget-friendly picks for every new collector.', cta: ['Shop by Budget', '#budget'] },
-];
+import { getBannerList } from '@/api/BannerApi';
+import type { Banner } from '@/types/Banner';
 
 export default function Hero() {
   const [i, setI] = useState(0);
-  const go = (n: number) => setI((n + slides.length) % slides.length);
-  useEffect(() => { const t = setInterval(() => setI((x) => (x + 1) % slides.length), 6000); return () => clearInterval(t); }, [i]);
+  const [banners, setBanners] = useState<Banner[]>([]);
+
+  const heroSlides = banners.map((banner) => ({
+    img: banner.BannerImg,
+    h: banner.BannerTitle,
+    p: banner.BannerSubTitle,
+    cta: ['Shop New Arrivals', '#arrivals'],
+    cta2: ['Shop by Budget', '#budget'],
+  }));
+
+  const go = (n: number) => setI((n + heroSlides.length) % heroSlides.length);
+
+  useEffect(() => {
+    async function loadBanners() {
+      try {
+        const response = await getBannerList();
+        setBanners(response.data.filter((banner) => banner.isActive && !banner.isDeleted));
+        setI(0);
+      } catch {
+        setBanners([]);
+      }
+    }
+    void loadBanners();
+  }, []);
+
+  useEffect(() => {
+    if (heroSlides.length === 0) return;
+    const t = setInterval(() => setI((x) => (x + 1) % heroSlides.length), 6000);
+    return () => clearInterval(t);
+  }, [heroSlides.length]);
   return (
     <section className="hero" id="home">
-      {slides.map((s, k) => (
+      {heroSlides.map((s, k) => (
         <div key={k} className={`slide${k === i ? ' on' : ''}`} style={{ '--img': `url('${s.img}')` } as React.CSSProperties}>
           <div className="content">
             <p className="eyebrow"></p><h1>{s.h}</h1><p>{s.p}</p>
@@ -28,9 +48,13 @@ export default function Hero() {
           </div>
         </div>
       ))}
-      <button className="arrow prev" aria-label="Previous" onClick={() => go(i - 1)}>&#10094;</button>
-      <button className="arrow next" aria-label="Next" onClick={() => go(i + 1)}>&#10095;</button>
-      <div className="dots">{slides.map((_, k) => <i key={k} className={k === i ? 'on' : ''} onClick={() => go(k)} />)}</div>
+      {heroSlides.length > 0 && (
+        <>
+          <button className="arrow prev" aria-label="Previous" onClick={() => go(i - 1)}>&#10094;</button>
+          <button className="arrow next" aria-label="Next" onClick={() => go(i + 1)}>&#10095;</button>
+          <div className="dots">{heroSlides.map((_, k) => <i key={k} className={k === i ? 'on' : ''} onClick={() => go(k)} />)}</div>
+        </>
+      )}
     </section>
   );
 }

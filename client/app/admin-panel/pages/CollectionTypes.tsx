@@ -11,7 +11,7 @@ type CollectionType = CollectionReference & {
 };
 
 type CollectionTypeInput = {
-  collectionName: string;
+  collectionName?: string;
   createdBy?: string;
   updatedBy: string;
   isActive: boolean;

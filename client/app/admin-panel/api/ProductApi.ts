@@ -14,7 +14,7 @@ export interface ProductReference {
 }
 
 export interface BrandReference extends ProductReference {
-  companyName: string;
+  brandName: string;
 }
 
 export interface PackagingReference extends ProductReference {

@@ -13,5 +13,11 @@ export function CarSvg({ color, name }: { color: string; name: string }) {
 }
 
 export default function CarImage({ p }: { p: Product }) {
+  const isImageSource = p.image.startsWith('data:image/')
+    || p.image.startsWith('/')
+    || /^https?:\/\//i.test(p.image);
+  if (p.image && isImageSource) {
+    return <img className="product-image" src={p.image} alt={p.name} />;
+  }
   return <CarSvg color={p.color} name={p.name} />;
 }
