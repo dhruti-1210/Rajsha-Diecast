@@ -1,7 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { getPackagingTypeList } from '@/api/PackagingApi';
+import { getPublicReviews } from '@/api/ReviewsApi';
 import type { PackagingType } from '@/types/PackagingType';
+import type { Review } from '@/types/Reviews';
 
 export function Grading() {
   const [packagingTypes, setPackagingTypes] = useState<PackagingType[]>([]);
@@ -69,16 +71,52 @@ export function Grading() {
   );
 }
 
-const reviews = [
-  ['Sealed card was perfect, exactly as graded. Packed like a vault.', 'Arjun, Vadodara'],
-  ['Best source for Mini GT and Tarmac Works in India.', 'Meera, Kochi'],
-  ['Honest photos of every flaw. This is how it should be done.', 'Rahul, Surat'],
-];
 export function Reviews() {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadReviews() {
+      try {
+        const response = await getPublicReviews();
+        if (!response.success) {
+          throw new Error(response.message || 'Could not load reviews.');
+        }
+        if (active) {
+          setReviews(response.data
+            .filter((review) => review.isActive && review.isDisplay && !review.isDeleted)
+            .slice(0, 3));
+        }
+      } catch (loadError) {
+        if (active) {
+          setError(loadError instanceof Error ? loadError.message : 'Could not load reviews.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadReviews();
+    return () => { active = false; };
+  }, []);
+
   return (
     <section className="section dark" id="reviews">
       <div className="head"><h2 className="title">Collector <em>Reviews</em></h2></div>
-      <div className="reviews">{reviews.map(([q, c]) => <blockquote key={c}>“{q}”<cite>— {c}</cite></blockquote>)}</div>
+      <div className="reviews">
+        {reviews.map((review) => (
+          <blockquote key={review._id}>
+            “{review.message}”
+            <cite>— {review.name}</cite>
+          </blockquote>
+        ))}
+      </div>
+      {loading && <p role="status">Loading reviews…</p>}
+      {!loading && error && <p role="alert">{error}</p>}
+      {!loading && !error && reviews.length === 0 && <p>No reviews yet. Be the first to share your experience.</p>}
     </section>
   );
 }

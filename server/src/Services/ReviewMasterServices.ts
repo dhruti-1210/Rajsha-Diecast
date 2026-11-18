@@ -22,6 +22,29 @@ export const GetAllReviewsMaster = async () => {
     }
 };
 
+export const GetDisplayedReviewsMaster = async () => {
+    try {
+        return await ReviewsMaster.find({
+            isDeleted: false,
+            isActive: true,
+            isDisplay: true
+        }).sort({ createdAt: -1 });
+    } catch (error: any) {
+        throw new Error(error.message);
+    }
+};
+
+export const GetReviewsMasterByUserId = async (userId: string) => {
+    try {
+        return await ReviewsMaster.find({
+            user_id: userId,
+            isDeleted: false
+        }).sort({ createdAt: -1 });
+    } catch (error: any) {
+        throw new Error(error.message);
+    }
+};
+
 // Get Reviews By ID
 export const GetReviewsMasterById = async (id: string) => {
     try {

@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { useToastify } from '@/components/Toastify';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { createReview, getMyReviews } from '@/api/ReviewsApi';
+import type { Review } from '@/types/Reviews';
 import { money } from '@/lib/format';
 import { userAuthUrl } from '@/lib/user-auth';
 
-type PanelSection = 'dashboard' | 'profile' | 'orders';
+type PanelSection = 'dashboard' | 'profile' | 'orders' | 'reviews';
 type ProfileData = {
   fullName: string;
   email: string;
@@ -21,6 +23,7 @@ const sections: { id: PanelSection; label: string; icon: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'M3 3h7v7H3z M14 3h7v5h-7z M14 12h7v9h-7z M3 14h7v7H3z' },
   { id: 'profile', label: 'User profile', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21a8 8 0 0 1 16 0' },
   { id: 'orders', label: 'Orders', icon: 'M3 7h18v14H3z M7 7V4h10v3 M3 11h18 M10 11v3h4v-3' },
+  { id: 'reviews', label: 'Reviews', icon: 'M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z' },
 ];
 
 const orders = [
@@ -227,6 +230,7 @@ export default function UserPanel() {
             />
           )}
           {activeSection === 'orders' && <Orders />}
+          {activeSection === 'reviews' && <ReviewsPage />}
         </section>
       </div>
 
@@ -367,6 +371,117 @@ function Orders() {
         <div className="user-panel-order-list">
           {orders.map((order) => <OrderRow key={order.id} order={order} />)}
         </div>
+      </section>
+    </div>
+  );
+}
+
+function ReviewsPage() {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewMessage, setReviewMessage] = useState('');
+  const [reviewNotice, setReviewNotice] = useState('');
+  const [reviewError, setReviewError] = useState('');
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadReviews() {
+      try {
+        const response = await getMyReviews();
+        if (!response.success) {
+          throw new Error(response.message || 'Could not load your reviews.');
+        }
+        if (active) setReviews(response.data);
+      } catch (error) {
+        if (active) {
+          setReviewError(error instanceof Error ? error.message : 'Could not load your reviews.');
+        }
+      } finally {
+        if (active) setLoadingReviews(false);
+      }
+    }
+
+    void loadReviews();
+    return () => { active = false; };
+  }, []);
+
+  async function submitReview(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const message = reviewMessage.trim();
+    if (!message) {
+      setReviewError('Enter a review before submitting.');
+      return;
+    }
+
+    setSubmittingReview(true);
+    setReviewError('');
+    setReviewNotice('');
+    try {
+      const response = await createReview({ message });
+      if (!response.success) {
+        throw new Error(response.message || 'Could not submit your review.');
+      }
+      setReviews((current) => [response.data, ...current]);
+      setReviewMessage('');
+      setReviewNotice('Your review is now visible in the reviews section.');
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : 'Could not submit your review.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  }
+
+  return (
+    <div className="user-panel-section">
+      <div className="user-panel-section-heading"><div><h2>Reviews</h2></div></div>
+      <section className="user-panel-card user-panel-review-card">
+        <div>
+          <p className="eyebrow">YOUR FEEDBACK</p>
+          <h3>Leave a review</h3>
+          <p>Share your experience with the Rajsha Diecast team.</p>
+        </div>
+        <form onSubmit={(event) => void submitReview(event)}>
+          <label className="user-panel-review-field" htmlFor="order-review">
+            <span>Review message</span>
+            <textarea
+              id="order-review"
+              name="review"
+              value={reviewMessage}
+              onChange={(event) => setReviewMessage(event.target.value)}
+              maxLength={2000}
+              rows={5}
+              required
+            />
+          </label>
+          {reviewError && <p className="user-panel-review-feedback error" role="alert">{reviewError}</p>}
+          {reviewNotice && <p className="user-panel-review-feedback" role="status">{reviewNotice}</p>}
+          <div className="user-panel-review-actions">
+            <button className="btn" type="submit" disabled={submittingReview}>
+              {submittingReview ? 'Submitting…' : 'Submit review'}
+            </button>
+          </div>
+        </form>
+      </section>
+      <section className="user-panel-card user-panel-review-list-card" aria-label="Your submitted reviews">
+        <div className="user-panel-card-heading">
+          <div><p className="eyebrow">YOUR SUBMISSIONS</p><h3>Submitted reviews</h3></div>
+        </div>
+        {loadingReviews && <p role="status">Loading your reviews…</p>}
+        {!loadingReviews && reviews.length === 0 && !reviewError && (
+          <p className="user-panel-review-empty">You haven’t submitted a review yet.</p>
+        )}
+        {reviews.map((review) => (
+          <article className="user-panel-review-item" key={review._id}>
+            <p>{review.message}</p>
+            <small>
+              {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'Recently submitted'}
+              {' · '}
+              {review.isActive && review.isDisplay ? 'Visible on site' : 'Not visible on site'}
+            </small>
+          </article>
+        ))}
       </section>
     </div>
   );

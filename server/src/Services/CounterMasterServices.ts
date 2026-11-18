@@ -2,7 +2,7 @@ import { ICounterMaster } from "../Models/CounterMaster";
 import BrandMaster from "../Models/BrandMaster";
 import CollectionType from "../Models/CollectionTypeMaster";
 import ProductMaster from "../Models/ProductMaster";
-import UserMaster from "../Models/userMaster";
+import ReviewsMaster from "../Models/ReviewMaster";
 
 type CounterData = Pick<
     ICounterMaster,
@@ -20,19 +20,53 @@ type CounterData = Pick<
 >;
 
 export const GetCounterMaster = async (): Promise<CounterData[]> => {
-    const [modelsInStock, topBrands, happyCollectors, premiumCollections] =
+    const [stockTotals, topBrands, happyCollectors, premiumCollectionTypes] =
         await Promise.all([
-            ProductMaster.countDocuments({
+            ProductMaster.aggregate([
+                {
+                    $match: {
+                        isDeleted: false,
+                        isActive: true,
+                        isDisplay: true,
+                        TotalStock: { $gt: 0 }
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        total: { $sum: "$TotalStock" }
+                    }
+                }
+            ]),
+            BrandMaster.countDocuments({ isDeleted: false, isActive: true }),
+            ReviewsMaster.countDocuments({ isDeleted: false }),
+            CollectionType.find({
+                collectionName: /^premium collection$/i,
                 isDeleted: false,
-                TotalStock: { $gt: 0 }
-            }),
-            BrandMaster.countDocuments({ isDeleted: false }),
-            UserMaster.countDocuments({
-                isDeleted: false,
-                emailVerified: true
-            }),
-            CollectionType.countDocuments({ isDeleted: false })
+                isActive: true,
+                isDisplay: { $ne: false }
+            }).select("_id").lean()
         ]);
+    const modelsInStock = stockTotals[0]?.total ?? 0;
+    const premiumCollectionFilters = premiumCollectionTypes.length
+        ? [{
+            Collectiontype_id: {
+                $in: premiumCollectionTypes.map((collection) => collection._id)
+            }
+        }]
+        : [];
+    const premiumProductCount = await ProductMaster.countDocuments({
+        isDeleted: false,
+        isActive: true,
+        isDisplay: true,
+        $or: [
+            ...premiumCollectionFilters,
+            {
+                Collectiontype_id: { $in: [null] },
+                CollectionName: /^premium collection$/i
+            }
+        ]
+    });
 
     const now = new Date();
     const counters = [
@@ -59,7 +93,7 @@ export const GetCounterMaster = async (): Promise<CounterData[]> => {
         },
         {
             counterTitle: "Premium Collections",
-            counterValue: premiumCollections,
+            counterValue: premiumProductCount,
             counterSuffix: "+",
             counterLabel: "PREMIUM COLLECTIONS",
             sortOrder: 4

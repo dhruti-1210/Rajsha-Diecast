@@ -2,6 +2,8 @@ import { Router } from "express";
 
 import {
     CreateReviewsMasterController,
+    GetMyReviewsMasterController,
+    GetDisplayedReviewsMasterController,
     GetAllReviewsMasterController,
     GetReviewsMasterByIdController,
     UpdateReviewsMasterController,
@@ -9,11 +11,18 @@ import {
     ChangeReviewsActiveStatusController,
     ChangeReviewsDisplayStatusController
 } from "../controller/ReviewMasterController";
+import { authMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
 // Create Reviews
-router.post("/create", CreateReviewsMasterController);
+router.post("/create", authMiddleware, CreateReviewsMasterController);
+
+// Get authenticated user's reviews
+router.get("/mine", authMiddleware, GetMyReviewsMasterController);
+
+// Get reviews displayed on the storefront
+router.get("/public", GetDisplayedReviewsMasterController);
 
 // Get All Reviews
 router.get("/list", GetAllReviewsMasterController);
