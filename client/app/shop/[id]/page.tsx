@@ -184,7 +184,7 @@ export default function ProductPage() {
           {relatedProducts.map((item) => (
             <article className="related-card" key={item.id}>
               {item.left > 0 && <span className="related-stock">ONLY {item.left} LEFT</span>}
-              <Link href={`/shop/${item.id}`} className="related-image product-image-container" aria-label={`View ${item.name}`}>
+              <Link href={`/shop/${item.id}`} className="related-image" aria-label={`View ${item.name}`}>
                 <CarImage p={item} />
               </Link>
               <div className="related-info">

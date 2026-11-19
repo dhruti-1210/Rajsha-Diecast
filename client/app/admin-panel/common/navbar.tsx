@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import Icon, { type IconName } from './icon';
+import Icon, { type IconName } from './AdminIcon';
 import navConfig, { type AdminView } from '../data/navConfig';
 
 type NavbarProps = {

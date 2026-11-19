@@ -1,4 +1,4 @@
-import type { IconName } from '../common/icon';
+import type { IconName } from '../common/AdminIcon';
 
 export type AdminView =
   | 'dashboard'

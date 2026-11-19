@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AdminToast from '../common/AdminToast';
 import { products as storeProducts } from '@/data/products';
-import Icon from '../common/icon';
+import Icon from '../common/AdminIcon';
 import Header from '../common/header';
 
 type DashboardProduct = Pick<(typeof storeProducts)[number], 'id' | 'price'> & {

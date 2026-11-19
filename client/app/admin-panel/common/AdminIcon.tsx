@@ -59,7 +59,7 @@ const iconPaths: Record<IconName, string[]> = {
   chevron: ['m6 9 6 6 6-6'],
 };
 
-export default function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
+export default function AdminIcon({ name, size = 18 }: { name: IconName; size?: number }) {
   return (
     <svg
       aria-hidden="true"

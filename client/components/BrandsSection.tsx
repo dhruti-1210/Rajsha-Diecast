@@ -1,4 +1,5 @@
 import type { Brand } from '@/types/Brand';
+import Link from 'next/link';
 import Slider from './Slider';
 
 export default function BrandsSection({
@@ -12,13 +13,13 @@ export default function BrandsSection({
 }) {
   return (
     <section className="section" id="brands">
-      <div className="head"><h2 className="title">Shop by <em>Brand</em></h2><a href="#" className="more">All brands →</a></div>
+      <div className="head"><h2 className="title">Shop by <em>Brand</em></h2><Link href="/shop" className="more">All brands →</Link></div>
       <Slider className="brands">
         {brands.map((brand) => (
-          <a key={brand._id} href="#featured" className="brand">
+          <Link key={brand._id} href={`/shop?brand=${encodeURIComponent(brand.brandName)}`} className="brand">
             <h3>{brand.brandName}</h3>
             <small>{brand.modelCount} {brand.modelCount === 1 ? 'model' : 'models'} · {brand.scaleSize}</small>
-          </a>
+          </Link>
         ))}
       </Slider>
       {loading && <p role="status">Loading brands…</p>}

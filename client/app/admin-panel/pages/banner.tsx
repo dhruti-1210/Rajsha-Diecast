@@ -12,7 +12,7 @@ import {
 } from '../api/banner';
 import type { Banner, BannerInput } from '../types/banner';
 import Header from '../common/header';
-import Icon from '../common/icon';
+import Icon from '../common/AdminIcon';
 import AdminDataTable from '../common/AdminDataTable';
 import type { TableColumn } from 'react-data-table-component';
 import { readImageAsDataUrl } from '../utils/images';

@@ -1,6 +1,6 @@
 'use client';
 
-import Icon from './icon';
+import Icon from './AdminIcon';
 
 type AdminDeleteConfirmProps = {
   itemName: string;

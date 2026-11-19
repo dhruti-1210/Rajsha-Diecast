@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import Icon from './icon';
+import Icon from './AdminIcon';
 
 export type AdminSelectOption = {
   value: string;

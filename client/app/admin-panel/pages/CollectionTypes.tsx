@@ -6,7 +6,7 @@ import AdminToast from '../common/AdminToast';
 import type { CollectionReference, ProductApiResponse } from '../api/ProductApi';
 import api from '../api/axios';
 import Header from '../common/header';
-import Icon from '../common/icon';
+import Icon from '../common/AdminIcon';
 import AdminDataTable from '../common/AdminDataTable';
 import type { TableColumn } from 'react-data-table-component';
 

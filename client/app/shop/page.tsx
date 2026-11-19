@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
@@ -18,10 +19,12 @@ import type { Product as ProductRecord } from '@/types/Product';
 const PAGE_SIZE = 8;
 
 export default function ShopPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [conditions, setConditions] = useState<PackagingType[]>([]);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [minPrice, setMinPrice] = useState<number | null>(null);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -75,6 +78,29 @@ export default function ShopPage() {
           setProducts(availableProducts);
           setBrands(availableBrands);
           setConditions(availableConditions);
+
+          const searchParams = new URLSearchParams(window.location.search);
+          const brandParam = searchParams.get('brand')?.trim().toLowerCase();
+          const selectedBrand = availableBrands.find(
+            (brand) => brand.brandName.trim().toLowerCase() === brandParam,
+          );
+          const requestedMaxPrice = searchParams.get('maxPrice');
+          const requestedMinPrice = searchParams.get('minPrice');
+          const parsedMaxPrice = requestedMaxPrice === null ? null : Number(requestedMaxPrice);
+          const parsedMinPrice = requestedMinPrice === null ? null : Number(requestedMinPrice);
+
+          setSelectedBrands(selectedBrand ? [selectedBrand.brandName] : []);
+          setMaxPrice(
+            parsedMaxPrice !== null && Number.isFinite(parsedMaxPrice) && parsedMaxPrice >= 0
+              ? parsedMaxPrice
+              : null,
+          );
+          setMinPrice(
+            parsedMinPrice !== null && Number.isFinite(parsedMinPrice) && parsedMinPrice >= 0
+              ? parsedMinPrice
+              : null,
+          );
+          setCurrentPage(1);
         }
       } catch (loadError) {
         if (active) {
@@ -92,12 +118,13 @@ export default function ShopPage() {
   }, []);
 
   const priceLimit = Math.max(0, ...products.map((product) => product.price));
-  const effectiveMaxPrice = maxPrice ?? priceLimit;
+  const effectiveMaxPrice = Math.min(maxPrice ?? priceLimit, priceLimit);
   const filteredProducts = useMemo(() => products.filter((product) =>
+    product.price >= (minPrice ?? 0) &&
     product.price <= effectiveMaxPrice &&
     (!selectedBrands.length || selectedBrands.includes(product.brand)) &&
     (!selectedConditions.length || selectedConditions.some((condition) => condition === product.condition)),
-  ), [products, effectiveMaxPrice, selectedBrands, selectedConditions]);
+  ), [products, effectiveMaxPrice, minPrice, selectedBrands, selectedConditions]);
   const pageCount = Math.ceil(filteredProducts.length / PAGE_SIZE);
   const pageProducts = filteredProducts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
@@ -119,12 +146,13 @@ export default function ShopPage() {
           <aside className="col-12 col-lg-3 col-xl-2">
             <div className="shop-filters">
               <div className="filter-heading"><h2>Filters</h2><button type="button" onClick={() => {
-                setMaxPrice(null); setSelectedBrands([]); setSelectedConditions([]);
+                setMaxPrice(null); setMinPrice(null); setSelectedBrands([]); setSelectedConditions([]);
                 setCurrentPage(1);
+                router.replace('/shop');
               }}>Clear all</button></div>
               <section className="filter-group">
                 <h3>Price range</h3>
-                <div className="price-labels"><span>₹0</span><span>{money(effectiveMaxPrice)}</span></div>
+                <div className="price-labels"><span>{money(minPrice ?? 0)}</span><span>{money(effectiveMaxPrice)}</span></div>
                 <input aria-label="Maximum price" type="range" min="0" max={Math.max(priceLimit, 1)} step="100" value={effectiveMaxPrice} onChange={(event) => {
                   setMaxPrice(Number(event.target.value));
                   setCurrentPage(1);
@@ -142,7 +170,7 @@ export default function ShopPage() {
               {pageProducts.map((product) => (
                 <div className="col-6 col-md-4 col-xl-3" key={product.id}>
                   <article className="shop-card">
-                    <Link href={`/shop/${product.id}`} className="shop-card-image product-image-container" aria-label={`View ${product.name}`}>
+                    <Link href={`/shop/${product.id}`} className="shop-card-image" aria-label={`View ${product.name}`}>
                       {product.left > 0 && <span className="shop-stock">ONLY {product.left} LEFT</span>}
                       <CarImage p={product} />
                     </Link>

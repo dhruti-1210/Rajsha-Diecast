@@ -1,10 +1,11 @@
 import type { Brand } from '@/types/Brand';
+import Link from 'next/link';
 
 function BrandName({ name }: { name: string }) {
   return (
-    <a href="#brands" className="bl" title={name}>
+    <Link href={`/shop?brand=${encodeURIComponent(name)}`} className="bl" title={name}>
       <span>{name}</span>
-    </a>
+    </Link>
   );
 }
 

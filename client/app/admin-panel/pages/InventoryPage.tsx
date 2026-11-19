@@ -5,7 +5,7 @@ import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
 import AdminSelect from '../common/AdminSelect';
 import AdminToast from '../common/AdminToast';
 import Header from '../common/header';
-import Icon from '../common/icon';
+import Icon from '../common/AdminIcon';
 import AdminDataTable from '../common/AdminDataTable';
 import type { TableColumn } from 'react-data-table-component';
 import {

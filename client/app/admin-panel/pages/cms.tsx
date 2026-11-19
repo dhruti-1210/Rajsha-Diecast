@@ -13,7 +13,7 @@ import {
 } from '../api/cms';
 import type { Cms, CmsInput } from '../types/cms';
 import Header from '../common/header';
-import Icon from '../common/icon';
+import Icon from '../common/AdminIcon';
 import AdminDataTable from '../common/AdminDataTable';
 import type { TableColumn } from 'react-data-table-component';
 
