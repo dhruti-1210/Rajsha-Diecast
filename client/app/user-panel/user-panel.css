@@ -357,7 +357,8 @@
   margin-bottom: 4px
 }
 
-.user-panel-review-empty {
+.user-panel-review-empty,
+.user-panel-order-empty {
   color: var(--mut);
   font-size: .82rem
 }

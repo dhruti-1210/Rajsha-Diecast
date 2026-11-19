@@ -1,5 +1,7 @@
 
 import OrderMaster, { IOrderMaster } from "../Models/OrderMaster";
+import OrderLineMaster from "../Models/OrderLineMaster";
+import Checkout from "../Models/CheckoutModel";
 
 // Create Order
 export const CreateOrderMaster = async (data: Partial<IOrderMaster>) => {
@@ -18,6 +20,54 @@ export const GetAllOrderMaster = async () => {
     } catch (error) {
         throw error;
     }
+};
+
+export const GetOrderHistoryByUserId = async (userId: string) => {
+    const orders = await OrderMaster.find({
+        user_id: userId,
+        isDeleted: false
+    }).sort({ createdAt: -1 });
+
+    if (orders.length === 0) {
+        return [];
+    }
+
+    const orderIds = orders.map((order) => order._id);
+    const [orderLines, checkouts] = await Promise.all([
+        OrderLineMaster.find({
+            order_Master_id: { $in: orderIds },
+            isDeleted: false
+        }).populate("product_ID", "Name BrandName ModelCode Size Image").lean(),
+        Checkout.find({ order_Master_id: { $in: orderIds } })
+            .select("order_Master_id isPLACED isPROCESSING isSHIPPED isTransist isDELIVERED")
+            .sort({ updatedAt: -1 })
+            .lean()
+    ]);
+
+    const orderLinesByOrderId = new Map<string, typeof orderLines>();
+    for (const orderLine of orderLines) {
+        const orderId = orderLine.order_Master_id.toString();
+        const currentLines = orderLinesByOrderId.get(orderId) ?? [];
+        currentLines.push(orderLine);
+        orderLinesByOrderId.set(orderId, currentLines);
+    }
+
+    const checkoutByOrderId = new Map<string, (typeof checkouts)[number]>();
+    for (const checkout of checkouts) {
+        const orderId = checkout.order_Master_id.toString();
+        if (!checkoutByOrderId.has(orderId)) {
+            checkoutByOrderId.set(orderId, checkout);
+        }
+    }
+
+    return orders.map((order) => {
+        const orderId = order._id.toString();
+        return {
+            ...order.toObject(),
+            items: orderLinesByOrderId.get(orderId) ?? [],
+            checkout: checkoutByOrderId.get(orderId) ?? null
+        };
+    });
 };
 
 // Get Order By ID

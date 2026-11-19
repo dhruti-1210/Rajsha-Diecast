@@ -7,9 +7,11 @@ import { useStore } from '@/context/StoreContext';
 import { useToastify } from '@/components/Toastify';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { createReview, getMyReviews } from '@/api/ReviewsApi';
+import { getMyOrders } from '@/api/orderMasterApi';
 import type { Review } from '@/types/Reviews';
-import { money } from '@/lib/format';
+import type { OrderMaster } from '@/types/orderMaster';
 import { userAuthUrl } from '@/lib/user-auth';
+import OrderPage from '@/app/user-panel/order';
 
 type PanelSection = 'dashboard' | 'profile' | 'orders' | 'reviews';
 type ProfileData = {
@@ -26,18 +28,15 @@ const sections: { id: PanelSection; label: string; icon: string }[] = [
   { id: 'reviews', label: 'Reviews', icon: 'M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z' },
 ];
 
-const orders = [
-  { id: 'RD-2048', name: 'Nissan GT-R (R35) Nismo', date: '12 Nov 2026', price: 1199, status: 'Delivered' },
-  { id: 'RD-1936', name: 'Porsche 911 GT3 R', date: '28 Oct 2026', price: 1899, status: 'In transit' },
-  { id: 'RD-1802', name: 'Toyota GR86', date: '06 Oct 2026', price: 1099, status: 'Delivered' },
-];
-
 export default function UserPanel() {
   const [activeSection, setActiveSection] = useState<PanelSection>('profile');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({ fullName: '', email: '', phone: '', address: '' });
   const [profileComplete, setProfileComplete] = useState(false);
   const [ready, setReady] = useState(false);
+  const [orders, setOrders] = useState<OrderMaster[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState('');
   const [confirmAction, setConfirmAction] = useState<'logout' | 'delete' | null>(null);
   const { setAuthStatus } = useStore();
   const { notify } = useToastify();
@@ -71,7 +70,6 @@ export default function UserPanel() {
         if (!response.ok) {
           throw new Error(result.message || 'Could not verify your login session.');
         }
-
         const user = result.data.user;
         if (!active) return;
         setAuthStatus('authenticated');
@@ -94,6 +92,30 @@ export default function UserPanel() {
     void loadSession();
     return () => { active = false; };
   }, [notify, router, setAuthStatus]);
+
+  useEffect(() => {
+    if (!ready) return;
+    let active = true;
+
+    async function loadOrders() {
+      try {
+        const response = await getMyOrders();
+        if (!response.success) {
+          throw new Error(response.message || 'Could not load your orders.');
+        }
+        if (active) setOrders(response.data);
+      } catch (error) {
+        if (active) {
+          setOrdersError(error instanceof Error ? error.message : 'Could not load your orders.');
+        }
+      } finally {
+        if (active) setOrdersLoading(false);
+      }
+    }
+
+    void loadOrders();
+    return () => { active = false; };
+  }, [ready]);
 
   async function logout() {
     try {
@@ -196,7 +218,14 @@ export default function UserPanel() {
         </aside>
 
         <section className="user-panel-content" aria-live="polite">
-          {activeSection === 'dashboard' && <Dashboard onOrdersClick={() => setActiveSection('orders')} />}
+          {activeSection === 'dashboard' && (
+            <Dashboard
+              orders={orders}
+              ordersLoading={ordersLoading}
+              ordersError={ordersError}
+              onOrdersClick={() => setActiveSection('orders')}
+            />
+          )}
           {activeSection === 'profile' && (
             <Profile
               profile={profile}
@@ -229,7 +258,9 @@ export default function UserPanel() {
               }}
             />
           )}
-          {activeSection === 'orders' && <Orders />}
+          {activeSection === 'orders' && (
+            <OrderPage orders={orders} loading={ordersLoading} error={ordersError} />
+          )}
           {activeSection === 'reviews' && <ReviewsPage />}
         </section>
       </div>
@@ -255,22 +286,33 @@ export default function UserPanel() {
   );
 }
 
-function Dashboard({ onOrdersClick }: { onOrdersClick: () => void }) {
+function Dashboard({
+  orders,
+  ordersLoading,
+  ordersError,
+  onOrdersClick,
+}: {
+  orders: OrderMaster[];
+  ordersLoading: boolean;
+  ordersError: string;
+  onOrdersClick: () => void;
+}) {
   return (
     <div className="user-panel-section">
       <div className="user-panel-section-heading">
         <div><h2>Dashboard</h2></div>
       </div>
       <div className="user-panel-stats">
-        <article className="user-panel-stat"><small>ORDERS PLACED</small><strong>03</strong><span>Across your garage</span></article>
+        <article className="user-panel-stat"><small>ORDERS PLACED</small><strong>{ordersLoading ? '…' : String(orders.length).padStart(2, '0')}</strong><span>Across your garage</span></article>
         <article className="user-panel-stat"><small>COLLECTOR STATUS</small><strong className="user-panel-gold">Gold</strong><span>Thank you for collecting</span></article>
       </div>
-      <section className="user-panel-card">
-        <div className="user-panel-card-heading"><div><p className="eyebrow">RECENT ACTIVITY</p><h3>Recent orders</h3></div><button type="button" onClick={onOrdersClick}>View all orders <span aria-hidden="true">→</span></button></div>
-        <div className="user-panel-order-list">
-          {orders.slice(0, 2).map((order) => <OrderRow key={order.id} order={order} />)}
-        </div>
-      </section>
+      <OrderPage
+        orders={orders}
+        loading={ordersLoading}
+        error={ordersError}
+        compact
+        onViewAll={onOrdersClick}
+      />
       <div className="user-panel-note"><span aria-hidden="true">✦</span><p>Your next favourite model is waiting in the collection.</p><Link href="/shop">Shop all models →</Link></div>
     </div>
   );
@@ -360,19 +402,6 @@ function ProfileField({
         required={required}
       />
     </label>
-  );
-}
-
-function Orders() {
-  return (
-    <div className="user-panel-section">
-      <div className="user-panel-section-heading"><div><h2>Orders</h2></div></div>
-      <section className="user-panel-card">
-        <div className="user-panel-order-list">
-          {orders.map((order) => <OrderRow key={order.id} order={order} />)}
-        </div>
-      </section>
-    </div>
   );
 }
 
@@ -484,17 +513,5 @@ function ReviewsPage() {
         ))}
       </section>
     </div>
-  );
-}
-
-function OrderRow({ order }: { order: typeof orders[number] }) {
-  const delivered = order.status === 'Delivered';
-  return (
-    <article className="user-panel-order-row">
-      <span className="user-panel-order-art" aria-hidden="true">RD</span>
-      <div className="user-panel-order-product"><strong>{order.name}</strong><small>Order #{order.id} · {order.date}</small></div>
-      <span className={`user-panel-order-status${delivered ? ' delivered' : ''}`}><i />{order.status}</span>
-      <strong className="user-panel-order-price">{money(order.price)}</strong>
-    </article>
   );
 }

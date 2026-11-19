@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import {
     CreateOrderMaster,
     GetAllOrderMaster,
+    GetOrderHistoryByUserId,
     GetOrderMasterById,
     UpdateOrderMaster,
     DeleteOrderMaster,
@@ -42,6 +43,30 @@ export const GetAllOrderMasterController = async (req: Request, res: Response) =
         return res.status(500).json({
             success: false,
             message: error.message
+        });
+    }
+};
+
+export const GetMyOrderHistoryController = async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({
+            success: false,
+            message: "Authentication is required to view order history."
+        });
+    }
+
+    try {
+        const orders = await GetOrderHistoryByUserId(userId);
+        return res.status(200).json({
+            success: true,
+            message: "Order history fetched successfully",
+            data: orders
+        });
+    } catch (error: unknown) {
+        return res.status(500).json({
+            success: false,
+            message: error instanceof Error ? error.message : "Could not fetch order history."
         });
     }
 };
