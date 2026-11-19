@@ -16,7 +16,7 @@ export default function ProductModal() {
           <h3>{p.name}</h3>
           <p>Condition: <span className={`cond ${p.condition}`}>{p.condition}</span><br />Highly detailed collector model. Photos of every flaw are shared before dispatch.</p>
           <div className="price" style={{ marginBottom: 16 }}>{money(p.price)}</div>
-          <button className="btn add" onClick={() => { add(p); setModal(null); }}>Add to cart</button>
+          <button className="btn add" onClick={() => { add(p); setModal(null); }} disabled={p.stock === 0}>Add to cart</button>
         </div>
       </div>
     </div>

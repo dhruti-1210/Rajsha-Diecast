@@ -7,8 +7,11 @@ import {
     UpdateCartController,
     DeleteCartController
 } from "../controller/CartController";
+import { authMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
+
+router.use(authMiddleware);
 
 // Create Cart
 router.post("/create", CreateCartController);

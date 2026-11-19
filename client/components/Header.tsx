@@ -16,6 +16,7 @@ export function Logo() {
 
 export default function Header() {
   const { cart, setDrawer, authStatus } = useStore();
+  const cartQuantity = cart.reduce((total, item) => total + item.quantity, 0);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -43,11 +44,11 @@ export default function Header() {
             <span>My profile</span>
           </> : 'Login'}
         </Link>}
-        <a href="#" className="cart" aria-label={`Cart, ${cart.length} items`} onClick={(e) => { e.preventDefault(); setDrawer('cart'); }}>
+        <a href="#" className="cart" aria-label={`Cart, ${cartQuantity} items`} onClick={(e) => { e.preventDefault(); setDrawer('cart'); }}>
           <span>Cart</span>
           <span className="cart-icon-wrap">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h2l2.2 11.2a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 2-1.6L22 7H6" /><circle cx="10" cy="20" r="1" /><circle cx="18" cy="20" r="1" /></svg>
-            <b>{cart.length}</b>
+            <b>{cartQuantity}</b>
           </span>
         </a>
       </nav>

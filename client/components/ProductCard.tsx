@@ -16,7 +16,7 @@ export default function ProductCard({ p }: { p: Product }) {
         <h3>{p.name}</h3>
         <div className="product-card-price-row"><span className="price">{money(p.price)}</span><span className={`cond ${p.condition}`}>{p.condition}</span></div>
         <div className="btnrow">
-          <button className="add" onClick={() => add(p)}>Add to cart</button>
+          <button className="add" onClick={() => add(p)} disabled={p.stock === 0}>Add to cart</button>
           <Link className="view" href={`/shop/${p.id}`}>Details</Link>
         </div>
       </div>

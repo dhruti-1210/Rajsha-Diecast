@@ -1122,6 +1122,44 @@ cite {
   cursor: pointer
 }
 
+.cart-item-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px
+}
+
+.cart-item-actions>button {
+  font-size: .72rem
+}
+
+.cart-quantity-control {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  padding: 2px 4px
+}
+
+.cart-quantity-control button {
+  color: var(--gold);
+  font-size: .9rem;
+  padding: 0 3px
+}
+
+.cart-quantity-control span {
+  min-width: 16px;
+  color: var(--text);
+  font-size: .75rem;
+  text-align: center
+}
+
+.cart-item-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .5
+}
+
 .df {
   border-top: 1px solid var(--line);
   padding-top: 14px

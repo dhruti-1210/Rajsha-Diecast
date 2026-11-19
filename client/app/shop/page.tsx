@@ -1,37 +1,107 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import CarImage from '@/components/CarImage';
-import { products } from '@/data/products';
+import { getBrandList } from '@/api/BrandApi';
+import { getPackagingTypeList } from '@/api/PackagingApi';
+import { getProductList } from '@/api/ProductApi';
 import { money } from '@/lib/format';
-import type { Condition } from '@/types';
+import type { Product as StoreProduct } from '@/types';
+import type { Brand } from '@/types/Brand';
+import type { PackagingType } from '@/types/PackagingType';
+import type { Product as ProductRecord } from '@/types/Product';
 
-const conditions: Condition[] = ['Sealed', 'Opened', 'Damage'];
-const brands = [...new Set(products.map((product) => product.brand))];
-const scales = [...new Set(products.map((product) => product.scale))];
 const PAGE_SIZE = 8;
 
 export default function ShopPage() {
-  const [maxPrice, setMaxPrice] = useState(5000);
+  const [products, setProducts] = useState<StoreProduct[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [conditions, setConditions] = useState<PackagingType[]>([]);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [selectedScales, setSelectedScales] = useState<string[]>([]);
-  const [selectedConditions, setSelectedConditions] = useState<Condition[]>([]);
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadShopData() {
+      try {
+        const [productResponse, packagingResponse, brandResponse] = await Promise.all([
+          getProductList(),
+          getPackagingTypeList(),
+          getBrandList(),
+        ]);
+        if (!productResponse.success || !packagingResponse.success || !brandResponse.success) {
+          throw new Error('Could not load the product collection.');
+        }
+
+        const availableBrands = brandResponse.data.filter(
+          (brand) => brand.isActive && !brand.isDeleted,
+        );
+        const availableConditions = packagingResponse.data.filter(
+          (condition) => condition.isActive && !condition.isDeleted,
+        );
+        const brandNamesById = new Map(
+          availableBrands.map((brand) => [brand._id, brand.brandName]),
+        );
+        const conditionNamesById = new Map(
+          availableConditions.map((condition) => [condition._id, condition.packagingName]),
+        );
+        const availableProducts = productResponse.data
+          .filter((product) => product.isActive && product.isDisplay && !product.isDeleted)
+          .map((product: ProductRecord): StoreProduct => ({
+            id: product._id,
+            name: product.Name,
+            brand: product.BrandName?.trim()
+              || brandNamesById.get(product.Company_Id || '')
+              || product.Company_Id
+              || 'Unknown brand',
+            scale: product.Size,
+            price: product.Price,
+            condition: conditionNamesById.get(product.Packagingtype_Id) || 'Unknown',
+            color: '#d4af37',
+            left: product.TotalStock > 0 && product.TotalStock <= 2 ? product.TotalStock : 0,
+            image: product.Image?.[0] || '',
+          }));
+
+        if (active) {
+          setProducts(availableProducts);
+          setBrands(availableBrands);
+          setConditions(availableConditions);
+        }
+      } catch (loadError) {
+        if (active) {
+          setError(loadError instanceof Error
+            ? loadError.message
+            : 'Could not load the product collection.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadShopData();
+    return () => { active = false; };
+  }, []);
+
+  const priceLimit = Math.max(0, ...products.map((product) => product.price));
+  const effectiveMaxPrice = maxPrice ?? priceLimit;
   const filteredProducts = useMemo(() => products.filter((product) =>
-    product.price <= maxPrice &&
+    product.price <= effectiveMaxPrice &&
     (!selectedBrands.length || selectedBrands.includes(product.brand)) &&
-    (!selectedScales.length || selectedScales.includes(product.scale)) &&
     (!selectedConditions.length || selectedConditions.some((condition) => condition === product.condition)),
-  ), [maxPrice, selectedBrands, selectedScales, selectedConditions]);
+  ), [products, effectiveMaxPrice, selectedBrands, selectedConditions]);
   const pageCount = Math.ceil(filteredProducts.length / PAGE_SIZE);
   const pageProducts = filteredProducts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const toggle = <T extends string>(values: T[], value: T, update: (next: T[]) => void) => {
+  const toggle = (values: string[], value: string, update: (next: string[]) => void) => {
     setCurrentPage(1);
     update(values.includes(value) ? values.filter((item) => item !== value) : [...values, value]);
   };
@@ -49,25 +119,26 @@ export default function ShopPage() {
           <aside className="col-12 col-lg-3 col-xl-2">
             <div className="shop-filters">
               <div className="filter-heading"><h2>Filters</h2><button type="button" onClick={() => {
-                setMaxPrice(5000); setSelectedBrands([]); setSelectedScales([]); setSelectedConditions([]);
+                setMaxPrice(null); setSelectedBrands([]); setSelectedConditions([]);
                 setCurrentPage(1);
               }}>Clear all</button></div>
               <section className="filter-group">
                 <h3>Price range</h3>
-                <div className="price-labels"><span>₹0</span><span>{money(maxPrice)}</span></div>
-                <input aria-label="Maximum price" type="range" min="0" max="5000" step="100" value={maxPrice} onChange={(event) => {
+                <div className="price-labels"><span>₹0</span><span>{money(effectiveMaxPrice)}</span></div>
+                <input aria-label="Maximum price" type="range" min="0" max={Math.max(priceLimit, 1)} step="100" value={effectiveMaxPrice} onChange={(event) => {
                   setMaxPrice(Number(event.target.value));
                   setCurrentPage(1);
                 }} />
               </section>
-              <FilterOptions title="Packaging condition" options={conditions} selected={selectedConditions} onToggle={(value) => toggle(selectedConditions, value as Condition, setSelectedConditions)} />
-              <FilterOptions title="Brand" options={brands} selected={selectedBrands} onToggle={(value) => toggle(selectedBrands, value, setSelectedBrands)} />
-              {/* <FilterOptions title="Scale" options={scales} selected={selectedScales} onToggle={(value) => toggle(selectedScales, value, setSelectedScales)} /> */}
+              <FilterOptions title="Packaging condition" options={conditions.map((condition) => condition.packagingName)} selected={selectedConditions} onToggle={(value) => toggle(selectedConditions, value, setSelectedConditions)} />
+              <FilterOptions title="Brand" options={brands.map((brand) => brand.brandName)} selected={selectedBrands} onToggle={(value) => toggle(selectedBrands, value, setSelectedBrands)} />
             </div>
           </aside>
           <section className="col-12 col-lg-9 col-xl-10" aria-label="Product collection">
             {/* <div className="shop-results-bar"><span>{filteredProducts.length} models</span><span>Curated for collectors</span></div> */}
-            {filteredProducts.length ? <div className="row g-3 g-xl-4">
+            {loading ? <p role="status">Loading models…</p>
+              : error ? <p role="alert">{error}</p>
+                : filteredProducts.length ? <div className="row g-3 g-xl-4">
               {pageProducts.map((product) => (
                 <div className="col-6 col-md-4 col-xl-3" key={product.id}>
                   <article className="shop-card">

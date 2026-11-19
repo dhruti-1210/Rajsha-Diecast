@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 
 import {
     CreateCart,
@@ -13,8 +14,25 @@ export const CreateCartController = async (
     req: Request,
     res: Response
 ) => {
+    const userId = req.user?.id;
+    const productId = req.body?.Product_Id;
+    const quantity = req.body?.Quantity ?? 1;
+    if (!userId) {
+        return res.status(401).json({ success: false, message: "Authentication is required." });
+    }
+    if (typeof productId !== "string" || !mongoose.Types.ObjectId.isValid(productId)) {
+        return res.status(400).json({ success: false, message: "A valid product ID is required." });
+    }
+    if (!Number.isSafeInteger(quantity) || quantity < 1) {
+        return res.status(400).json({ success: false, message: "Quantity must be a positive whole number." });
+    }
+
     try {
-        const cart = await CreateCart(req.body);
+        const cart = await CreateCart(
+            { Product_Id: new mongoose.Types.ObjectId(productId) },
+            userId,
+            quantity
+        );
 
         return res.status(201).json({
             success: true,
@@ -34,8 +52,13 @@ export const GetAllCartController = async (
     req: Request,
     res: Response
 ) => {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, message: "Authentication is required." });
+    }
+
     try {
-        const cart = await GetAllCart();
+        const cart = await GetAllCart(userId);
 
         return res.status(200).json({
             success: true,
@@ -55,8 +78,13 @@ export const GetCartByIdController = async (
     req: Request,
     res: Response
 ) => {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, message: "Authentication is required." });
+    }
+
     try {
-        const cart = await GetCartById(req.params.id);
+        const cart = await GetCartById(req.params.id, userId);
 
         if (!cart) {
             return res.status(404).json({
@@ -83,10 +111,20 @@ export const UpdateCartController = async (
     req: Request,
     res: Response
 ) => {
+    const userId = req.user?.id;
+    const quantity = req.body?.Quantity;
+    if (!userId) {
+        return res.status(401).json({ success: false, message: "Authentication is required." });
+    }
+    if (!Number.isSafeInteger(quantity) || quantity < 1) {
+        return res.status(400).json({ success: false, message: "Quantity must be a positive whole number." });
+    }
+
     try {
         const cart = await UpdateCart(
             req.params.id,
-            req.body
+            userId,
+            { Quantity: quantity }
         );
 
         if (!cart) {
@@ -114,8 +152,13 @@ export const DeleteCartController = async (
     req: Request,
     res: Response
 ) => {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, message: "Authentication is required." });
+    }
+
     try {
-        const cart = await DeleteCart(req.params.id);
+        const cart = await DeleteCart(req.params.id, userId);
 
         if (!cart) {
             return res.status(404).json({

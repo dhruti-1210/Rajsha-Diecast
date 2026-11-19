@@ -18,7 +18,6 @@ export default function ProductPage() {
   const router = useRouter();
   const { add } = useStore();
   const staticProduct = products.find((item) => String(item.id) === params.id);
-  const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [added, setAdded] = useState(false);
   const [serverProduct, setServerProduct] = useState<Product | null>(null);
@@ -59,6 +58,7 @@ export default function ProductPage() {
           color: '#d4af37',
           left: record.TotalStock > 0 && record.TotalStock <= 2 ? record.TotalStock : 0,
           image: record.Image?.[0] || '',
+          stock: record.TotalStock,
         };
         if (active) setServerProduct(serverProduct);
       } catch (error) {
@@ -145,17 +145,12 @@ export default function ProductPage() {
                 <strong>{money(product.price)}</strong>
               </div>
               <div className="purchase-row">
-              <div className="quantity-control" aria-label="Quantity">
-                <button type="button" onClick={() => setQuantity((count) => Math.max(1, count - 1))} aria-label="Decrease quantity">−</button>
-                <span>{quantity}</span>
-                <button type="button" onClick={() => setQuantity((count) => Math.min(Math.max(product.left, 1), count + 1))} aria-label="Increase quantity">+</button>
-              </div>
-                <button type="button" className="btn product-add-button" onClick={() => {
-                  for (let count = 0; count < quantity; count += 1) add(product);
+                <button type="button" className="btn product-add-button" disabled={product.stock === 0} onClick={() => {
+                  add(product);
                   setAdded(true);
-                }}>Add to cart <span>·</span> {money(product.price * quantity)}</button>
+                }}>Add to cart <span>·</span> {money(product.price)}</button>
               </div>
-              {added && <p className="added-confirmation" role="status">{quantity} {quantity === 1 ? 'model' : 'models'} added to your cart.</p>}
+              {added && <p className="added-confirmation" role="status">1 model added to your cart.</p>}
               <p className="shipping-note">Carefully packed and shipped across India.</p>
               <Link href="/shop" className="continue-shopping">Continue exploring the collection →</Link>
             </section>

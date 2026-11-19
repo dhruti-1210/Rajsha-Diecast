@@ -5,21 +5,50 @@ import CarImage from './CarImage';
 import Link from 'next/link';
 
 export default function CartDrawer() {
-  const { cart, total, remove, drawer, setDrawer } = useStore();
-  const text = encodeURIComponent(`Hi Rajsha Diecast, I want to order: ${cart.map((c) => c.name).join(', ')} Total ${money(total)}`);
+  const { cart, total, remove, setQuantity, cartError, cartLoading, drawer, setDrawer } = useStore();
+  const text = encodeURIComponent(`Hi Rajsha Diecast, I want to order: ${cart.map((item) => `${item.name} x${item.quantity}`).join(', ')} Total ${money(total)}`);
   return (
     <aside className={`drawer${drawer ? ' open' : ''}`} aria-label="Shopping cart">
       <div className="dh"><h3>Your Cart</h3><button onClick={() => setDrawer(null)} aria-label="Close">&times;</button></div>
       <div id="cartItems">
-        {cart.length === 0 ? <p>Your cart is empty.</p> : cart.map((item, k) => (
-          <div className="ci" key={`${item.id}-${k}`}>
+        {cartError && <p role="alert">{cartError}</p>}
+        {cartLoading ? <p role="status">Restoring your cart…</p>
+          : cart.length === 0 ? (!cartError && <p>Your cart is empty.</p>)
+            : cart.map((item, k) => (
+          <div className="ci" key={item.key}>
             <Link href={`/shop/${item.id}`} className="ci-image" aria-label={`View ${item.name}`} onClick={() => setDrawer(null)}><CarImage p={item} /></Link>
             <div className="ci-details">
               <Link href={`/shop/${item.id}`} onClick={() => setDrawer(null)}>{item.name}</Link>
               <small>{item.brand} · {item.scale}</small>
-              <b>{money(item.price)}</b>
+              <small>{money(item.price)} each × {item.quantity}</small>
+              {item.isSaving && <small role="status">Saving to your cart…</small>}
+              {item.isRemoving && <small role="status">Removing from your cart…</small>}
+              {item.isUpdating && <small role="status">Updating quantity…</small>}
+              <b>{money(item.price * item.quantity)}</b>
             </div>
-            <button aria-label={`Remove ${item.name} from cart`} onClick={() => remove(k)}>Remove</button>
+            <div className="cart-item-actions">
+              <div className="cart-quantity-control" aria-label={`${item.name} quantity`}>
+                <button
+                  type="button"
+                  aria-label={`Decrease ${item.name} quantity`}
+                  onClick={() => setQuantity(item.key, item.quantity - 1)}
+                  disabled={item.quantity <= 1 || item.isSaving || item.isRemoving || item.isUpdating}
+                >−</button>
+                <span aria-live="polite">{item.quantity}</span>
+                <button
+                  type="button"
+                  aria-label={`Increase ${item.name} quantity`}
+                  onClick={() => setQuantity(item.key, item.quantity + 1)}
+                  disabled={
+                    item.isSaving
+                    || item.isRemoving
+                    || item.isUpdating
+                    || (item.stock !== undefined && item.quantity >= item.stock)
+                  }
+                >+</button>
+              </div>
+              <button aria-label={`Remove ${item.name} from cart`} onClick={() => remove(k)} disabled={item.isSaving || item.isRemoving || item.isUpdating}>Remove</button>
+            </div>
           </div>
         ))}
       </div>
