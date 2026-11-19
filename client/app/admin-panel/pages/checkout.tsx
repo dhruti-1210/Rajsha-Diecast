@@ -1,10 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import AdminToast from '../common/AdminToast';
+import AdminSelect from '../common/AdminSelect';
 import { getCheckoutList, updateCheckoutStatus } from '../api/checkout';
 import type { Checkout, CheckoutStage } from '../types/checkout';
 import Header from '../common/header';
 import Icon from '../common/icon';
+import AdminDataTable from '../common/AdminDataTable';
+import type { TableColumn } from 'react-data-table-component';
 
 const checkoutStages: { value: CheckoutStage; label: string }[] = [
   { value: 'isPLACED', label: 'Placed' },
@@ -108,6 +112,38 @@ export default function CheckoutPage() {
     }
   }
 
+  const columns: TableColumn<Checkout>[] = [
+    { name: 'ORDER', selector: (checkout) => getOrderId(checkout), minWidth: '130px', wrap: true },
+    { name: 'DATE', selector: (checkout) => checkout.createdAt, format: (checkout) => formatDate(checkout.createdAt), minWidth: '100px' },
+    { name: 'TOTAL', selector: (checkout) => getOrder(checkout)?.Total ?? 0, format: (checkout) => formatTotal(getOrder(checkout)?.Total), minWidth: '110px' },
+    { name: 'PAYMENT', selector: (checkout) => getOrder(checkout)?.PaymentStatus ?? '—', minWidth: '110px', wrap: true },
+    { name: 'TRACKING', selector: (checkout) => getOrder(checkout)?.TrackingId || '—', minWidth: '120px', wrap: true },
+    {
+      name: 'FULFILLMENT',
+      minWidth: '150px',
+      cell: (checkout) => {
+        const currentStage = getCheckoutStage(checkout);
+        const updating = updatingIds.has(checkout._id);
+        return (
+          <AdminSelect
+            className="admin-checkout-status-select"
+            value={currentStage}
+            disabled={updating}
+            aria-label={`Update fulfillment status for order ${getOrderId(checkout)}`}
+            onChange={(value) => {
+              const selectedStage = checkoutStages.find((stage) => stage.value === value);
+              if (selectedStage) void changeStatus(checkout, selectedStage.value);
+            }}
+            options={[
+              { value: '', label: 'Not started' },
+              ...checkoutStages.map((stage) => ({ value: stage.value, label: stage.label })),
+            ]}
+          />
+        );
+      },
+    },
+  ];
+
   return (
     <>
       <Header
@@ -117,14 +153,7 @@ export default function CheckoutPage() {
         subtitle="Review checkout records and update order fulfillment progress."
       />
 
-      {notice && (
-        <div className={`admin-notice ${noticeIsError ? 'admin-notice-error' : ''}`} role={noticeIsError ? 'alert' : 'status'}>
-          <span>{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
-            <Icon name="close" size={16} />
-          </button>
-        </div>
-      )}
+      <AdminToast message={notice} isError={noticeIsError} />
 
       <section className="admin-inventory-card admin-reference-card">
         <div className="admin-inventory-header">
@@ -149,63 +178,13 @@ export default function CheckoutPage() {
             />
           </label>
         </div>
-        <div className="admin-table-scroll">
-          <table className="admin-table admin-reference-table">
-            <thead>
-              <tr>
-                <th>ORDER</th>
-                <th>DATE</th>
-                <th>TOTAL</th>
-                <th>PAYMENT</th>
-                <th>TRACKING</th>
-                <th>FULFILLMENT</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleItems.map((checkout) => {
-                const order = getOrder(checkout);
-                const currentStage = getCheckoutStage(checkout);
-                const updating = updatingIds.has(checkout._id);
-                return (
-                  <tr key={checkout._id}>
-                    <td><strong className="admin-reference-name">{getOrderId(checkout)}</strong></td>
-                    <td>{formatDate(checkout.createdAt)}</td>
-                    <td>{formatTotal(order?.Total)}</td>
-                    <td>{order?.PaymentStatus ?? '—'}</td>
-                    <td>{order?.TrackingId || '—'}</td>
-                    <td>
-                      <select
-                        className="admin-checkout-status-select"
-                        value={currentStage}
-                        disabled={updating}
-                        aria-label={`Update fulfillment status for order ${getOrderId(checkout)}`}
-                        onChange={(event) => {
-                          const selectedStage = checkoutStages.find((stage) => stage.value === event.target.value);
-                          if (selectedStage) void changeStatus(checkout, selectedStage.value);
-                        }}
-                      >
-                        <option value="">Not started</option>
-                        {checkoutStages.map((stage) => (
-                          <option key={stage.value} value={stage.value}>{stage.label}</option>
-                        ))}
-                      </select>
-                    </td>
-                  </tr>
-                );
-              })}
-              {visibleItems.length === 0 && !loading && (
-                <tr>
-                  <td className="admin-reference-empty" colSpan={6}>
-                    {items.length ? 'No checkout orders match your search.' : 'No checkout orders found.'}
-                  </td>
-                </tr>
-              )}
-              {loading && (
-                <tr><td className="admin-reference-empty" colSpan={6}>Loading checkout orders…</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminDataTable
+          columns={columns}
+          data={visibleItems}
+          keyField="_id"
+          loading={loading}
+          emptyMessage={items.length ? 'No checkout orders match your search.' : 'No checkout orders found.'}
+        />
       </section>
     </>
   );

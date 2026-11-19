@@ -1,10 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
+import AdminToast from '../common/AdminToast';
 import type { CollectionReference, ProductApiResponse } from '../api/ProductApi';
 import api from '../api/axios';
 import Header from '../common/header';
 import Icon from '../common/icon';
+import AdminDataTable from '../common/AdminDataTable';
+import type { TableColumn } from 'react-data-table-component';
 
 type CollectionType = CollectionReference & {
   isDisplay: boolean;
@@ -34,10 +38,16 @@ export default function CollectionTypesPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<CollectionType | null>(null);
 
   async function loadCollectionTypes() {
-    const response = await api.get<ProductApiResponse<CollectionType[]>>('/collection-types/list');
-    setItems(response.data.data);
+    setLoading(true);
+    try {
+      const response = await api.get<ProductApiResponse<CollectionType[]>>('/collection-types/list');
+      setItems(response.data.data);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -64,6 +74,42 @@ export default function CollectionTypesPage() {
     const normalizedQuery = query.trim().toLowerCase();
     return items.filter((item) => item.collectionName.toLowerCase().includes(normalizedQuery));
   }, [items, query]);
+  const columns: TableColumn<CollectionType>[] = [
+    { name: 'NAME', selector: (item) => item.collectionName, grow: 2, wrap: true },
+    {
+      name: 'STOREFRONT',
+      minWidth: '120px',
+      cell: (item) => (
+        <span className={`admin-reference-status ${item.isDisplay ? 'is-active' : 'is-inactive'}`}>
+          {item.isDisplay ? 'Displayed' : 'Hidden'}
+        </span>
+      ),
+    },
+    {
+      name: 'STATUS',
+      minWidth: '100px',
+      cell: (item) => (
+        <span className={`admin-reference-status ${item.isActive ? 'is-active' : 'is-inactive'}`}>
+          {item.isActive ? 'Active' : 'Inactive'}
+        </span>
+      ),
+    },
+    {
+      name: 'ACTIONS',
+      width: '110px',
+      right: true,
+      cell: (item) => (
+        <div className="admin-row-actions">
+          <button type="button" onClick={() => openEdit(item)} aria-label={`Edit ${item.collectionName}`} title="Edit collection type">
+            <Icon name="edit" size={16} />
+          </button>
+          <button type="button" onClick={() => setDeleteTarget(item)} aria-label={`Delete ${item.collectionName}`} title="Delete collection type">
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   function openCreate() {
     setEditingId(null);
@@ -128,7 +174,6 @@ export default function CollectionTypesPage() {
   }
 
   async function deleteCollectionType(item: CollectionType) {
-    if (!window.confirm(`Remove "${item.collectionName}" from collection types?`)) return;
     try {
       await api.delete<ProductApiResponse<CollectionType>>(
         `/collection-types/delete/${encodeURIComponent(item._id)}`,
@@ -157,20 +202,20 @@ export default function CollectionTypesPage() {
         title="Collection"
         highlight="types"
         subtitle="Manage the collection types available in your catalog."
-        action={(
-          <button type="button" className="admin-primary-button" onClick={openCreate}>
-            <Icon name="plus" size={17} /> Add collection type
-          </button>
-        )}
       />
 
-      {notice && (
-        <div className={`admin-notice ${noticeIsError ? 'admin-notice-error' : ''}`} role="status">
-          <span>{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
-            <Icon name="close" size={16} />
-          </button>
-        </div>
+      <AdminToast message={notice} isError={noticeIsError} />
+      {deleteTarget && (
+        <AdminDeleteConfirm
+          itemName={deleteTarget.collectionName}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            const target = deleteTarget;
+            if (!target) return;
+            setDeleteTarget(null);
+            void deleteCollectionType(target);
+          }}
+        />
       )}
 
       <section className="admin-inventory-card admin-reference-card">
@@ -179,7 +224,9 @@ export default function CollectionTypesPage() {
             <h2>Collection types</h2>
             <p>Manage names, availability, and storefront visibility.</p>
           </div>
-          <span className="admin-inventory-count">{items.length} total</span>
+          <button type="button" className="admin-primary-button" onClick={openCreate}>
+            <Icon name="plus" size={17} /> Add collection type
+          </button>
         </div>
         <div className="admin-toolbar">
           <span className="admin-reference-summary">
@@ -196,55 +243,13 @@ export default function CollectionTypesPage() {
             />
           </label>
         </div>
-        <div className="admin-table-scroll">
-          <table className="admin-table admin-reference-table">
-            <thead>
-              <tr>
-                <th>NAME</th>
-                <th>STOREFRONT</th>
-                <th>STATUS</th>
-                <th><span className="admin-visually-hidden">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleItems.map((item) => (
-                <tr key={item._id}>
-                  <td><strong className="admin-reference-name">{item.collectionName}</strong></td>
-                  <td>
-                    <span className={`admin-reference-status ${item.isDisplay ? 'is-active' : 'is-inactive'}`}>
-                      {item.isDisplay ? 'Displayed' : 'Hidden'}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`admin-reference-status ${item.isActive ? 'is-active' : 'is-inactive'}`}>
-                      {item.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="admin-row-actions">
-                      <button type="button" onClick={() => openEdit(item)} aria-label={`Edit ${item.collectionName}`} title="Edit collection type">
-                        <Icon name="edit" size={16} />
-                      </button>
-                      <button type="button" onClick={() => void deleteCollectionType(item)} aria-label={`Delete ${item.collectionName}`} title="Delete collection type">
-                        <Icon name="trash" size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {visibleItems.length === 0 && !loading && (
-                <tr>
-                  <td className="admin-reference-empty" colSpan={4}>
-                    {items.length ? 'No collection types match your search.' : 'No collection types yet. Add one to get started.'}
-                  </td>
-                </tr>
-              )}
-              {loading && (
-                <tr><td className="admin-reference-empty" colSpan={4}>Loading collection types…</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminDataTable
+          columns={columns}
+          data={visibleItems}
+          keyField="_id"
+          loading={loading}
+          emptyMessage={items.length ? 'No collection types match your search.' : 'No collection types yet. Add one to get started.'}
+        />
       </section>
 
       {modalOpen && (

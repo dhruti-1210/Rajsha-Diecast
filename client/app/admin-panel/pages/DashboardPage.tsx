@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import AdminToast from '../common/AdminToast';
 import { products as storeProducts } from '@/data/products';
 import Icon from '../common/icon';
 import Header from '../common/header';
@@ -59,14 +60,7 @@ export default function DashboardPage() {
         subtitle="A clear view of your products and stock levels."
       />
 
-      {notice && (
-        <div className={`admin-notice ${noticeIsError ? 'admin-notice-error' : ''}`} role="status">
-          <span>{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
-            <Icon name="close" size={16} />
-          </button>
-        </div>
-      )}
+      <AdminToast message={notice} isError={noticeIsError} />
 
       <section className="admin-stats" aria-label="Inventory summary">
         <article className="admin-stat-card">

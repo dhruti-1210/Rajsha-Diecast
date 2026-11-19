@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
+import AdminToast from '../common/AdminToast';
 import {
   changeReviewMasterDisplayStatus,
   changeReviewMasterStatus,
@@ -11,6 +13,8 @@ import {
 import type { ReviewMaster } from '../types/ReviewMaster';
 import Header from '../common/header';
 import Icon from '../common/icon';
+import AdminDataTable from '../common/AdminDataTable';
+import type { TableColumn } from 'react-data-table-component';
 
 type ReviewDraft = {
   name: string;
@@ -29,10 +33,16 @@ export default function ReviewMasterPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ReviewMaster | null>(null);
 
   async function loadReviews() {
-    const response = await getReviewMasterList();
-    setItems(response.data.filter((review) => !review.isDeleted));
+    setLoading(true);
+    try {
+      const response = await getReviewMasterList();
+      setItems(response.data.filter((review) => !review.isDeleted));
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -115,7 +125,6 @@ export default function ReviewMasterPage() {
   }
 
   async function removeReview(review: ReviewMaster) {
-    if (!window.confirm(`Remove the review from ${review.name}?`)) return;
     try {
       await deleteReviewMaster(review._id, 'admin');
       setItems((current) => current.filter((item) => item._id !== review._id));
@@ -127,6 +136,59 @@ export default function ReviewMasterPage() {
     }
   }
 
+  const columns: TableColumn<ReviewMaster>[] = [
+    { name: 'CUSTOMER', selector: (review) => review.name, minWidth: '130px', wrap: true },
+    {
+      name: 'REVIEW',
+      minWidth: '220px',
+      grow: 2,
+      cell: (review) => <span className="admin-review-message" title={review.message}>{review.message}</span>,
+    },
+    {
+      name: 'STOREFRONT',
+      minWidth: '120px',
+      cell: (review) => (
+        <button
+          type="button"
+          className={`admin-reference-status ${review.isDisplay ? 'is-active' : 'is-inactive'}`}
+          onClick={() => void toggleReviewStatus(review, true)}
+          aria-label={`${review.isDisplay ? 'Hide' : 'Display'} review by ${review.name}`}
+        >
+          {review.isDisplay ? 'Displayed' : 'Hidden'}
+        </button>
+      ),
+    },
+    {
+      name: 'STATUS',
+      minWidth: '100px',
+      cell: (review) => (
+        <button
+          type="button"
+          className={`admin-reference-status ${review.isActive ? 'is-active' : 'is-inactive'}`}
+          onClick={() => void toggleReviewStatus(review, false)}
+          aria-label={`${review.isActive ? 'Deactivate' : 'Activate'} review by ${review.name}`}
+        >
+          {review.isActive ? 'Active' : 'Inactive'}
+        </button>
+      ),
+    },
+    {
+      name: 'ACTIONS',
+      width: '110px',
+      right: true,
+      cell: (review) => (
+        <div className="admin-row-actions">
+          <button type="button" onClick={() => openEdit(review)} aria-label={`Edit review by ${review.name}`} title="Edit review">
+            <Icon name="edit" size={16} />
+          </button>
+          <button type="button" onClick={() => setDeleteTarget(review)} aria-label={`Delete review by ${review.name}`} title="Delete review">
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
       <Header
@@ -136,13 +198,18 @@ export default function ReviewMasterPage() {
         subtitle="Moderate customer reviews and manage their storefront visibility."
       />
 
-      {notice && (
-        <div className={`admin-notice ${noticeIsError ? 'admin-notice-error' : ''}`} role={noticeIsError ? 'alert' : 'status'}>
-          <span>{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
-            <Icon name="close" size={16} />
-          </button>
-        </div>
+      <AdminToast message={notice} isError={noticeIsError} />
+      {deleteTarget && (
+        <AdminDeleteConfirm
+          itemName={`review by ${deleteTarget.name}`}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            const target = deleteTarget;
+            if (!target) return;
+            setDeleteTarget(null);
+            void removeReview(target);
+          }}
+        />
       )}
 
       <section className="admin-inventory-card admin-reference-card">
@@ -168,67 +235,13 @@ export default function ReviewMasterPage() {
             />
           </label>
         </div>
-        <div className="admin-table-scroll">
-          <table className="admin-table admin-reference-table">
-            <thead>
-              <tr>
-                <th>CUSTOMER</th>
-                <th>REVIEW</th>
-                <th>STOREFRONT</th>
-                <th>STATUS</th>
-                <th><span className="admin-visually-hidden">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleItems.map((review) => (
-                <tr key={review._id}>
-                  <td><strong className="admin-reference-name">{review.name}</strong></td>
-                  <td className="admin-review-message" title={review.message}>{review.message}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className={`admin-reference-status ${review.isDisplay ? 'is-active' : 'is-inactive'}`}
-                      onClick={() => void toggleReviewStatus(review, true)}
-                      aria-label={`${review.isDisplay ? 'Hide' : 'Display'} review by ${review.name}`}
-                    >
-                      {review.isDisplay ? 'Displayed' : 'Hidden'}
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className={`admin-reference-status ${review.isActive ? 'is-active' : 'is-inactive'}`}
-                      onClick={() => void toggleReviewStatus(review, false)}
-                      aria-label={`${review.isActive ? 'Deactivate' : 'Activate'} review by ${review.name}`}
-                    >
-                      {review.isActive ? 'Active' : 'Inactive'}
-                    </button>
-                  </td>
-                  <td>
-                    <div className="admin-row-actions">
-                      <button type="button" onClick={() => openEdit(review)} aria-label={`Edit review by ${review.name}`} title="Edit review">
-                        <Icon name="edit" size={16} />
-                      </button>
-                      <button type="button" onClick={() => void removeReview(review)} aria-label={`Delete review by ${review.name}`} title="Delete review">
-                        <Icon name="trash" size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {visibleItems.length === 0 && !loading && (
-                <tr>
-                  <td className="admin-reference-empty" colSpan={5}>
-                    {items.length ? 'No reviews match your search.' : 'No reviews found.'}
-                  </td>
-                </tr>
-              )}
-              {loading && (
-                <tr><td className="admin-reference-empty" colSpan={5}>Loading reviews…</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminDataTable
+          columns={columns}
+          data={visibleItems}
+          keyField="_id"
+          loading={loading}
+          emptyMessage={items.length ? 'No reviews match your search.' : 'No reviews found.'}
+        />
       </section>
 
       {modalOpen && (

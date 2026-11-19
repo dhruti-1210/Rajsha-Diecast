@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
+import AdminToast from '../common/AdminToast';
 import {
   changeCmsDisplayStatus,
   changeCmsStatus,
@@ -12,6 +14,8 @@ import {
 import type { Cms, CmsInput } from '../types/cms';
 import Header from '../common/header';
 import Icon from '../common/icon';
+import AdminDataTable from '../common/AdminDataTable';
+import type { TableColumn } from 'react-data-table-component';
 
 type CmsDraft = {
   Name: string;
@@ -37,10 +41,16 @@ export default function CmsPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Cms | null>(null);
 
   async function loadCms() {
-    const response = await getCmsList();
-    setItems(response.data.filter((item) => !item.isDeleted));
+    setLoading(true);
+    try {
+      const response = await getCmsList();
+      setItems(response.data.filter((item) => !item.isDeleted));
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -147,7 +157,6 @@ export default function CmsPage() {
   }
 
   async function removeCms(item: Cms) {
-    if (!window.confirm(`Remove "${item.Name}"?`)) return;
     try {
       await deleteCms(item._id, 'admin');
       setItems((current) => current.filter((cms) => cms._id !== item._id));
@@ -159,6 +168,54 @@ export default function CmsPage() {
     }
   }
 
+  const columns: TableColumn<Cms>[] = [
+    { name: 'NAME', selector: (item) => item.Name, grow: 1.2, wrap: true },
+    { name: 'DESCRIPTION', selector: (item) => item.Description || '—', grow: 2, wrap: true },
+    {
+      name: 'STOREFRONT',
+      minWidth: '120px',
+      cell: (item) => (
+        <button
+          type="button"
+          className={`admin-reference-status ${item.isDisplay ? 'is-active' : 'is-inactive'}`}
+          onClick={() => void toggleCmsStatus(item, true)}
+          aria-label={`${item.isDisplay ? 'Hide' : 'Display'} ${item.Name} on storefront`}
+        >
+          {item.isDisplay ? 'Displayed' : 'Hidden'}
+        </button>
+      ),
+    },
+    {
+      name: 'STATUS',
+      minWidth: '100px',
+      cell: (item) => (
+        <button
+          type="button"
+          className={`admin-reference-status ${item.isActive ? 'is-active' : 'is-inactive'}`}
+          onClick={() => void toggleCmsStatus(item, false)}
+          aria-label={`${item.isActive ? 'Deactivate' : 'Activate'} ${item.Name}`}
+        >
+          {item.isActive ? 'Active' : 'Inactive'}
+        </button>
+      ),
+    },
+    {
+      name: 'ACTIONS',
+      width: '110px',
+      right: true,
+      cell: (item) => (
+        <div className="admin-row-actions">
+          <button type="button" onClick={() => openEdit(item)} aria-label={`Edit ${item.Name}`} title="Edit CMS content">
+            <Icon name="edit" size={16} />
+          </button>
+          <button type="button" onClick={() => setDeleteTarget(item)} aria-label={`Delete ${item.Name}`} title="Delete CMS content">
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
       <Header
@@ -166,20 +223,20 @@ export default function CmsPage() {
         title="CMS"
         highlight="pages"
         subtitle="Manage content entries and control their storefront visibility."
-        action={(
-          <button type="button" className="admin-primary-button" onClick={openCreate}>
-            <Icon name="plus" size={17} /> Add content
-          </button>
-        )}
       />
 
-      {notice && (
-        <div className={`admin-notice ${noticeIsError ? 'admin-notice-error' : ''}`} role={noticeIsError ? 'alert' : 'status'}>
-          <span>{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
-            <Icon name="close" size={16} />
-          </button>
-        </div>
+      <AdminToast message={notice} isError={noticeIsError} />
+      {deleteTarget && (
+        <AdminDeleteConfirm
+          itemName={deleteTarget.Name}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            const target = deleteTarget;
+            if (!target) return;
+            setDeleteTarget(null);
+            void removeCms(target);
+          }}
+        />
       )}
 
       <section className="admin-inventory-card admin-reference-card">
@@ -188,7 +245,9 @@ export default function CmsPage() {
             <h2>CMS content</h2>
             <p>Manage content titles, descriptions, status, and visibility.</p>
           </div>
-          <span className="admin-inventory-count">{items.length} total</span>
+          <button type="button" className="admin-primary-button" onClick={openCreate}>
+            <Icon name="plus" size={17} /> Add content
+          </button>
         </div>
         <div className="admin-toolbar">
           <span className="admin-reference-summary">
@@ -205,67 +264,13 @@ export default function CmsPage() {
             />
           </label>
         </div>
-        <div className="admin-table-scroll">
-          <table className="admin-table admin-reference-table">
-            <thead>
-              <tr>
-                <th>NAME</th>
-                <th>DESCRIPTION</th>
-                <th>STOREFRONT</th>
-                <th>STATUS</th>
-                <th><span className="admin-visually-hidden">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleItems.map((item) => (
-                <tr key={item._id}>
-                  <td><strong className="admin-reference-name">{item.Name}</strong></td>
-                  <td className="admin-cms-description">{item.Description || '—'}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className={`admin-reference-status ${item.isDisplay ? 'is-active' : 'is-inactive'}`}
-                      onClick={() => void toggleCmsStatus(item, true)}
-                      aria-label={`${item.isDisplay ? 'Hide' : 'Display'} ${item.Name} on storefront`}
-                    >
-                      {item.isDisplay ? 'Displayed' : 'Hidden'}
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className={`admin-reference-status ${item.isActive ? 'is-active' : 'is-inactive'}`}
-                      onClick={() => void toggleCmsStatus(item, false)}
-                      aria-label={`${item.isActive ? 'Deactivate' : 'Activate'} ${item.Name}`}
-                    >
-                      {item.isActive ? 'Active' : 'Inactive'}
-                    </button>
-                  </td>
-                  <td>
-                    <div className="admin-row-actions">
-                      <button type="button" onClick={() => openEdit(item)} aria-label={`Edit ${item.Name}`} title="Edit CMS content">
-                        <Icon name="edit" size={16} />
-                      </button>
-                      <button type="button" onClick={() => void removeCms(item)} aria-label={`Delete ${item.Name}`} title="Delete CMS content">
-                        <Icon name="trash" size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {visibleItems.length === 0 && !loading && (
-                <tr>
-                  <td className="admin-reference-empty" colSpan={5}>
-                    {items.length ? 'No CMS entries match your search.' : 'No CMS entries yet. Add one to get started.'}
-                  </td>
-                </tr>
-              )}
-              {loading && (
-                <tr><td className="admin-reference-empty" colSpan={5}>Loading CMS content…</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminDataTable
+          columns={columns}
+          data={visibleItems}
+          keyField="_id"
+          loading={loading}
+          emptyMessage={items.length ? 'No CMS entries match your search.' : 'No CMS entries yet. Add one to get started.'}
+        />
       </section>
 
       {modalOpen && (

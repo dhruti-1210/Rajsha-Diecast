@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
+import AdminToast from '../common/AdminToast';
 import {
   changeBrandMasterStatus,
   createBrandMaster,
@@ -11,6 +13,12 @@ import {
 import type { BrandMaster, BrandMasterInput } from '../types/brandMaster';
 import Header from '../common/header';
 import Icon from '../common/icon';
+import AdminDataTable from '../common/AdminDataTable';
+import type { TableColumn } from 'react-data-table-component';
+import { readImageAsDataUrl } from '../utils/images';
+
+const MAX_BRAND_LOGO_FILE_SIZE = 5 * 1024 * 1024;
+
 type BrandMasterDraft = {
   brandName: string;
   modelCount: string;
@@ -35,10 +43,17 @@ export default function BrandMasterPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<BrandMaster | null>(null);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
 
   async function loadBrands() {
-    const response = await getBrandMasterList();
-    setItems(response.data.filter((brand) => !brand.isDeleted));
+    setLoading(true);
+    try {
+      const response = await getBrandMasterList();
+      setItems(response.data.filter((brand) => !brand.isDeleted));
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -152,7 +167,6 @@ export default function BrandMasterPage() {
   }
 
   async function removeBrand(brand: BrandMaster) {
-    if (!window.confirm(`Remove "${brand.brandName}"?`)) return;
     try {
       await deleteBrandMaster(brand._id, 'admin');
       setItems((current) => current.filter((item) => item._id !== brand._id));
@@ -164,27 +178,74 @@ export default function BrandMasterPage() {
     }
   }
 
+  const columns: TableColumn<BrandMaster>[] = [
+    {
+      name: 'LOGO',
+      width: '76px',
+      cell: (brand) => (
+        <span className="admin-brand-logo" aria-label={`${brand.brandName} logo`}>
+          {brand.brandName.charAt(0).toUpperCase()}
+        </span>
+      ),
+    },
+    { name: 'BRAND', selector: (brand) => brand.brandName, grow: 1.5, wrap: true },
+    { name: 'MODELS', selector: (brand) => brand.modelCount, minWidth: '90px' },
+    { name: 'SCALE SIZE', selector: (brand) => brand.scaleSize, minWidth: '100px', wrap: true },
+    {
+      name: 'STATUS',
+      minWidth: '100px',
+      cell: (brand) => (
+        <span className={`admin-reference-status ${brand.isActive ? 'is-active' : 'is-inactive'}`}>
+          {brand.isActive ? 'Active' : 'Inactive'}
+        </span>
+      ),
+    },
+    {
+      name: 'ACTIONS',
+      width: '150px',
+      right: true,
+      cell: (brand) => (
+        <div className="admin-row-actions">
+          <button
+            type="button"
+            onClick={() => void toggleBrandStatus(brand)}
+            aria-label={`${brand.isActive ? 'Deactivate' : 'Activate'} ${brand.brandName}`}
+            title={brand.isActive ? 'Deactivate brand' : 'Activate brand'}
+          >
+            <Icon name="box" size={16} />
+          </button>
+          <button type="button" onClick={() => openEdit(brand)} aria-label={`Edit ${brand.brandName}`} title="Edit brand">
+            <Icon name="edit" size={16} />
+          </button>
+          <button type="button" onClick={() => setDeleteTarget(brand)} aria-label={`Delete ${brand.brandName}`} title="Delete brand">
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
       <Header
         eyebrow="CATALOG MANAGEMENT"
         title="Brand"
         highlight="master"
-        subtitle="Manage brands, model counts, and scale sizes."
-        action={(
-          <button type="button" className="admin-primary-button" onClick={openCreate}>
-            <Icon name="plus" size={17} /> Add brand
-          </button>
-        )}
+        subtitle="Manage brands, their logos, model counts, and scale sizes."
       />
 
-      {notice && (
-        <div className={`admin-notice ${noticeIsError ? 'admin-notice-error' : ''}`} role={noticeIsError ? 'alert' : 'status'}>
-          <span>{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
-            <Icon name="close" size={16} />
-          </button>
-        </div>
+      <AdminToast message={notice} isError={noticeIsError} />
+      {deleteTarget && (
+        <AdminDeleteConfirm
+          itemName={deleteTarget.brandName}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            const target = deleteTarget;
+            if (!target) return;
+            setDeleteTarget(null);
+            void removeBrand(target);
+          }}
+        />
       )}
 
       <section className="admin-inventory-card admin-reference-card">
@@ -193,7 +254,9 @@ export default function BrandMasterPage() {
             <h2>Brands</h2>
             <p>Maintain the brand data used throughout your catalog.</p>
           </div>
-          <span className="admin-inventory-count">{items.length} total</span>
+          <button type="button" className="admin-primary-button" onClick={openCreate}>
+            <Icon name="plus" size={17} /> Add brand
+          </button>
         </div>
         <div className="admin-toolbar">
           <span className="admin-reference-summary">
@@ -210,61 +273,13 @@ export default function BrandMasterPage() {
             />
           </label>
         </div>
-        <div className="admin-table-scroll">
-          <table className="admin-table admin-reference-table">
-            <thead>
-              <tr>
-                <th>BRAND</th>
-                <th>MODELS</th>
-                <th>SCALE SIZE</th>
-                <th>STATUS</th>
-                <th><span className="admin-visually-hidden">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleItems.map((brand) => (
-                <tr key={brand._id}>
-                  <td><strong className="admin-reference-name">{brand.brandName}</strong></td>
-                  <td>{brand.modelCount}</td>
-                  <td>{brand.scaleSize}</td>
-                  <td>
-                    <span className={`admin-reference-status ${brand.isActive ? 'is-active' : 'is-inactive'}`}>
-                      {brand.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="admin-row-actions">
-                      <button
-                        type="button"
-                        onClick={() => void toggleBrandStatus(brand)}
-                        aria-label={`${brand.isActive ? 'Deactivate' : 'Activate'} ${brand.brandName}`}
-                        title={brand.isActive ? 'Deactivate brand' : 'Activate brand'}
-                      >
-                        <Icon name="box" size={16} />
-                      </button>
-                      <button type="button" onClick={() => openEdit(brand)} aria-label={`Edit ${brand.brandName}`} title="Edit brand">
-                        <Icon name="edit" size={16} />
-                      </button>
-                      <button type="button" onClick={() => void removeBrand(brand)} aria-label={`Delete ${brand.brandName}`} title="Delete brand">
-                        <Icon name="trash" size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {visibleItems.length === 0 && !loading && (
-                <tr>
-                  <td className="admin-reference-empty" colSpan={5}>
-                    {items.length ? 'No brands match your search.' : 'No brands yet. Add one to get started.'}
-                  </td>
-                </tr>
-              )}
-              {loading && (
-                <tr><td className="admin-reference-empty" colSpan={5}>Loading brands…</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminDataTable
+          columns={columns}
+          data={visibleItems}
+          keyField="_id"
+          loading={loading}
+          emptyMessage={items.length ? 'No brands match your search.' : 'No brands yet. Add one to get started.'}
+        />
       </section>
 
       {modalOpen && (

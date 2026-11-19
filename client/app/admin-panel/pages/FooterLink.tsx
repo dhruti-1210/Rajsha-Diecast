@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
+import AdminSelect from '../common/AdminSelect';
+import AdminToast from '../common/AdminToast';
 import {
   changeFooterLinkDisplayStatus,
   changeFooterLinkStatus,
@@ -14,6 +17,8 @@ import type { FooterLink, FooterLinkInput } from '../types/FooterLink';
 import type { FooterLinkGroup } from '../types/FooterLinkGroup';
 import Header from '../common/header';
 import Icon from '../common/icon';
+import AdminDataTable from '../common/AdminDataTable';
+import type { TableColumn } from 'react-data-table-component';
 
 type FooterLinkDraft = {
   FooterLinkGroupId: string;
@@ -54,14 +59,20 @@ export default function FooterLinkPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<FooterLink | null>(null);
 
   async function loadData() {
-    const [linksResponse, groupsResponse] = await Promise.all([
-      getFooterLinkList(),
-      getFooterLinkGroupList(),
-    ]);
-    setItems(linksResponse.data.filter((link) => !link.isDeleted));
-    setGroups(groupsResponse.data.filter((group) => !group.isDeleted));
+    setLoading(true);
+    try {
+      const [linksResponse, groupsResponse] = await Promise.all([
+        getFooterLinkList(),
+        getFooterLinkGroupList(),
+      ]);
+      setItems(linksResponse.data.filter((link) => !link.isDeleted));
+      setGroups(groupsResponse.data.filter((group) => !group.isDeleted));
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -179,7 +190,6 @@ export default function FooterLinkPage() {
   }
 
   async function removeFooterLink(link: FooterLink) {
-    if (!window.confirm(`Remove "${link.FooterLinkName}"?`)) return;
     try {
       await deleteFooterLink(link._id);
       setItems((current) => current.filter((item) => item._id !== link._id));
@@ -191,6 +201,65 @@ export default function FooterLinkPage() {
     }
   }
 
+  const columns: TableColumn<FooterLink>[] = [
+    { name: 'LINK NAME', selector: (link) => link.FooterLinkName, minWidth: '130px', wrap: true },
+    {
+      name: 'URL',
+      minWidth: '180px',
+      grow: 1.5,
+      cell: (link) => <span className="admin-footer-link-url" title={link.FooterLinkUrl}>{link.FooterLinkUrl}</span>,
+    },
+    {
+      name: 'GROUP',
+      minWidth: '120px',
+      selector: (link) => getGroupName(link.FooterLinkGroupId, groups),
+      wrap: true,
+    },
+    {
+      name: 'STOREFRONT',
+      minWidth: '120px',
+      cell: (link) => (
+        <button
+          type="button"
+          className={`admin-reference-status ${link.isDisplay ? 'is-active' : 'is-inactive'}`}
+          onClick={() => void toggleFooterLink(link, true)}
+          aria-label={`${link.isDisplay ? 'Hide' : 'Display'} ${link.FooterLinkName} on storefront`}
+        >
+          {link.isDisplay ? 'Displayed' : 'Hidden'}
+        </button>
+      ),
+    },
+    {
+      name: 'STATUS',
+      minWidth: '100px',
+      cell: (link) => (
+        <button
+          type="button"
+          className={`admin-reference-status ${link.isActive ? 'is-active' : 'is-inactive'}`}
+          onClick={() => void toggleFooterLink(link, false)}
+          aria-label={`${link.isActive ? 'Deactivate' : 'Activate'} ${link.FooterLinkName}`}
+        >
+          {link.isActive ? 'Active' : 'Inactive'}
+        </button>
+      ),
+    },
+    {
+      name: 'ACTIONS',
+      width: '110px',
+      right: true,
+      cell: (link) => (
+        <div className="admin-row-actions">
+          <button type="button" onClick={() => openEdit(link)} aria-label={`Edit ${link.FooterLinkName}`} title="Edit footer link">
+            <Icon name="edit" size={16} />
+          </button>
+          <button type="button" onClick={() => setDeleteTarget(link)} aria-label={`Delete ${link.FooterLinkName}`} title="Delete footer link">
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
       <Header
@@ -198,24 +267,20 @@ export default function FooterLinkPage() {
         title="Footer"
         highlight="links"
         subtitle="Manage links and organize them into footer groups."
-        action={(
-          <button
-            type="button"
-            className="admin-primary-button"
-            onClick={openCreate}
-          >
-            <Icon name="plus" size={17} /> Add footer link
-          </button>
-        )}
       />
 
-      {notice && (
-        <div className={`admin-notice ${noticeIsError ? 'admin-notice-error' : ''}`} role={noticeIsError ? 'alert' : 'status'}>
-          <span>{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
-            <Icon name="close" size={16} />
-          </button>
-        </div>
+      <AdminToast message={notice} isError={noticeIsError} />
+      {deleteTarget && (
+        <AdminDeleteConfirm
+          itemName={deleteTarget.FooterLinkName}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            const target = deleteTarget;
+            if (!target) return;
+            setDeleteTarget(null);
+            void removeFooterLink(target);
+          }}
+        />
       )}
 
       <section className="admin-inventory-card admin-reference-card">
@@ -224,7 +289,9 @@ export default function FooterLinkPage() {
             <h2>Footer links</h2>
             <p>Each footer link belongs to a group.</p>
           </div>
-          <span className="admin-inventory-count">{items.length} total</span>
+          <button type="button" className="admin-primary-button" onClick={openCreate}>
+            <Icon name="plus" size={17} /> Add footer link
+          </button>
         </div>
         <div className="admin-toolbar">
           <span className="admin-reference-summary">
@@ -241,69 +308,13 @@ export default function FooterLinkPage() {
             />
           </label>
         </div>
-        <div className="admin-table-scroll">
-          <table className="admin-table admin-reference-table">
-            <thead>
-              <tr>
-                <th>LINK NAME</th>
-                <th>URL</th>
-                <th>GROUP</th>
-                <th>STOREFRONT</th>
-                <th>STATUS</th>
-                <th><span className="admin-visually-hidden">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleItems.map((link) => (
-                <tr key={link._id}>
-                  <td><strong className="admin-reference-name">{link.FooterLinkName}</strong></td>
-                  <td className="admin-footer-link-url" title={link.FooterLinkUrl}>{link.FooterLinkUrl}</td>
-                  <td>{getGroupName(link.FooterLinkGroupId, groups)}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className={`admin-reference-status ${link.isDisplay ? 'is-active' : 'is-inactive'}`}
-                      onClick={() => void toggleFooterLink(link, true)}
-                      aria-label={`${link.isDisplay ? 'Hide' : 'Display'} ${link.FooterLinkName} on storefront`}
-                    >
-                      {link.isDisplay ? 'Displayed' : 'Hidden'}
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className={`admin-reference-status ${link.isActive ? 'is-active' : 'is-inactive'}`}
-                      onClick={() => void toggleFooterLink(link, false)}
-                      aria-label={`${link.isActive ? 'Deactivate' : 'Activate'} ${link.FooterLinkName}`}
-                    >
-                      {link.isActive ? 'Active' : 'Inactive'}
-                    </button>
-                  </td>
-                  <td>
-                    <div className="admin-row-actions">
-                      <button type="button" onClick={() => openEdit(link)} aria-label={`Edit ${link.FooterLinkName}`} title="Edit footer link">
-                        <Icon name="edit" size={16} />
-                      </button>
-                      <button type="button" onClick={() => void removeFooterLink(link)} aria-label={`Delete ${link.FooterLinkName}`} title="Delete footer link">
-                        <Icon name="trash" size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {visibleItems.length === 0 && !loading && (
-                <tr>
-                  <td className="admin-reference-empty" colSpan={6}>
-                    {items.length ? 'No footer links match your search.' : 'No footer links yet. Add one to get started.'}
-                  </td>
-                </tr>
-              )}
-              {loading && (
-                <tr><td className="admin-reference-empty" colSpan={6}>Loading footer links…</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminDataTable
+          columns={columns}
+          data={visibleItems}
+          keyField="_id"
+          loading={loading}
+          emptyMessage={items.length ? 'No footer links match your search.' : 'No footer links yet. Add one to get started.'}
+        />
       </section>
 
       {modalOpen && (
@@ -329,18 +340,16 @@ export default function FooterLinkPage() {
             <div className="admin-form-grid">
               <label className="admin-form-field admin-form-wide">
                 <span>Footer link group</span>
-                <select
+                <AdminSelect
                   required
                   value={draft.FooterLinkGroupId}
-                  onChange={(event) => setDraft((current) => ({ ...current, FooterLinkGroupId: event.target.value }))}
-                >
-                  <option value="">Select a group</option>
-                  {groups.map((group) => (
-                    <option key={group._id} value={group._id}>
-                      {group.FooterLinkGroupName}{group.isActive ? '' : ' (Inactive)'}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select a group"
+                  onChange={(value) => setDraft((current) => ({ ...current, FooterLinkGroupId: value }))}
+                  options={groups.map((group) => ({
+                    value: group._id,
+                    label: `${group.FooterLinkGroupName}${group.isActive ? '' : ' (Inactive)'}`,
+                  }))}
+                />
               </label>
               <label className="admin-form-field admin-form-wide">
                 <span>Link name</span>

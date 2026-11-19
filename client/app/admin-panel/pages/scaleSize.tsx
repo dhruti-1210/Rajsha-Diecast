@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
+import AdminToast from '../common/AdminToast';
 import {
   changeScaleSizeStatus,
   createScaleSize,
@@ -11,6 +13,8 @@ import {
 import type { ScaleSize, ScaleSizeInput } from '../types/ScaleSize';
 import Header from '../common/header';
 import Icon from '../common/icon';
+import AdminDataTable from '../common/AdminDataTable';
+import type { TableColumn } from 'react-data-table-component';
 
 type ScaleSizeDraft = {
   ScaleSize: string;
@@ -32,10 +36,16 @@ export default function ScaleSizesPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ScaleSize | null>(null);
 
   async function loadScaleSizes() {
-    const response = await getScaleSizeList();
-    setItems(response.data);
+    setLoading(true);
+    try {
+      const response = await getScaleSizeList();
+      setItems(response.data);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -63,6 +73,41 @@ export default function ScaleSizesPage() {
     const normalizedQuery = query.trim().toLowerCase();
     return items.filter((item) => item.ScaleSize.toLowerCase().includes(normalizedQuery));
   }, [items, query]);
+  const columns: TableColumn<(typeof visibleItems)[number]>[] = [
+    { name: 'SCALE SIZE', selector: (item) => item.ScaleSize, grow: 2, wrap: true },
+    {
+      name: 'STATUS',
+      minWidth: '100px',
+      cell: (item) => (
+        <span className={`admin-reference-status ${item.isActive ? 'is-active' : 'is-inactive'}`}>
+          {item.isActive ? 'Active' : 'Inactive'}
+        </span>
+      ),
+    },
+    {
+      name: 'ACTIONS',
+      width: '150px',
+      right: true,
+      cell: (item) => (
+        <div className="admin-row-actions">
+          <button
+            type="button"
+            onClick={() => void toggleScaleSize(item)}
+            aria-label={`${item.isActive ? 'Deactivate' : 'Activate'} ${item.ScaleSize}`}
+            title={item.isActive ? 'Deactivate scale size' : 'Activate scale size'}
+          >
+            <Icon name="box" size={16} />
+          </button>
+          <button type="button" onClick={() => openEdit(item)} aria-label={`Edit ${item.ScaleSize}`} title="Edit scale size">
+            <Icon name="edit" size={16} />
+          </button>
+          <button type="button" onClick={() => setDeleteTarget(item)} aria-label={`Delete ${item.ScaleSize}`} title="Delete scale size">
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   function openCreate() {
     setEditingId(null);
@@ -131,7 +176,6 @@ export default function ScaleSizesPage() {
   }
 
   async function removeScaleSize(item: ScaleSize) {
-    if (!window.confirm(`Remove "${item.ScaleSize}" from scale sizes?`)) return;
     try {
       await deleteScaleSize(item._id, 'admin');
       setItems((current) => current.filter((scaleSize) => scaleSize._id !== item._id));
@@ -150,20 +194,20 @@ export default function ScaleSizesPage() {
         title="Scale"
         highlight="sizes"
         subtitle="Manage the scale options available for catalog products."
-        action={(
-          <button type="button" className="admin-primary-button" onClick={openCreate}>
-            <Icon name="plus" size={17} /> Add scale size
-          </button>
-        )}
       />
 
-      {notice && (
-        <div className={`admin-notice ${noticeIsError ? 'admin-notice-error' : ''}`} role="status">
-          <span>{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
-            <Icon name="close" size={16} />
-          </button>
-        </div>
+      <AdminToast message={notice} isError={noticeIsError} />
+      {deleteTarget && (
+        <AdminDeleteConfirm
+          itemName={deleteTarget.ScaleSize}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            const target = deleteTarget;
+            if (!target) return;
+            setDeleteTarget(null);
+            void removeScaleSize(target);
+          }}
+        />
       )}
 
       <section className="admin-inventory-card admin-reference-card">
@@ -172,7 +216,9 @@ export default function ScaleSizesPage() {
             <h2>Scale sizes</h2>
             <p>Manage the scale values used across your product catalog.</p>
           </div>
-          <span className="admin-inventory-count">{items.length} total</span>
+          <button type="button" className="admin-primary-button" onClick={openCreate}>
+            <Icon name="plus" size={17} /> Add scale size
+          </button>
         </div>
         <div className="admin-toolbar">
           <span className="admin-reference-summary">
@@ -189,57 +235,13 @@ export default function ScaleSizesPage() {
             />
           </label>
         </div>
-        <div className="admin-table-scroll">
-          <table className="admin-table admin-reference-table">
-            <thead>
-              <tr>
-                <th>SCALE SIZE</th>
-                <th>STATUS</th>
-                <th><span className="admin-visually-hidden">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleItems.map((item) => (
-                <tr key={item._id}>
-                  <td><strong className="admin-reference-name">{item.ScaleSize}</strong></td>
-                  <td>
-                    <span className={`admin-reference-status ${item.isActive ? 'is-active' : 'is-inactive'}`}>
-                      {item.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="admin-row-actions">
-                      <button
-                        type="button"
-                        onClick={() => void toggleScaleSize(item)}
-                        aria-label={`${item.isActive ? 'Deactivate' : 'Activate'} ${item.ScaleSize}`}
-                        title={item.isActive ? 'Deactivate scale size' : 'Activate scale size'}
-                      >
-                        <Icon name="box" size={16} />
-                      </button>
-                      <button type="button" onClick={() => openEdit(item)} aria-label={`Edit ${item.ScaleSize}`} title="Edit scale size">
-                        <Icon name="edit" size={16} />
-                      </button>
-                      <button type="button" onClick={() => void removeScaleSize(item)} aria-label={`Delete ${item.ScaleSize}`} title="Delete scale size">
-                        <Icon name="trash" size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {visibleItems.length === 0 && !loading && (
-                <tr>
-                  <td className="admin-reference-empty" colSpan={3}>
-                    {items.length ? 'No scale sizes match your search.' : 'No scale sizes yet. Add one to get started.'}
-                  </td>
-                </tr>
-              )}
-              {loading && (
-                <tr><td className="admin-reference-empty" colSpan={3}>Loading scale sizes…</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminDataTable
+          columns={columns}
+          data={visibleItems}
+          keyField="_id"
+          loading={loading}
+          emptyMessage={items.length ? 'No scale sizes match your search.' : 'No scale sizes yet. Add one to get started.'}
+        />
       </section>
 
       {modalOpen && (

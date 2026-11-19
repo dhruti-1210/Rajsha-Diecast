@@ -42,7 +42,7 @@ export default function AdminPanelPage() {
   useEffect(() => {
     const syncPage = () => {
       const currentPage = navConfig
-        .flatMap((section) => section.items)
+        .flatMap((section) => section.items.flatMap((item) => 'items' in item ? item.items : [item]))
         .find((item) => item.href === window.location.hash);
       setActivePage(currentPage?.id ?? 'dashboard');
     };
@@ -91,14 +91,14 @@ export default function AdminPanelPage() {
   }
 
   return (
-    <main className="admin-dashboard">
+    <main className="admin-dashboard container-fluid p-0">
       <Navbar
         activePage={activePage}
         onNavigate={setActivePage}
         onSignOut={signOut}
       />
-      <section className="admin-workspace">
-        <div className="admin-content">
+      <section className="admin-workspace container-fluid p-0">
+        <div className="admin-content container-fluid">
           {authError && <div className="admin-notice admin-notice-error" role="alert">{authError}</div>}
           {activePage === 'inventory'
             ? <InventoryPage />
