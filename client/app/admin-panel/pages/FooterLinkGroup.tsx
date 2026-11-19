@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
+import AdminToast from '../common/AdminToast';
 import {
   changeFooterLinkGroupStatus,
   createFooterLinkGroup,
@@ -11,6 +13,8 @@ import {
 import type { FooterLinkGroup, FooterLinkGroupInput } from '../types/FooterLinkGroup';
 import Header from '../common/header';
 import Icon from '../common/icon';
+import AdminDataTable from '../common/AdminDataTable';
+import type { TableColumn } from 'react-data-table-component';
 
 type FooterLinkGroupDraft = {
   FooterLinkGroupName: string;
@@ -34,10 +38,16 @@ export default function FooterLinkGroupPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<FooterLinkGroup | null>(null);
 
   async function loadGroups() {
-    const response = await getFooterLinkGroupList();
-    setItems(response.data.filter((group) => !group.isDeleted));
+    setLoading(true);
+    try {
+      const response = await getFooterLinkGroupList();
+      setItems(response.data.filter((group) => !group.isDeleted));
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -143,7 +153,6 @@ export default function FooterLinkGroupPage() {
   }
 
   async function removeGroup(group: FooterLinkGroup) {
-    if (!window.confirm(`Remove "${group.FooterLinkGroupName}"?`)) return;
     try {
       await deleteFooterLinkGroup(group._id, 'admin');
       setItems((current) => current.filter((item) => item._id !== group._id));
@@ -155,6 +164,53 @@ export default function FooterLinkGroupPage() {
     }
   }
 
+  const columns: TableColumn<FooterLinkGroup>[] = [
+    { name: 'GROUP NAME', selector: (group) => group.FooterLinkGroupName, grow: 2, wrap: true },
+    {
+      name: 'STOREFRONT',
+      minWidth: '120px',
+      cell: (group) => (
+        <button
+          type="button"
+          className={`admin-reference-status ${group.isDisplay ? 'is-active' : 'is-inactive'}`}
+          onClick={() => void toggleGroupStatus(group, true)}
+          aria-label={`${group.isDisplay ? 'Hide' : 'Display'} ${group.FooterLinkGroupName} on storefront`}
+        >
+          {group.isDisplay ? 'Displayed' : 'Hidden'}
+        </button>
+      ),
+    },
+    {
+      name: 'STATUS',
+      minWidth: '100px',
+      cell: (group) => (
+        <button
+          type="button"
+          className={`admin-reference-status ${group.isActive ? 'is-active' : 'is-inactive'}`}
+          onClick={() => void toggleGroupStatus(group, false)}
+          aria-label={`${group.isActive ? 'Deactivate' : 'Activate'} ${group.FooterLinkGroupName}`}
+        >
+          {group.isActive ? 'Active' : 'Inactive'}
+        </button>
+      ),
+    },
+    {
+      name: 'ACTIONS',
+      width: '110px',
+      right: true,
+      cell: (group) => (
+        <div className="admin-row-actions">
+          <button type="button" onClick={() => openEdit(group)} aria-label={`Edit ${group.FooterLinkGroupName}`} title="Edit group">
+            <Icon name="edit" size={16} />
+          </button>
+          <button type="button" onClick={() => setDeleteTarget(group)} aria-label={`Delete ${group.FooterLinkGroupName}`} title="Delete group">
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
       <Header
@@ -162,20 +218,20 @@ export default function FooterLinkGroupPage() {
         title="Footer link"
         highlight="groups"
         subtitle="Organize storefront footer links into manageable groups."
-        action={(
-          <button type="button" className="admin-primary-button" onClick={openCreate}>
-            <Icon name="plus" size={17} /> Add group
-          </button>
-        )}
       />
 
-      {notice && (
-        <div className={`admin-notice ${noticeIsError ? 'admin-notice-error' : ''}`} role={noticeIsError ? 'alert' : 'status'}>
-          <span>{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
-            <Icon name="close" size={16} />
-          </button>
-        </div>
+      <AdminToast message={notice} isError={noticeIsError} />
+      {deleteTarget && (
+        <AdminDeleteConfirm
+          itemName={deleteTarget.FooterLinkGroupName}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            const target = deleteTarget;
+            if (!target) return;
+            setDeleteTarget(null);
+            void removeGroup(target);
+          }}
+        />
       )}
 
       <section className="admin-inventory-card admin-reference-card">
@@ -184,7 +240,9 @@ export default function FooterLinkGroupPage() {
             <h2>Footer link groups</h2>
             <p>Create groups before adding links to the storefront footer.</p>
           </div>
-          <span className="admin-inventory-count">{items.length} total</span>
+          <button type="button" className="admin-primary-button" onClick={openCreate}>
+            <Icon name="plus" size={17} /> Add group
+          </button>
         </div>
         <div className="admin-toolbar">
           <span className="admin-reference-summary">
@@ -201,65 +259,13 @@ export default function FooterLinkGroupPage() {
             />
           </label>
         </div>
-        <div className="admin-table-scroll">
-          <table className="admin-table admin-reference-table">
-            <thead>
-              <tr>
-                <th>GROUP NAME</th>
-                <th>STOREFRONT</th>
-                <th>STATUS</th>
-                <th><span className="admin-visually-hidden">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleItems.map((group) => (
-                <tr key={group._id}>
-                  <td><strong className="admin-reference-name">{group.FooterLinkGroupName}</strong></td>
-                  <td>
-                    <button
-                      type="button"
-                      className={`admin-reference-status ${group.isDisplay ? 'is-active' : 'is-inactive'}`}
-                      onClick={() => void toggleGroupStatus(group, true)}
-                      aria-label={`${group.isDisplay ? 'Hide' : 'Display'} ${group.FooterLinkGroupName} on storefront`}
-                    >
-                      {group.isDisplay ? 'Displayed' : 'Hidden'}
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className={`admin-reference-status ${group.isActive ? 'is-active' : 'is-inactive'}`}
-                      onClick={() => void toggleGroupStatus(group, false)}
-                      aria-label={`${group.isActive ? 'Deactivate' : 'Activate'} ${group.FooterLinkGroupName}`}
-                    >
-                      {group.isActive ? 'Active' : 'Inactive'}
-                    </button>
-                  </td>
-                  <td>
-                    <div className="admin-row-actions">
-                      <button type="button" onClick={() => openEdit(group)} aria-label={`Edit ${group.FooterLinkGroupName}`} title="Edit group">
-                        <Icon name="edit" size={16} />
-                      </button>
-                      <button type="button" onClick={() => void removeGroup(group)} aria-label={`Delete ${group.FooterLinkGroupName}`} title="Delete group">
-                        <Icon name="trash" size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {visibleItems.length === 0 && !loading && (
-                <tr>
-                  <td className="admin-reference-empty" colSpan={4}>
-                    {items.length ? 'No groups match your search.' : 'No footer link groups yet. Add one to get started.'}
-                  </td>
-                </tr>
-              )}
-              {loading && (
-                <tr><td className="admin-reference-empty" colSpan={4}>Loading footer link groups…</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminDataTable
+          columns={columns}
+          data={visibleItems}
+          keyField="_id"
+          loading={loading}
+          emptyMessage={items.length ? 'No groups match your search.' : 'No footer link groups yet. Add one to get started.'}
+        />
       </section>
 
       {modalOpen && (

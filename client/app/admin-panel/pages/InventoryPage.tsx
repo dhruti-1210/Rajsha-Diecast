@@ -1,8 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
+import AdminSelect from '../common/AdminSelect';
+import AdminToast from '../common/AdminToast';
 import Header from '../common/header';
 import Icon from '../common/icon';
+import AdminDataTable from '../common/AdminDataTable';
+import type { TableColumn } from 'react-data-table-component';
 import {
   createProductMaster,
   deleteProductMaster,
@@ -149,6 +154,8 @@ export default function InventoryPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AdminProduct | null>(null);
+  const [galleryProduct, setGalleryProduct] = useState<AdminProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
@@ -178,6 +185,16 @@ export default function InventoryPage() {
     void loadInventory();
   }, []);
 
+  async function refreshInventory() {
+    setLoading(true);
+    try {
+      const response = await getProductMasterList();
+      setItems(response.data.map((product) => mapProduct(product, references)));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const visibleItems = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return items.filter((product) => {
@@ -201,6 +218,60 @@ export default function InventoryPage() {
   const pageStart = (displayedPage - 1) * PAGE_SIZE;
   const pageItems = visibleItems.slice(pageStart, pageStart + PAGE_SIZE);
   const outOfStockCount = items.filter((product) => product.stock === 0).length;
+  const columns: TableColumn<AdminProduct>[] = [
+    {
+      name: 'PRODUCT',
+      minWidth: '190px',
+      grow: 2,
+      cell: (product) => {
+        const thumbnail = product.images.find((image) => image.trim());
+        return (
+          <div className="admin-product-cell">
+            <button
+              type="button"
+              className="admin-product-thumb"
+              onClick={() => setGalleryProduct(product)}
+              disabled={!thumbnail}
+              aria-label={`View images for ${product.name}`}
+              title={thumbnail ? 'View product images' : 'No product images'}
+            >
+              {thumbnail
+                ? <img src={thumbnail} alt="" />
+                : <Icon name="car" size={20} />}
+            </button>
+            <span><strong>{product.name}</strong><small>{product.brand} <i /> {product.scale}</small></span>
+          </div>
+        );
+      },
+    },
+    { name: 'SKU', selector: (product) => product.sku, minWidth: '110px' },
+    { name: 'PRICE', selector: (product) => product.price, format: (product) => formatPrice(product.price), minWidth: '100px' },
+    {
+      name: 'STOCK',
+      minWidth: '115px',
+      cell: (product) => (
+        <span className={`admin-stock-pill ${product.stock === 0 ? 'stock-empty' : product.stock <= 2 ? 'stock-low' : 'stock-available'}`}>
+          <i />{product.stock === 0 ? 'Out of stock' : `${product.stock} in stock`}
+        </span>
+      ),
+    },
+    { name: 'CONDITION', selector: (product) => product.condition, minWidth: '105px' },
+    {
+      name: 'ACTIONS',
+      width: '94px',
+      right: true,
+      cell: (product) => (
+        <div className="admin-row-actions">
+          <button type="button" onClick={() => openEdit(product)} aria-label={`Edit ${product.name}`} title="Edit product">
+            <Icon name="edit" size={16} />
+          </button>
+          <button type="button" onClick={() => setDeleteTarget(product)} aria-label={`Delete ${product.name}`} title="Delete product">
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   function openCreate() {
     setEditingId(null);
@@ -302,8 +373,7 @@ export default function InventoryPage() {
       } else {
         await updateProductMaster(editingId, payload);
       }
-      const response = await getProductMasterList();
-      setItems(response.data.map((product) => mapProduct(product, references)));
+      await refreshInventory();
       setNotice(editingId === null ? 'Product added to the database.' : 'Product changes saved.');
       setNoticeIsError(false);
       setModalOpen(false);
@@ -316,11 +386,9 @@ export default function InventoryPage() {
   }
 
   async function deleteProduct(product: AdminProduct) {
-    if (!window.confirm(`Remove "${product.name}" from the inventory?`)) return;
     try {
       await deleteProductMaster(product.id);
-      const response = await getProductMasterList();
-      setItems(response.data.map((item) => mapProduct(item, references)));
+      await refreshInventory();
       setNotice('Product removed from the database.');
       setNoticeIsError(false);
     } catch (error) {
@@ -340,43 +408,50 @@ export default function InventoryPage() {
     }));
   }
 
-  async function addImageFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  async function addImageFiles(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
     event.target.value = '';
-    if (!file) return;
+    if (!files.length) return;
 
-    if (!file.type.startsWith('image/')) {
+    if (files.some((file) => !file.type.startsWith('image/'))) {
       setNotice('Please choose an image file.');
       setNoticeIsError(true);
       return;
     }
-    if (file.size > MAX_IMAGE_FILE_SIZE) {
+    if (files.some((file) => file.size > MAX_IMAGE_FILE_SIZE)) {
       setNotice('Choose an image smaller than 5 MB.');
       setNoticeIsError(true);
       return;
     }
 
     try {
-      const imageData = await readImageAsDataUrl(file);
-      const existingImageDataSize = draft.images.reduce(
+      const imageDataList: string[] = [];
+      let totalImageDataSize = draft.images.reduce(
         (total, image) => total + (image.startsWith('data:image/') ? image.length : 0),
         0,
       );
-      if (existingImageDataSize + imageData.length > MAX_PRODUCT_IMAGE_DATA_SIZE) {
-        setNotice('Uploaded product images must total less than 12 MB.');
-        setNoticeIsError(true);
-        return;
+      for (const file of files) {
+        const imageData = await readImageAsDataUrl(file);
+        totalImageDataSize += imageData.length;
+        if (totalImageDataSize > MAX_PRODUCT_IMAGE_DATA_SIZE) {
+          setNotice('Uploaded product images must total less than 12 MB.');
+          setNoticeIsError(true);
+          return;
+        }
+        imageDataList.push(imageData);
       }
 
       setDraft((current) => {
-        const emptyImageIndex = current.images.findIndex((image) => !image.trim());
-        if (emptyImageIndex === -1) {
-          return { ...current, images: [...current.images, imageData] };
+        const images = [...current.images];
+        for (const imageData of imageDataList) {
+          const emptyImageIndex = images.findIndex((image) => !image.trim());
+          if (emptyImageIndex === -1) {
+            images.push(imageData);
+          } else {
+            images[emptyImageIndex] = imageData;
+          }
         }
-        return {
-          ...current,
-          images: current.images.map((image, index) => index === emptyImageIndex ? imageData : image),
-        };
+        return { ...current, images };
       });
       setNotice('');
     } catch (error) {
@@ -401,23 +476,57 @@ export default function InventoryPage() {
             title="Product"
             highlight="inventory"
             subtitle="Manage your diecast collection and availability."
-            action={(
-              <button
-                type="button"
-                className="admin-primary-button"
-                onClick={openCreate}
-              >
-                <Icon name="plus" size={17} /> Add product
-              </button>
-            )}
           />
 
-          {notice && (
-            <div className={`admin-notice ${noticeIsError ? 'admin-notice-error' : ''}`} role="status">
-              <span>{notice}</span>
-              <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
-                <Icon name="close" size={16} />
-              </button>
+          <AdminToast message={notice} isError={noticeIsError} />
+          {deleteTarget && (
+            <AdminDeleteConfirm
+              itemName={deleteTarget.name}
+              onCancel={() => setDeleteTarget(null)}
+              onConfirm={() => {
+                const target = deleteTarget;
+                if (!target) return;
+                setDeleteTarget(null);
+                void deleteProduct(target);
+              }}
+            />
+          )}
+          {galleryProduct && (
+            <div
+              className="admin-image-gallery-backdrop"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setGalleryProduct(null);
+              }}
+            >
+              <section
+                className="admin-image-gallery-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="admin-image-gallery-title"
+              >
+                <div className="admin-modal-heading">
+                  <div>
+                    <p className="admin-eyebrow">PRODUCT IMAGES</p>
+                    <h2 id="admin-image-gallery-title">{galleryProduct.name}</h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="admin-modal-close"
+                    onClick={() => setGalleryProduct(null)}
+                    aria-label="Close product images"
+                  >
+                    <Icon name="close" />
+                  </button>
+                </div>
+                <div className="admin-image-gallery-grid">
+                  {galleryProduct.images.filter((image) => image.trim()).map((image, index) => (
+                    <figure className="admin-image-gallery-item" key={`${galleryProduct.id}-${index}`}>
+                      <img src={image} alt={`${galleryProduct.name} image ${index + 1}`} />
+                      <figcaption>Image {index + 1}</figcaption>
+                    </figure>
+                  ))}
+                </div>
+              </section>
             </div>
           )}
           <section className="admin-inventory-card">
@@ -426,7 +535,9 @@ export default function InventoryPage() {
                 <h2>Product inventory</h2>
                 <p>Manage your diecast collection and availability.</p>
               </div>
-              <span className="admin-inventory-count">{outOfStockCount} out of stock</span>
+              <button type="button" className="admin-primary-button" onClick={openCreate}>
+                <Icon name="plus" size={17} /> Add product
+              </button>
             </div>
 
             <div className="admin-toolbar">
@@ -458,47 +569,13 @@ export default function InventoryPage() {
               </label>
             </div>
 
-            <div className="admin-table-scroll">
-              <table className="admin-table">
-                <thead>
-                  <tr><th>PRODUCT</th><th>SKU</th><th>PRICE</th><th>STOCK</th><th>CONDITION</th><th><span className="admin-visually-hidden">Actions</span></th></tr>
-                </thead>
-                <tbody>
-                  {pageItems.map((product) => (
-                    <tr key={product.id}>
-                      <td>
-                        <div className="admin-product-cell">
-                          <span className="admin-product-thumb"><Icon name="car" size={20} /></span>
-                          <span><strong>{product.name}</strong><small>{product.brand} <i /> {product.scale}</small></span>
-                        </div>
-                      </td>
-                      <td className="admin-sku">{product.sku}</td>
-                      <td className="admin-price">{formatPrice(product.price)}</td>
-                      <td><span className={`admin-stock-pill ${product.stock === 0 ? 'stock-empty' : product.stock <= 2 ? 'stock-low' : 'stock-available'}`}>
-                        <i />{product.stock === 0 ? 'Out of stock' : `${product.stock} in stock`}
-                      </span></td>
-                      <td><span className="admin-condition">{product.condition}</span></td>
-                      <td>
-                        <div className="admin-row-actions">
-                          <button type="button" onClick={() => openEdit(product)} aria-label={`Edit ${product.name}`} title="Edit product">
-                            <Icon name="edit" size={16} />
-                          </button>
-                          <button type="button" onClick={() => deleteProduct(product)} aria-label={`Delete ${product.name}`} title="Delete product">
-                            <Icon name="trash" size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {visibleItems.length === 0 && !loading && (
-                    <tr><td className="admin-empty" colSpan={6}>No products match your search. Try another term or filter.</td></tr>
-                  )}
-                  {loading && (
-                    <tr><td className="admin-loading" colSpan={6}>Loading products from the database…</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <AdminDataTable
+              columns={columns}
+              data={pageItems}
+              keyField="id"
+              loading={loading}
+              emptyMessage="No products match your search. Try another term or filter."
+            />
 
             <div className="admin-table-footer">
               <span>
@@ -510,16 +587,26 @@ export default function InventoryPage() {
                   type="button"
                   onClick={() => setCurrentPage(displayedPage - 1)}
                   disabled={displayedPage === 1}
+                  aria-label="Previous page"
                 >
-                  Previous
+                  <span className="admin-pagination-button-label">Previous</span>
+                  <span className="admin-pagination-arrow" aria-hidden="true">
+                    <Icon name="chevron" size={16} />
+                  </span>
                 </button>
-                <span>Page <strong>{displayedPage}</strong> of <strong>{pageCount}</strong></span>
+                <span className="admin-pagination-page">
+                  Page <strong>{displayedPage}</strong> of <strong>{pageCount}</strong>
+                </span>
                 <button
                   type="button"
                   onClick={() => setCurrentPage(displayedPage + 1)}
                   disabled={displayedPage === pageCount}
+                  aria-label="Next page"
                 >
-                  Next
+                  <span className="admin-pagination-button-label">Next</span>
+                  <span className="admin-pagination-arrow" aria-hidden="true">
+                    <Icon name="chevron" size={16} />
+                  </span>
                 </button>
               </nav>
             </div>
@@ -559,77 +646,80 @@ export default function InventoryPage() {
             <div className="admin-form-grid">
               <label className="admin-form-field admin-form-wide"><span>Product name</span><input required maxLength={100} value={draft.name} onChange={(event) => updateDraft('name', event.target.value)} placeholder="e.g. Nissan GT-R Nismo" /></label>
               <label className="admin-form-field"><span>Brand</span>
-                <select
+                <AdminSelect
                   required
                   value={draft.brand}
-                  onChange={(event) => updateDraft('brand', event.target.value)}
-                >
-                  <option value="" disabled>Select a brand</option>
-                  {editingId
+                  placeholder="Select a brand"
+                  onChange={(value) => updateDraft('brand', value)}
+                  options={[
+                    ...(editingId
                     && draft.brand
                     && !references.brands.some((brand) => brand._id === draft.brand)
-                    && (
-                      <option value={draft.brand}>
-                        {items.find((item) => item.id === editingId)?.brand || draft.brand} (currently assigned)
-                      </option>
-                    )}
-                  {references.brands.map((brand) => (
-                    <option key={brand._id} value={brand._id}>{brand.brandName}</option>
-                  ))}
-                </select>
+                      ? [{
+                        value: draft.brand,
+                        label: `${items.find((item) => item.id === editingId)?.brand || draft.brand} (currently assigned)`,
+                      }]
+                      : []),
+                    ...references.brands.map((brand) => ({
+                      value: brand._id,
+                      label: brand.brandName,
+                    })),
+                  ]}
+                />
               </label>
               <label className="admin-form-field"><span>SKU</span><input required maxLength={32} value={draft.sku} onChange={(event) => updateDraft('sku', event.target.value)} placeholder="e.g. RD-009" /></label>
               <label className="admin-form-field"><span>Scale</span>
-                <select
+                <AdminSelect
                   required
                   value={draft.scale}
-                  onChange={(event) => updateDraft('scale', event.target.value)}
-                >
-                  <option value="" disabled>Select a scale size</option>
-                  {editingId
+                  placeholder="Select a scale size"
+                  onChange={(value) => updateDraft('scale', value)}
+                  options={[
+                    ...(editingId
                     && draft.scale
                     && !references.scaleSizes.some((scaleSize) => scaleSize.ScaleSize === draft.scale)
-                    && (
-                      <option value={draft.scale}>{draft.scale} (currently assigned)</option>
-                    )}
-                  {references.scaleSizes.map((scaleSize) => (
-                    <option key={scaleSize._id} value={scaleSize.ScaleSize}>
-                      {scaleSize.ScaleSize}
-                    </option>
-                  ))}
-                </select>
+                      ? [{ value: draft.scale, label: `${draft.scale} (currently assigned)` }]
+                      : []),
+                    ...references.scaleSizes.map((scaleSize) => ({
+                      value: scaleSize.ScaleSize,
+                      label: scaleSize.ScaleSize,
+                    })),
+                  ]}
+                />
               </label>
               <label className="admin-form-field"><span>Packaging condition</span>
-                <select
+                <AdminSelect
                   required
                   value={draft.packagingTypeId}
-                  onChange={(event) => updateDraft('packagingTypeId', event.target.value)}
-                >
-                  <option value="" disabled>Select a packaging condition</option>
-                  {editingId
+                  placeholder="Select a packaging condition"
+                  onChange={(value) => updateDraft('packagingTypeId', value)}
+                  options={[
+                    ...(editingId
                     && draft.packagingTypeId
                     && !references.packagingTypes.some((packaging) => packaging._id === draft.packagingTypeId)
-                    && (
-                      <option value={draft.packagingTypeId}>
-                        {items.find((item) => item.id === editingId)?.condition || 'Inactive packaging type'}
-                      </option>
-                    )}
-                  {references.packagingTypes.map((packaging) => (
-                    <option key={packaging._id} value={packaging._id}>{packaging.packagingName}</option>
-                  ))}
-                </select>
+                      ? [{
+                        value: draft.packagingTypeId,
+                        label: items.find((item) => item.id === editingId)?.condition || 'Inactive packaging type',
+                      }]
+                      : []),
+                    ...references.packagingTypes.map((packaging) => ({
+                      value: packaging._id,
+                      label: packaging.packagingName,
+                    })),
+                  ]}
+                />
               </label>
               <label className="admin-form-field"><span>Collection type</span>
-                <select
+                <AdminSelect
                   required
                   value={draft.collectionTypeId}
-                  onChange={(event) => updateDraft('collectionTypeId', event.target.value)}
-                >
-                  <option value="" disabled>Select a collection type</option>
-                  {references.collectionTypes.map((collection) => (
-                    <option key={collection._id} value={collection._id}>{collection.collectionName}</option>
-                  ))}
-                </select>
+                  placeholder="Select a collection type"
+                  onChange={(value) => updateDraft('collectionTypeId', value)}
+                  options={references.collectionTypes.map((collection) => ({
+                    value: collection._id,
+                    label: collection.collectionName,
+                  }))}
+                />
               </label>
               <label className="admin-form-field"><span>Price (INR)</span><input required type="number" min="0" step="1" value={draft.price} onChange={(event) => updateDraft('price', Number(event.target.value))} /></label>
               <label className="admin-form-field"><span>Stock quantity</span><input required type="number" min="0" step="1" value={draft.stock} onChange={(event) => updateDraft('stock', Number(event.target.value))} /></label>
@@ -668,15 +758,16 @@ export default function InventoryPage() {
                   className="admin-image-file-input"
                   type="file"
                   accept="image/*"
-                  aria-label="Upload product image"
-                  onChange={addImageFile}
+                  multiple
+                  aria-label="Upload product images"
+                  onChange={addImageFiles}
                 />
                 <button
                   type="button"
                   className="admin-add-image"
                   onClick={() => imageFileInputRef.current?.click()}
                 >
-                  <Icon name="plus" size={15} /> Add another image
+                  <Icon name="plus" size={15} /> Add images
                 </button>
               </div>
               <label className="admin-status-toggle">

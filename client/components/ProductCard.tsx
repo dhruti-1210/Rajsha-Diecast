@@ -8,7 +8,7 @@ import Link from 'next/link';
 export default function ProductCard({ p }: { p: Product }) {
   const { add } = useStore();
   return (
-    <article className="card">
+    <article className="card product-card">
       {p.left > 0 && <span className="tag l">ONLY {p.left} LEFT</span>}
       <Link className="thumb" href={`/shop/${p.id}`} aria-label={`View ${p.name}`}><CarImage p={p} /></Link>
       <div className="info">

@@ -65,6 +65,7 @@ export default function ProductSection({ id, mode, dark }: Props) {
             color: '#d4af37',
             left: product.TotalStock > 0 && product.TotalStock <= 2 ? product.TotalStock : 0,
             image: product.Image?.[0] || '',
+            images: product.Image ?? [],
             stock: product.TotalStock,
           }));
 

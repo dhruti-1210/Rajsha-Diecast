@@ -12,7 +12,7 @@ import ScrollFX from '@/components/ScrollFX';
 
 export default function Home() {
   return (
-    <>
+    <div className="home-page">
       <Header />
       <main>
         <Hero />
@@ -28,6 +28,6 @@ export default function Home() {
       <CartDrawer />
       <ProductModal />
       <ScrollFX />
-    </>
+    </div>
   );
 }

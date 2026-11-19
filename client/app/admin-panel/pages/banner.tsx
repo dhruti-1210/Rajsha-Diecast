@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
+import AdminToast from '../common/AdminToast';
 import {
   changeBannerStatus,
   createBanner,
@@ -11,6 +13,8 @@ import {
 import type { Banner, BannerInput } from '../types/banner';
 import Header from '../common/header';
 import Icon from '../common/icon';
+import AdminDataTable from '../common/AdminDataTable';
+import type { TableColumn } from 'react-data-table-component';
 import { readImageAsDataUrl } from '../utils/images';
 
 const MAX_BANNER_FILE_SIZE = 5 * 1024 * 1024;
@@ -39,11 +43,17 @@ export default function BannerPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Banner | null>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
 
   async function loadBanners() {
-    const response = await getBannerList();
-    setItems(response.data.filter((banner) => !banner.isDeleted));
+    setLoading(true);
+    try {
+      const response = await getBannerList();
+      setItems(response.data.filter((banner) => !banner.isDeleted));
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -180,7 +190,6 @@ export default function BannerPage() {
   }
 
   async function removeBanner(banner: Banner) {
-    if (!window.confirm(`Remove "${banner.BannerTitle}"?`)) return;
     try {
       await deleteBanner(banner._id, 'admin');
       setItems((current) => current.filter((item) => item._id !== banner._id));
@@ -192,6 +201,50 @@ export default function BannerPage() {
     }
   }
 
+  const columns: TableColumn<Banner>[] = [
+    {
+      name: 'IMAGE',
+      width: '110px',
+      cell: (banner) => (
+        <img className="admin-banner-thumbnail" src={banner.BannerImg} alt={banner.BannerTitle} />
+      ),
+    },
+    { name: 'TITLE', selector: (banner) => banner.BannerTitle, minWidth: '140px', grow: 1.5, wrap: true },
+    { name: 'SUBTITLE', selector: (banner) => banner.BannerSubTitle, minWidth: '180px', grow: 2, wrap: true },
+    {
+      name: 'STATUS',
+      minWidth: '100px',
+      cell: (banner) => (
+        <span className={`admin-reference-status ${banner.isActive ? 'is-active' : 'is-inactive'}`}>
+          {banner.isActive ? 'Active' : 'Inactive'}
+        </span>
+      ),
+    },
+    {
+      name: 'ACTIONS',
+      width: '150px',
+      right: true,
+      cell: (banner) => (
+        <div className="admin-row-actions">
+          <button
+            type="button"
+            onClick={() => void toggleBannerStatus(banner)}
+            aria-label={`${banner.isActive ? 'Deactivate' : 'Activate'} ${banner.BannerTitle}`}
+            title={banner.isActive ? 'Deactivate banner' : 'Activate banner'}
+          >
+            <Icon name="box" size={16} />
+          </button>
+          <button type="button" onClick={() => openEdit(banner)} aria-label={`Edit ${banner.BannerTitle}`} title="Edit banner">
+            <Icon name="edit" size={16} />
+          </button>
+          <button type="button" onClick={() => setDeleteTarget(banner)} aria-label={`Delete ${banner.BannerTitle}`} title="Delete banner">
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
       <Header
@@ -199,20 +252,20 @@ export default function BannerPage() {
         title="Banner"
         highlight="images"
         subtitle="Manage banner artwork and text shown across the storefront."
-        action={(
-          <button type="button" className="admin-primary-button" onClick={openCreate}>
-            <Icon name="plus" size={17} /> Add banner
-          </button>
-        )}
       />
 
-      {notice && (
-        <div className={`admin-notice ${noticeIsError ? 'admin-notice-error' : ''}`} role={noticeIsError ? 'alert' : 'status'}>
-          <span>{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss message">
-            <Icon name="close" size={16} />
-          </button>
-        </div>
+      <AdminToast message={notice} isError={noticeIsError} />
+      {deleteTarget && (
+        <AdminDeleteConfirm
+          itemName={deleteTarget.BannerTitle}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            const target = deleteTarget;
+            if (!target) return;
+            setDeleteTarget(null);
+            void removeBanner(target);
+          }}
+        />
       )}
 
       <section className="admin-inventory-card admin-reference-card">
@@ -221,7 +274,9 @@ export default function BannerPage() {
             <h2>Banner images</h2>
             <p>Upload an image and manage its storefront title and subtitle.</p>
           </div>
-          <span className="admin-inventory-count">{items.length} total</span>
+          <button type="button" className="admin-primary-button" onClick={openCreate}>
+            <Icon name="plus" size={17} /> Add banner
+          </button>
         </div>
         <div className="admin-toolbar">
           <span className="admin-reference-summary">
@@ -238,63 +293,13 @@ export default function BannerPage() {
             />
           </label>
         </div>
-        <div className="admin-table-scroll">
-          <table className="admin-table admin-reference-table admin-banner-table">
-            <thead>
-              <tr>
-                <th>IMAGE</th>
-                <th>TITLE</th>
-                <th>SUBTITLE</th>
-                <th>STATUS</th>
-                <th><span className="admin-visually-hidden">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleItems.map((banner) => (
-                <tr key={banner._id}>
-                  <td>
-                    <img className="admin-banner-thumbnail" src={banner.BannerImg} alt={banner.BannerTitle} />
-                  </td>
-                  <td><strong className="admin-reference-name">{banner.BannerTitle}</strong></td>
-                  <td>{banner.BannerSubTitle}</td>
-                  <td>
-                    <span className={`admin-reference-status ${banner.isActive ? 'is-active' : 'is-inactive'}`}>
-                      {banner.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="admin-row-actions">
-                      <button
-                        type="button"
-                        onClick={() => void toggleBannerStatus(banner)}
-                        aria-label={`${banner.isActive ? 'Deactivate' : 'Activate'} ${banner.BannerTitle}`}
-                        title={banner.isActive ? 'Deactivate banner' : 'Activate banner'}
-                      >
-                        <Icon name="box" size={16} />
-                      </button>
-                      <button type="button" onClick={() => openEdit(banner)} aria-label={`Edit ${banner.BannerTitle}`} title="Edit banner">
-                        <Icon name="edit" size={16} />
-                      </button>
-                      <button type="button" onClick={() => void removeBanner(banner)} aria-label={`Delete ${banner.BannerTitle}`} title="Delete banner">
-                        <Icon name="trash" size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {visibleItems.length === 0 && !loading && (
-                <tr>
-                  <td className="admin-reference-empty" colSpan={5}>
-                    {items.length ? 'No banners match your search.' : 'No banners yet. Add one to get started.'}
-                  </td>
-                </tr>
-              )}
-              {loading && (
-                <tr><td className="admin-reference-empty" colSpan={5}>Loading banners…</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminDataTable
+          columns={columns}
+          data={visibleItems}
+          keyField="_id"
+          loading={loading}
+          emptyMessage={items.length ? 'No banners match your search.' : 'No banners yet. Add one to get started.'}
+        />
       </section>
 
       {modalOpen && (
