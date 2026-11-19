@@ -26,6 +26,10 @@ export default function ProductPage() {
   const [serverProductError, setServerProductError] = useState('');
 
   useEffect(() => {
+    setActiveImage(0);
+  }, [params.id]);
+
+  useEffect(() => {
     if (staticProduct) return;
     let active = true;
 
@@ -59,6 +63,7 @@ export default function ProductPage() {
           color: '#d4af37',
           left: record.TotalStock > 0 && record.TotalStock <= 2 ? record.TotalStock : 0,
           image: record.Image?.[0] || '',
+          images: record.Image ?? [],
         };
         if (active) setServerProduct(serverProduct);
       } catch (error) {
@@ -99,6 +104,10 @@ export default function ProductPage() {
       return score(b) - score(a);
     })
     .slice(0, 4);
+  const productImages = product.images?.filter(Boolean) ?? [];
+  const galleryImages = productImages.length > 0 ? productImages : [product.image];
+  const activeImageSource = galleryImages[activeImage] ?? galleryImages[0] ?? product.image;
+  const activeProduct = { ...product, image: activeImageSource };
 
   return (
     <>
@@ -120,16 +129,25 @@ export default function ProductPage() {
                 </div>
               </div>
             </section>
-            <div className={`purchase-visual purchase-angle-${activeImage}`} aria-label="Product image gallery">
+            <div className={`purchase-visual purchase-angle-${activeImage % 4}`} aria-label="Product image gallery">
               <div className="purchase-image-orbit" />
-              <CarImage p={product} />
-              <div className="purchase-thumbnails">
-                {[0, 1, 2, 3].map((image) => (
-                  <button key={image} type="button" className={activeImage === image ? 'active' : ''} onClick={() => setActiveImage(image)} aria-label={`Show product view ${image + 1}`}>
-                    <CarImage p={product} />
-                  </button>
-                ))}
-              </div>
+              <CarImage p={activeProduct} />
+              {galleryImages.length > 1 && (
+                <div className="purchase-thumbnails">
+                  {galleryImages.map((image, index) => (
+                    <button
+                      key={`${index}-${image.slice(0, 32)}`}
+                      type="button"
+                      className={activeImage === index ? 'active' : ''}
+                      onClick={() => setActiveImage(index)}
+                      aria-label={`Show product image ${index + 1}`}
+                      aria-pressed={activeImage === index}
+                    >
+                      <CarImage p={{ ...product, image }} />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <section className="purchase-details" aria-label="Purchase details">
               <p className="purchase-kicker">RAJSHA DIECAST <span>·</span> {product.brand.toUpperCase()}</p>

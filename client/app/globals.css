@@ -2010,14 +2010,22 @@ cite {
   z-index: 4;
   bottom: 7%;
   left: 50%;
+  max-width: 100%;
   transform: translateX(-50%);
   display: flex;
+  overflow-x: auto;
   gap: 8px;
+  scrollbar-width: none;
   pointer-events: auto
+}
+
+.purchase-thumbnails::-webkit-scrollbar {
+  display: none
 }
 
 .purchase-thumbnails button {
   width: 42px;
+  flex: 0 0 42px;
   height: 38px;
   display: grid;
   place-items: center;
