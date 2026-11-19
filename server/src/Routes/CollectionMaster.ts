@@ -10,23 +10,25 @@ import {
     changeCollectionTypeStatusController,
     changeCollectionTypeDisplayStatusController
 } from "../controller/CollectionMasterController";
+import { adminSessionMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
-router.post("/create", createCollectionTypeController);
+router.post("/create", adminSessionMiddleware, createCollectionTypeController);
 
 router.get("/list", getAllCollectionTypesController);
 
 router.get("/:id", getCollectionTypeByIdController);
 
-router.put("/update/:id", updateCollectionTypeController);
+router.put("/update/:id", adminSessionMiddleware, updateCollectionTypeController);
 
-router.delete("/delete/:id", deleteCollectionTypeController);
+router.delete("/delete/:id", adminSessionMiddleware, deleteCollectionTypeController);
 
-router.patch("/status/:id", changeCollectionTypeStatusController);
+router.patch("/status/:id", adminSessionMiddleware, changeCollectionTypeStatusController);
 
 router.patch(
     "/display-status/:id",
+    adminSessionMiddleware,
     changeCollectionTypeDisplayStatusController
 );
 

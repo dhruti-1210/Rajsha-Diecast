@@ -10,21 +10,22 @@ import {
     changeCmsStatusController,
     changeCmsDisplayStatusController
 } from "../controller/CMSMasterController";
+import { adminSessionMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
-router.post("/create", createCmsController);
+router.post("/create", adminSessionMiddleware, createCmsController);
 
 router.get("/list", getAllCmsController);
 
 router.get("/:id", getCmsByIdController);
 
-router.put("/update/:id", updateCmsController);
+router.put("/update/:id", adminSessionMiddleware, updateCmsController);
 
-router.delete("/delete/:id", deleteCmsController);
+router.delete("/delete/:id", adminSessionMiddleware, deleteCmsController);
 
-router.patch("/status/:id", changeCmsStatusController);
+router.patch("/status/:id", adminSessionMiddleware, changeCmsStatusController);
 
-router.patch("/display-status/:id", changeCmsDisplayStatusController);
+router.patch("/display-status/:id", adminSessionMiddleware, changeCmsDisplayStatusController);
 
 export default router;

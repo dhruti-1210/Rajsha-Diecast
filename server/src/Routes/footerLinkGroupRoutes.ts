@@ -8,11 +8,12 @@ import {
     DeleteFooterLinkGroupController,
     ChangeFooterLinkGroupActiveStatusController
 } from "../controller/footerLinkGroupController";
+import { adminSessionMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
 // Create Footer Link Group
-router.post("/create", CreateFooterLinkGroupController);
+router.post("/create", adminSessionMiddleware, CreateFooterLinkGroupController);
 
 // Get All Footer Link Groups
 router.get("/list", GetAllFooterLinkGroupController);
@@ -21,12 +22,12 @@ router.get("/list", GetAllFooterLinkGroupController);
 router.get("/:id", GetFooterLinkGroupByIdController);
 
 // Update Footer Link Group
-router.put("/update/:id", UpdateFooterLinkGroupController);
+router.put("/update/:id", adminSessionMiddleware, UpdateFooterLinkGroupController);
 
 // Delete Footer Link Group
-router.delete("/delete/:id", DeleteFooterLinkGroupController);
+router.delete("/delete/:id", adminSessionMiddleware, DeleteFooterLinkGroupController);
 
 // Change Active Status
-router.patch("/status/:id", ChangeFooterLinkGroupActiveStatusController);
+router.patch("/status/:id", adminSessionMiddleware, ChangeFooterLinkGroupActiveStatusController);
 
 export default router;

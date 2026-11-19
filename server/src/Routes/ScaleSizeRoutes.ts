@@ -8,11 +8,12 @@ import {
     DeleteScaleSizeController,
     ChangeScaleSizeActiveStatusController
 } from "../controller/ScaleSizeController";
+import { adminSessionMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
 // Create Scale Size
-router.post("/create", CreateScaleSizeController);
+router.post("/create", adminSessionMiddleware, CreateScaleSizeController);
 
 // Get All Scale Sizes
 router.get("/list", GetAllScaleSizeController);
@@ -21,12 +22,12 @@ router.get("/list", GetAllScaleSizeController);
 router.get("/:id", GetScaleSizeByIdController);
 
 // Update Scale Size
-router.put("/update/:id", UpdateScaleSizeController);
+router.put("/update/:id", adminSessionMiddleware, UpdateScaleSizeController);
 
 // Delete Scale Size
-router.delete("/delete/:id", DeleteScaleSizeController);
+router.delete("/delete/:id", adminSessionMiddleware, DeleteScaleSizeController);
 
 // Change Active Status
-router.patch("/status/:id", ChangeScaleSizeActiveStatusController);
+router.patch("/status/:id", adminSessionMiddleware, ChangeScaleSizeActiveStatusController);
 
 export default router;

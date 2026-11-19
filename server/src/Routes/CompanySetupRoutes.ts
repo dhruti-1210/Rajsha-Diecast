@@ -7,11 +7,12 @@ import {
     UpdateCompanySetupController,
     DeleteCompanySetupController
 } from "../controller/CompanySetupServices";
+import { adminSessionMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
 // Create Company Setup
-router.post("/create", CreateCompanySetupController);
+router.post("/create", adminSessionMiddleware, CreateCompanySetupController);
 
 // Get All Company Setup
 router.get("/list", GetAllCompanySetupController);
@@ -20,9 +21,9 @@ router.get("/list", GetAllCompanySetupController);
 router.get("/:id", GetCompanySetupByIdController);
 
 // Update Company Setup
-router.patch("/update/:id", UpdateCompanySetupController);
+router.patch("/update/:id", adminSessionMiddleware, UpdateCompanySetupController);
 
 // Delete Company Setup
-router.delete("/delete/:id", DeleteCompanySetupController);
+router.delete("/delete/:id", adminSessionMiddleware, DeleteCompanySetupController);
 
 export default router;

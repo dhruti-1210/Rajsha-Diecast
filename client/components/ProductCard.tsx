@@ -10,7 +10,7 @@ export default function ProductCard({ p }: { p: Product }) {
   return (
     <article className="card product-card">
       {p.left > 0 && <span className="tag l">ONLY {p.left} LEFT</span>}
-      <Link className="thumb" href={`/shop/${p.id}`} aria-label={`View ${p.name}`}><CarImage p={p} /></Link>
+      <Link className="thumb product-image-container" href={`/shop/${p.id}`} aria-label={`View ${p.name}`}><CarImage p={p} /></Link>
       <div className="info">
         <small>{p.brand.toUpperCase()} · {p.scale}</small>
         <h3>{p.name}</h3>

@@ -8,14 +8,15 @@ import {
     DeletePackagingTypeController,
     ChangePackagingTypeActiveStatusController
 } from "../controller/PackagingTypeController";
+import { adminSessionMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
-router.post("/create", CreatePackagingTypeController);
+router.post("/create", adminSessionMiddleware, CreatePackagingTypeController);
 router.get("/list", GetAllPackagingTypesController);
 router.get("/:id", GetPackagingTypeByIdController);
-router.put("/update/:id", UpdatePackagingTypeController);
-router.delete("/delete/:id", DeletePackagingTypeController);
-router.patch("/status/:id", ChangePackagingTypeActiveStatusController);
+router.put("/update/:id", adminSessionMiddleware, UpdatePackagingTypeController);
+router.delete("/delete/:id", adminSessionMiddleware, DeletePackagingTypeController);
+router.patch("/status/:id", adminSessionMiddleware, ChangePackagingTypeActiveStatusController);
 
 export default router;

@@ -9,15 +9,16 @@ import {
     ChangeProductActiveStatusController,
     ChangeProductDisplayStatusController
 } from "../controller/ProductMasterController";
+import { adminSessionMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
-router.post("/create", CreateProductMasterController);
+router.post("/create", adminSessionMiddleware, CreateProductMasterController);
 router.get("/list", GetAllProductMasterController);
 router.get("/:id", GetProductMasterByIdController);
-router.put("/update/:id", UpdateProductMasterController);
-router.delete("/delete/:id", DeleteProductMasterController);
-router.patch("/status/:id", ChangeProductActiveStatusController);
-router.patch("/display-status/:id", ChangeProductDisplayStatusController);
+router.put("/update/:id", adminSessionMiddleware, UpdateProductMasterController);
+router.delete("/delete/:id", adminSessionMiddleware, DeleteProductMasterController);
+router.patch("/status/:id", adminSessionMiddleware, ChangeProductActiveStatusController);
+router.patch("/display-status/:id", adminSessionMiddleware, ChangeProductDisplayStatusController);
 
 export default router;

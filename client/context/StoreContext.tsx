@@ -177,6 +177,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let active = true;
 
     async function checkSession() {
+      if (window.location.pathname.startsWith('/admin-panel')) return;
       try {
         const response = await fetch(userAuthUrl('session'), {
           credentials: 'include',

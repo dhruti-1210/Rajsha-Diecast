@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import navConfig, { type AdminView } from './data/navConfig';
 import Navbar from './common/navbar';
 import {
-  hasAdminSession,
-  signOutAdmin,
-} from './middleware/authmiddleware';
+  getAdminSession,
+  logoutAdmin,
+} from './api/auth';
 import AdminLoginPage from './pages/AdminLoginPage';
 import DashboardPage from './pages/DashboardPage';
 import InventoryPage from './pages/InventoryPage';
@@ -30,13 +30,21 @@ export default function AdminPanelPage() {
   const [authError, setAuthError] = useState('');
 
   useEffect(() => {
-    try {
-      setAuthenticated(hasAdminSession());
-    } catch {
-      setAuthError('Could not check the demo session. Check your browser storage settings.');
-    } finally {
-      setAuthChecked(true);
+    let active = true;
+    async function checkAdminSession() {
+      try {
+        const session = await getAdminSession();
+        if (active) setAuthenticated(Boolean(session?.success));
+      } catch (error) {
+        if (active) {
+          setAuthError(error instanceof Error ? error.message : 'Could not check admin access.');
+        }
+      } finally {
+        if (active) setAuthChecked(true);
+      }
     }
+    void checkAdminSession();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -56,11 +64,11 @@ export default function AdminPanelPage() {
     };
   }, []);
 
-  function signOut() {
+  async function signOut() {
     try {
-      signOutAdmin();
-    } catch {
-      setAuthError('Could not end the demo session. Check your browser storage settings.');
+      await logoutAdmin();
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Could not log out of the admin panel.');
       return;
     }
     setAuthError('');
@@ -95,7 +103,7 @@ export default function AdminPanelPage() {
       <Navbar
         activePage={activePage}
         onNavigate={setActivePage}
-        onSignOut={signOut}
+        onSignOut={() => { void signOut(); }}
       />
       <section className="admin-workspace container-fluid p-0">
         <div className="admin-content container-fluid">

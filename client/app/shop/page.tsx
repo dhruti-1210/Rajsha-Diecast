@@ -142,7 +142,7 @@ export default function ShopPage() {
               {pageProducts.map((product) => (
                 <div className="col-6 col-md-4 col-xl-3" key={product.id}>
                   <article className="shop-card">
-                    <Link href={`/shop/${product.id}`} className="shop-card-image" aria-label={`View ${product.name}`}>
+                    <Link href={`/shop/${product.id}`} className="shop-card-image product-image-container" aria-label={`View ${product.name}`}>
                       {product.left > 0 && <span className="shop-stock">ONLY {product.left} LEFT</span>}
                       <CarImage p={product} />
                     </Link>

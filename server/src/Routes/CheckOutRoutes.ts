@@ -7,6 +7,7 @@ import {
     UpdateCheckoutStatusController,
     DeleteCheckoutController
 } from "../controller/CheckoutController";
+import { adminSessionMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
@@ -14,15 +15,15 @@ const router = Router();
 router.post("/create", CreateCheckoutController);
 
 // Get All Checkout
-router.get("/list", GetAllCheckoutController);
+router.get("/list", adminSessionMiddleware, GetAllCheckoutController);
 
 // Get Checkout By ID
-router.get("/:id", GetCheckoutByIdController);
+router.get("/:id", adminSessionMiddleware, GetCheckoutByIdController);
 
 // Update Checkout Status
-router.patch("/status/:id", UpdateCheckoutStatusController);
+router.patch("/status/:id", adminSessionMiddleware, UpdateCheckoutStatusController);
 
 // Delete Checkout
-router.delete("/delete/:id", DeleteCheckoutController);
+router.delete("/delete/:id", adminSessionMiddleware, DeleteCheckoutController);
 
 export default router;

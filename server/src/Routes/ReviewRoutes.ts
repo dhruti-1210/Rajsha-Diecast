@@ -11,7 +11,10 @@ import {
     ChangeReviewsActiveStatusController,
     ChangeReviewsDisplayStatusController
 } from "../controller/ReviewMasterController";
-import { authMiddleware } from "../middleware/authMiddleWare";
+import {
+    adminSessionMiddleware,
+    authMiddleware
+} from "../middleware/authMiddleWare";
 
 const router = Router();
 
@@ -25,21 +28,21 @@ router.get("/mine", authMiddleware, GetMyReviewsMasterController);
 router.get("/public", GetDisplayedReviewsMasterController);
 
 // Get All Reviews
-router.get("/list", GetAllReviewsMasterController);
+router.get("/list", adminSessionMiddleware, GetAllReviewsMasterController);
 
 // Get Reviews By ID
-router.get("/:id", GetReviewsMasterByIdController);
+router.get("/:id", adminSessionMiddleware, GetReviewsMasterByIdController);
 
 // Update Reviews
-router.put("/update/:id", UpdateReviewsMasterController);
+router.put("/update/:id", adminSessionMiddleware, UpdateReviewsMasterController);
 
 // Delete Reviews
-router.delete("/delete/:id", DeleteReviewsMasterController);
+router.delete("/delete/:id", adminSessionMiddleware, DeleteReviewsMasterController);
 
 // Change Active Status
-router.patch("/status/:id", ChangeReviewsActiveStatusController);
+router.patch("/status/:id", adminSessionMiddleware, ChangeReviewsActiveStatusController);
 
 // Change Display Status
-router.patch("/display-status/:id", ChangeReviewsDisplayStatusController);
+router.patch("/display-status/:id", adminSessionMiddleware, ChangeReviewsDisplayStatusController);
 
 export default router;

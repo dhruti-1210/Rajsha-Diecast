@@ -9,6 +9,7 @@ interface JwtUser {
 }
 
 const SESSION_COOKIE = "rajshaSession";
+const ADMIN_SESSION_COOKIE = "rajshaAdminSession";
 
 declare global {
     namespace Express {
@@ -31,13 +32,16 @@ const getBearerToken = (authorization?: string) => {
     return token;
 };
 
-const getSessionCookieToken = (cookieHeader?: string) => {
+const getSessionCookieToken = (
+    cookieHeader?: string,
+    cookieName = SESSION_COOKIE
+) => {
     const cookie = cookieHeader
         ?.split(";")
         .map((part) => part.trim())
-        .find((part) => part.startsWith(`${SESSION_COOKIE}=`));
+        .find((part) => part.startsWith(`${cookieName}=`));
 
-    return cookie?.slice(SESSION_COOKIE.length + 1) || null;
+    return cookie?.slice(cookieName.length + 1) || null;
 };
 
 const getRequestToken = (req: Request) =>
@@ -100,6 +104,51 @@ export const authMiddleware = (
         return res.status(401).json({
             success: false,
             message: "Invalid or expired token"
+        });
+    }
+
+    req.user = user;
+    return next();
+};
+
+export const adminSessionMiddleware = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+        const clientOrigin = (
+            process.env.CLIENT_URL || "http://localhost:3001"
+        ).replace(/\/+$/, "");
+        if (req.get("origin") !== clientOrigin) {
+            return res.status(403).json({
+                success: false,
+                message: "Request origin is not allowed."
+            });
+        }
+    }
+
+    const token = getSessionCookieToken(req.headers.cookie, ADMIN_SESSION_COOKIE);
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: "Admin authentication is required."
+        });
+    }
+
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        return res.status(503).json({
+            success: false,
+            message: "Admin authentication is not configured."
+        });
+    }
+
+    const user = verifyJwtUser(token, secret);
+    if (!user || user.role !== "admin") {
+        return res.status(401).json({
+            success: false,
+            message: "Admin session is invalid or expired."
         });
     }
 

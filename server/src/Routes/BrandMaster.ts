@@ -8,14 +8,15 @@ import {
    DeleteBrandController,
   ChangeActiveStatusController
 } from "../controller/BrandMasterController";
+import { adminSessionMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
-router.post("/create", CreateBrandController);
+router.post("/create", adminSessionMiddleware, CreateBrandController);
 router.get("/list", GetAllBrandsController);
 router.get("/:id", GetBrandByIdController);
-router.put("/update/:id", UpdateBrandController);
-router.delete("/delete/:id", DeleteBrandController);
-router.patch("/status/:id", ChangeActiveStatusController);
+router.put("/update/:id", adminSessionMiddleware, UpdateBrandController);
+router.delete("/delete/:id", adminSessionMiddleware, DeleteBrandController);
+router.patch("/status/:id", adminSessionMiddleware, ChangeActiveStatusController);
 
 export default router;
