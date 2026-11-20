@@ -1,7 +1,20 @@
 
+import { randomBytes } from "crypto";
 import OrderMaster, { IOrderMaster } from "../Models/OrderMaster";
 import OrderLineMaster from "../Models/OrderLineMaster";
 import Checkout from "../Models/CheckoutModel";
+import Cart from "../Models/Cart";
+import ProductMaster from "../Models/ProductMaster";
+
+export class OrderPlacementError extends Error {
+    constructor(
+        message: string,
+        public readonly statusCode: number = 400
+    ) {
+        super(message);
+        this.name = "OrderPlacementError";
+    }
+}
 
 // Create Order
 export const CreateOrderMaster = async (data: Partial<IOrderMaster>) => {
@@ -9,6 +22,120 @@ export const CreateOrderMaster = async (data: Partial<IOrderMaster>) => {
         const order = new OrderMaster(data);
         return await order.save();
     } catch (error) {
+        throw error;
+    }
+};
+
+export const PlaceOrderForUser = async (userId: string) => {
+    const cartItems = await Cart.find({
+        User_Id: userId,
+        isDeleted: { $ne: true }
+    }).lean();
+
+    if (cartItems.length === 0) {
+        throw new OrderPlacementError("Your cart is empty.");
+    }
+
+    const productIds = [...new Set(cartItems.map((item) => item.Product_Id.toString()))];
+    const products = await ProductMaster.find({
+        _id: { $in: productIds },
+        isActive: true,
+        isDeleted: false
+    }).lean();
+    const productsById = new Map(products.map((product) => [product._id.toString(), product]));
+    const quantitiesByProduct = new Map<string, number>();
+
+    for (const item of cartItems) {
+        const productId = item.Product_Id.toString();
+        const product = productsById.get(productId);
+        if (!product) {
+            throw new OrderPlacementError("A product in your cart is no longer available.", 409);
+        }
+        if (!Number.isSafeInteger(item.Quantity) || item.Quantity < 1) {
+            throw new OrderPlacementError("A cart item has an invalid quantity.", 409);
+        }
+
+        const quantity = (quantitiesByProduct.get(productId) ?? 0) + item.Quantity;
+        if (quantity > product.TotalStock) {
+            throw new OrderPlacementError(
+                `Only ${product.TotalStock} of ${product.Name} are currently available.`,
+                409
+            );
+        }
+        quantitiesByProduct.set(productId, quantity);
+    }
+
+    const orderItems = [...quantitiesByProduct.entries()].map(([productId, Quantity]) => {
+        const product = productsById.get(productId);
+        if (!product) {
+            throw new OrderPlacementError("A product in your cart is no longer available.", 409);
+        }
+        return {
+            product_ID: product._id,
+            Price: product.Price,
+            Quantity,
+            lineTotal: product.Price * Quantity
+        };
+    });
+    const total = orderItems.reduce((sum, item) => sum + item.lineTotal, 0);
+    if (!Number.isFinite(total)) {
+        throw new OrderPlacementError("The order total is invalid.", 409);
+    }
+
+    const order = await OrderMaster.create({
+        user_id: userId,
+        Total: total,
+        PaymentStatus: "Pending",
+        TrackingId: `RD-${randomBytes(8).toString("hex").toUpperCase()}`,
+        createdBy: userId,
+        updatedBy: userId
+    });
+
+    try {
+        const orderLines = await OrderLineMaster.insertMany(orderItems.map((item) => ({
+            order_Master_id: order._id,
+            product_ID: item.product_ID,
+            Price: item.Price,
+            Quantity: item.Quantity,
+            createdBy: userId,
+            updatedBy: userId
+        })));
+        const checkout = await Checkout.create({
+            order_Master_id: order._id,
+            isPLACED: true,
+            createdBy: userId,
+            updatedBy: userId
+        });
+
+        await Cart.updateMany(
+            { _id: { $in: cartItems.map((item) => item._id) }, User_Id: userId },
+            { isDeleted: true }
+        );
+
+        return {
+            ...order.toObject(),
+            items: orderLines.map((line) => ({
+                ...line.toObject(),
+                product_ID: productsById.get(line.product_ID.toString()) ?? line.product_ID
+            })),
+            checkout: checkout.toObject()
+        };
+    } catch (error) {
+        try {
+            await Promise.all([
+                Checkout.deleteMany({ order_Master_id: order._id }),
+                OrderLineMaster.deleteMany({ order_Master_id: order._id }),
+                OrderMaster.deleteOne({ _id: order._id })
+            ]);
+        } catch (rollbackError) {
+            const originalMessage = error instanceof Error ? error.message : "Unknown order error.";
+            const rollbackMessage = rollbackError instanceof Error
+                ? rollbackError.message
+                : "Unknown rollback error.";
+            throw new Error(
+                `Order placement failed (${originalMessage}) and cleanup failed (${rollbackMessage}).`
+            );
+        }
         throw error;
     }
 };

@@ -37,6 +37,11 @@ function getOrderId(checkout: Checkout) {
   return order?._id ?? (typeof checkout.order_Master_id === 'string' ? checkout.order_Master_id : '—');
 }
 
+function getOrderEmail(checkout: Checkout) {
+  const user = getOrder(checkout)?.user_id;
+  return typeof user === 'object' && user ? user.email : '—';
+}
+
 function formatDate(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
@@ -46,6 +51,19 @@ function formatTotal(value?: number) {
   return typeof value === 'number' && Number.isFinite(value)
     ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value)
     : '—';
+}
+
+function getOrderItems(checkout: Checkout) {
+  const items = getOrder(checkout)?.items ?? [];
+  return items
+    .map((item) => {
+      const name = typeof item.product_ID === 'object' && item.product_ID
+        ? item.product_ID.Name
+        : '';
+      return name ? `${name} × ${item.Quantity ?? 1}` : '';
+    })
+    .filter(Boolean)
+    .join(', ') || '—';
 }
 
 export default function CheckoutPage() {
@@ -82,9 +100,10 @@ export default function CheckoutPage() {
     return items.filter((checkout) => {
       const order = getOrder(checkout);
       return [
-        getOrderId(checkout),
+        getOrderEmail(checkout),
         order?.TrackingId,
         order?.PaymentStatus,
+        getOrderItems(checkout),
         getCheckoutStage(checkout),
       ].join(' ').toLowerCase().includes(normalizedQuery);
     });
@@ -94,9 +113,20 @@ export default function CheckoutPage() {
     setUpdatingIds((current) => new Set(current).add(checkout._id));
     try {
       const response = await updateCheckoutStatus(checkout._id, status, 'admin');
-      setItems((current) => current.map((item) => (
-        item._id === checkout._id ? response.data : item
-      )));
+      setItems((current) => current.map((item) => {
+        if (item._id !== checkout._id) return item;
+        const currentOrder = getOrder(item);
+        const updatedOrder = getOrder(response.data);
+        const order = currentOrder && updatedOrder
+          ? {
+            ...currentOrder,
+            ...updatedOrder,
+            items: currentOrder.items ?? updatedOrder.items,
+            user_id: currentOrder.user_id ?? updatedOrder.user_id,
+          }
+          : currentOrder ?? response.data.order_Master_id;
+        return { ...response.data, order_Master_id: order };
+      }));
       const stage = checkoutStages.find((item) => item.value === status);
       setNotice(`Order status updated to ${stage?.label ?? status}.`);
       setNoticeIsError(false);
@@ -113,13 +143,14 @@ export default function CheckoutPage() {
   }
 
   const columns: TableColumn<Checkout>[] = [
-    { name: 'ORDER', selector: (checkout) => getOrderId(checkout), minWidth: '130px', wrap: true },
+    { name: 'USER', selector: (checkout) => getOrderEmail(checkout), minWidth: '180px', wrap: true },
+    { name: 'PRODUCTS', selector: (checkout) => getOrderItems(checkout), minWidth: '220px', wrap: true },
     { name: 'DATE', selector: (checkout) => checkout.createdAt, format: (checkout) => formatDate(checkout.createdAt), minWidth: '100px' },
     { name: 'TOTAL', selector: (checkout) => getOrder(checkout)?.Total ?? 0, format: (checkout) => formatTotal(getOrder(checkout)?.Total), minWidth: '110px' },
     { name: 'PAYMENT', selector: (checkout) => getOrder(checkout)?.PaymentStatus ?? '—', minWidth: '110px', wrap: true },
     { name: 'TRACKING', selector: (checkout) => getOrder(checkout)?.TrackingId || '—', minWidth: '120px', wrap: true },
     {
-      name: 'FULFILLMENT',
+      name: 'STATUS',
       minWidth: '150px',
       cell: (checkout) => {
         const currentStage = getCheckoutStage(checkout);
@@ -171,7 +202,7 @@ export default function CheckoutPage() {
             <Icon name="search" size={17} />
             <input
               type="search"
-              placeholder="Search order, tracking, or payment..."
+              placeholder="Search user, product, tracking, or payment..."
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               aria-label="Search checkout orders"

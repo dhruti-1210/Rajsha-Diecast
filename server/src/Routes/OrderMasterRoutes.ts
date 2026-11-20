@@ -2,6 +2,7 @@
 import { Router } from "express";
 import {
     CreateOrderMasterController,
+    PlaceOrderController,
     GetAllOrderMasterController,
     GetMyOrderHistoryController,
     GetOrderMasterByIdController,
@@ -14,6 +15,7 @@ import { authMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
+router.post("/place", authMiddleware, PlaceOrderController);
 router.post("/create", CreateOrderMasterController);
 router.get("/my", authMiddleware, GetMyOrderHistoryController);
 router.get("/list", GetAllOrderMasterController);

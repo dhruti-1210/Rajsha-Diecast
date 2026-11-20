@@ -10,6 +10,7 @@ export interface OrderProductSummary {
 export interface OrderLineSummary {
   _id: string;
   Price: number;
+  Quantity?: number;
   product_ID: OrderProductSummary | string | null;
 }
 

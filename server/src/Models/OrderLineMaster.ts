@@ -5,6 +5,7 @@ export interface IOrderLineMaster extends Document {
     order_Master_id: mongoose.Types.ObjectId;
     product_ID: mongoose.Types.ObjectId;
     Price: number;
+    Quantity: number;
 
     createdAt: Date;
     updatedAt: Date;
@@ -32,6 +33,16 @@ const OrderLineMasterSchema: Schema = new Schema(
             type: Number,
             required: true,
             default: 0
+        },
+        Quantity: {
+            type: Number,
+            required: true,
+            default: 1,
+            min: 1,
+            validate: {
+                validator: Number.isInteger,
+                message: "Quantity must be a whole number."
+            }
         },
         createdAt: {
             type: Date,

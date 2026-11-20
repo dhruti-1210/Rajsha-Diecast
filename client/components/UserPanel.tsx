@@ -7,7 +7,7 @@ import { useStore } from '@/context/StoreContext';
 import { useToastify } from '@/components/Toastify';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { createReview, getMyReviews } from '@/api/ReviewsApi';
-import { getMyOrders } from '@/api/orderMasterApi';
+import { getMyOrders, MY_ORDERS_UPDATED_EVENT } from '@/api/orderMasterApi';
 import type { Review } from '@/types/Reviews';
 import type { OrderMaster } from '@/types/orderMaster';
 import { userAuthUrl } from '@/lib/user-auth';
@@ -27,6 +27,25 @@ const sections: { id: PanelSection; label: string; icon: string }[] = [
   { id: 'orders', label: 'Orders', icon: 'M3 7h18v14H3z M7 7V4h10v3 M3 11h18 M10 11v3h4v-3' },
   { id: 'reviews', label: 'Reviews', icon: 'M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z' },
 ];
+
+function isPanelSection(section: string | null): section is PanelSection {
+  return sections.some((item) => item.id === section);
+}
+
+function getPanelSectionFromUrl(): PanelSection {
+  const requestedSection = new URLSearchParams(window.location.search).get('section');
+  return isPanelSection(requestedSection) ? requestedSection : 'profile';
+}
+
+function updatePanelSectionUrl(section: PanelSection) {
+  const url = new URL(window.location.href);
+  if (section === 'profile') {
+    url.searchParams.delete('section');
+  } else {
+    url.searchParams.set('section', section);
+  }
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
 
 export default function UserPanel() {
   const [activeSection, setActiveSection] = useState<PanelSection>('profile');
@@ -72,6 +91,12 @@ export default function UserPanel() {
         }
         const user = result.data.user;
         if (!active) return;
+        const requestedSection = getPanelSectionFromUrl();
+        const section = !user.profileComplete && requestedSection !== 'profile'
+          ? 'profile'
+          : requestedSection;
+        setActiveSection(section);
+        if (section !== requestedSection) updatePanelSectionUrl(section);
         setAuthStatus('authenticated');
         setProfile((current) => ({
           ...current,
@@ -98,6 +123,8 @@ export default function UserPanel() {
     let active = true;
 
     async function loadOrders() {
+      setOrdersLoading(true);
+      setOrdersError('');
       try {
         const response = await getMyOrders();
         if (!response.success) {
@@ -114,7 +141,11 @@ export default function UserPanel() {
     }
 
     void loadOrders();
-    return () => { active = false; };
+    window.addEventListener(MY_ORDERS_UPDATED_EVENT, loadOrders);
+    return () => {
+      active = false;
+      window.removeEventListener(MY_ORDERS_UPDATED_EVENT, loadOrders);
+    };
   }, [ready]);
 
   async function logout() {
@@ -137,6 +168,16 @@ export default function UserPanel() {
     setConfirmAction(null);
     notify('success', 'Logout successful. See you again soon!');
     router.push('/login');
+  }
+
+  function navigateToSection(section: PanelSection) {
+    if (!profileComplete && section !== 'profile') {
+      notify('error', 'Complete your profile before continuing.');
+      return;
+    }
+    setActiveSection(section);
+    updatePanelSectionUrl(section);
+    setMobileSidebarOpen(false);
   }
 
   if (!ready) {
@@ -183,14 +224,7 @@ export default function UserPanel() {
                 key={section.id}
                 className={activeSection === section.id ? 'active' : ''}
                 aria-current={activeSection === section.id ? 'page' : undefined}
-                onClick={() => {
-                  if (!profileComplete && section.id !== 'profile') {
-                    notify('error', 'Complete your profile before continuing.');
-                    return;
-                  }
-                  setActiveSection(section.id);
-                  setMobileSidebarOpen(false);
-                }}
+                onClick={() => navigateToSection(section.id)}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d={section.icon} /></svg>
                 <span>{section.label}</span>
@@ -223,7 +257,7 @@ export default function UserPanel() {
               orders={orders}
               ordersLoading={ordersLoading}
               ordersError={ordersError}
-              onOrdersClick={() => setActiveSection('orders')}
+              onOrdersClick={() => navigateToSection('orders')}
             />
           )}
           {activeSection === 'profile' && (

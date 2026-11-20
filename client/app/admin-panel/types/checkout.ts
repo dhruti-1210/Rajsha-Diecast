@@ -10,6 +10,11 @@ export interface CheckoutOrderSummary {
   Total?: number;
   PaymentStatus?: string;
   TrackingId?: string;
+  user_id?: string | { email: string } | null;
+  items?: {
+    Quantity?: number;
+    product_ID: string | { Name: string } | null;
+  }[];
 }
 
 export interface Checkout {

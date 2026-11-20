@@ -72,6 +72,7 @@ interface Store {
   total: number;
   cartLoading: boolean;
   onlyNLeft: number;
+  clearCart: () => void;
   add: (p: Product, quantity?: number) => void;
   remove: (i: number) => void;
   setQuantity: (key: string, quantity: number) => void;
@@ -394,10 +395,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
   }, [cart]);
 
+  const clearCart = useCallback(() => {
+    setCart([]);
+    setCartError('');
+  }, []);
+
   const value = useMemo<Store>(() => ({
-    cart, cartError, cartLoading: !cartHydrated, onlyNLeft, drawer, setDrawer, modal, setModal, maxPrice, setMaxPrice, authStatus, setAuthStatus,
+    cart, cartError, cartLoading: !cartHydrated, onlyNLeft, clearCart, drawer, setDrawer, modal, setModal, maxPrice, setMaxPrice, authStatus, setAuthStatus,
     total: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
     add, remove, setQuantity,
-  }), [cart, cartError, cartHydrated, onlyNLeft, drawer, modal, maxPrice, authStatus, add, remove, setQuantity]);
+  }), [cart, cartError, cartHydrated, onlyNLeft, clearCart, drawer, modal, maxPrice, authStatus, add, remove, setQuantity]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -49,17 +49,16 @@ export default function AdminPanelPage() {
 
   useEffect(() => {
     const syncPage = () => {
+      const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
       const currentPage = navConfig
         .flatMap((section) => section.items.flatMap((item) => 'items' in item ? item.items : [item]))
-        .find((item) => item.href === window.location.hash);
+        .find((item) => item.href === currentPath);
       setActivePage(currentPage?.id ?? 'dashboard');
     };
 
     syncPage();
-    window.addEventListener('hashchange', syncPage);
     window.addEventListener('popstate', syncPage);
     return () => {
-      window.removeEventListener('hashchange', syncPage);
       window.removeEventListener('popstate', syncPage);
     };
   }, []);

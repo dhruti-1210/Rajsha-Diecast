@@ -38,41 +38,41 @@ const navConfig: AdminNavSection[] = [
   {
     title: 'WORKSPACE',
     items: [
-      { label: 'Dashboard', href: '#dashboard', id: 'dashboard', icon: 'box' },
+      { label: 'Dashboard', href: '/admin-panel', id: 'dashboard', icon: 'box' },
       {
         label: 'Manage inventory',
         icon: 'car',
         items: [
-          { label: 'Inventory', href: '#inventory', id: 'inventory', icon: 'car' },
-          { label: 'Brand master', href: '#brands', id: 'brands', icon: 'tag' },
-          { label: 'Collection types', href: '#collection-types', id: 'collection-types', icon: 'collection' },
-          { label: 'Packaging types', href: '#packaging-types', id: 'packaging-types', icon: 'box' },
-          { label: 'Scale sizes', href: '#scale-sizes', id: 'scale-sizes', icon: 'ruler' },
+          { label: 'Inventory', href: '/admin-panel/inventory', id: 'inventory', icon: 'car' },
+          { label: 'Brand master', href: '/admin-panel/brands', id: 'brands', icon: 'tag' },
+          { label: 'Collection types', href: '/admin-panel/collection-types', id: 'collection-types', icon: 'collection' },
+          { label: 'Packaging types', href: '/admin-panel/packaging-types', id: 'packaging-types', icon: 'box' },
+          { label: 'Scale sizes', href: '/admin-panel/scale-sizes', id: 'scale-sizes', icon: 'ruler' },
         ],
       },
       {
         label: 'Company profile',
         icon: 'building',
         items: [
-          { label: 'Company setup', href: '#company-setup', id: 'company-setup', icon: 'building' },
-          { label: 'Banner image', href: '#banners', id: 'banners', icon: 'image' },
+          { label: 'Company setup', href: '/admin-panel/company-setup', id: 'company-setup', icon: 'building' },
+          { label: 'Banner image', href: '/admin-panel/banners', id: 'banners', icon: 'image' },
         ],
       },
-      { label: 'CMS master', href: '#cms', id: 'cms', icon: 'file' },
+      { label: 'CMS master', href: '/admin-panel/cms', id: 'cms', icon: 'file' },
       {
         label: 'User orders',
         icon: 'cart',
         items: [
-          { label: 'Reviews', href: '#review-master', id: 'review-master', icon: 'star' },
-          { label: 'Checkout', href: '#checkout', id: 'checkout', icon: 'cart' },
+          { label: 'Reviews', href: '/admin-panel/review-master', id: 'review-master', icon: 'star' },
+          { label: 'Checkout', href: '/admin-panel/checkout', id: 'checkout', icon: 'cart' },
         ],
       },
       {
         label: 'Manage footer',
         icon: 'links',
         items: [
-          { label: 'Footer link group', href: '#footer-link-groups', id: 'footer-link-groups', icon: 'collection' },
-          { label: 'Footer link', href: '#footer-links', id: 'footer-links', icon: 'links' },
+          { label: 'Footer link group', href: '/admin-panel/footer-link-groups', id: 'footer-link-groups', icon: 'collection' },
+          { label: 'Footer link', href: '/admin-panel/footer-links', id: 'footer-links', icon: 'links' },
         ],
       },
     ],

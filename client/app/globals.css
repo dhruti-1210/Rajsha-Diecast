@@ -1236,6 +1236,114 @@ cite {
   white-space: nowrap
 }
 
+.order-confirmation-box {
+  display: block;
+  max-width: 560px;
+  padding: 32px;
+  color: var(--text)
+}
+
+.order-confirmation-box h2 {
+  margin: 0 38px 8px 0;
+  font-family: Cinzel, serif;
+  font-size: 1.4rem
+}
+
+.order-confirmation-intro {
+  margin: 0 0 18px;
+  color: var(--mut);
+  font-size: .9rem
+}
+
+.order-confirmation-items {
+  max-height: min(45vh, 360px);
+  overflow: auto;
+  border-top: 1px solid var(--line)
+}
+
+.order-confirmation-item {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: .82rem
+}
+
+.order-confirmation-image {
+  display: grid;
+  width: 52px;
+  height: 46px;
+  place-items: center;
+  overflow: hidden;
+  background: #171717
+}
+
+.order-confirmation-image img,
+.order-confirmation-image svg {
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  object-fit: contain
+}
+
+.order-confirmation-details {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px
+}
+
+.order-confirmation-details strong {
+  overflow-wrap: anywhere
+}
+
+.order-confirmation-details small {
+  color: var(--mut)
+}
+
+.order-confirmation-total {
+  display: flex;
+  justify-content: space-between;
+  margin: 18px 0;
+  font-size: 1rem
+}
+
+.order-confirmation-total strong {
+  color: var(--gold2)
+}
+
+.order-confirmation-error {
+  color: #ff7777;
+  font-size: .85rem
+}
+
+.order-confirmation-box > .btn,
+.order-confirmation-success .btn {
+  display: inline-flex;
+  justify-content: center;
+  min-height: 42px;
+  align-items: center;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #000;
+  font-weight: 600;
+  cursor: pointer
+}
+
+.order-confirmation-box > .btn:disabled {
+  cursor: wait;
+  opacity: .7
+}
+
+.order-confirmation-success p {
+  margin: 10px 0 22px;
+  color: var(--mut)
+}
+
 .modal {
   position: fixed;
   inset: 0;
@@ -1305,6 +1413,10 @@ cite {
 @media(max-width:700px) {
   .mbox {
     grid-template-columns: 1fr
+  }
+
+  .order-confirmation-box {
+    padding: 28px 20px
   }
 }
 

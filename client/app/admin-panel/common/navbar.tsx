@@ -43,7 +43,7 @@ export default function Navbar({ activePage, onNavigate, onSignOut }: NavbarProp
         onClick={(event) => {
           if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
           event.preventDefault();
-          if (window.location.hash !== item.href) window.history.pushState(null, '', item.href);
+          if (window.location.pathname !== item.href) window.history.pushState(null, '', item.href);
           navigate(item.id);
         }}
       >

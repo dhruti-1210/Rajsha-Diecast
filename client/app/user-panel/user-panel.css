@@ -445,10 +445,170 @@
   background: var(--gold2)
 }
 
+.user-panel-track-button {
+  min-width: 70px;
+  padding: 7px 12px;
+  border: 1px solid var(--gold2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gold2);
+  font: inherit;
+  font-size: .7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease
+}
+
+.user-panel-track-button:hover,
+.user-panel-track-button.is-active {
+  background: var(--gold2);
+  color: #080808
+}
+
 .user-panel-order-price {
   color: var(--text);
   font-size: .78rem;
   white-space: nowrap
+}
+
+.user-panel-tracking-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(0 0 0 / 82%)
+}
+
+.user-panel-tracking-dialog {
+  position: relative;
+  width: min(720px, 100%);
+  padding: 32px;
+  border: 1px solid var(--gold2);
+  border-radius: 8px;
+  background:
+    radial-gradient(ellipse at 50% 0, rgb(212 175 55 / 9%), transparent 58%),
+    #0b0b0b;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 65%)
+}
+
+.user-panel-tracking-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #111;
+  color: var(--gold2);
+  font-size: 1.4rem;
+  cursor: pointer
+}
+
+.user-panel-tracking-dialog > .eyebrow {
+  margin: 0 42px 8px 0;
+  font-size: .62rem
+}
+
+.user-panel-tracking-dialog h3 {
+  margin: 0 42px 20px 0;
+  color: var(--text);
+  font-family: Cinzel, serif;
+  font-size: clamp(1.15rem, 3vw, 1.65rem)
+}
+
+.user-panel-tracking-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  padding: 13px 15px;
+  border: 1px solid rgb(212 175 55 / 28%);
+  background: rgb(212 175 55 / 5%);
+  color: var(--mut);
+  font-size: .68rem;
+  letter-spacing: .08em
+}
+
+.user-panel-tracking-meta strong {
+  margin-left: 6px;
+  color: var(--gold2);
+  font-size: .75rem;
+  letter-spacing: .04em;
+  overflow-wrap: anywhere
+}
+
+.user-panel-tracking-steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 34px 0 24px;
+  padding: 0;
+  list-style: none
+}
+
+.user-panel-tracking-steps::before {
+  position: absolute;
+  top: 14px;
+  right: 10%;
+  left: 10%;
+  height: 2px;
+  background: #3b3b3b;
+  content: ""
+}
+
+.user-panel-tracking-steps li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  color: #858585;
+  font-size: .68rem;
+  text-align: center
+}
+
+.user-panel-tracking-marker {
+  z-index: 1;
+  display: grid;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  border: 2px solid #494949;
+  border-radius: 50%;
+  background: #111;
+  color: #999;
+  font-size: .7rem;
+  font-weight: 700
+}
+
+.user-panel-tracking-steps li.is-complete {
+  color: var(--gold2)
+}
+
+.user-panel-tracking-steps li.is-complete .user-panel-tracking-marker {
+  border-color: var(--gold2);
+  background: var(--gold2);
+  color: #090909
+}
+
+.user-panel-tracking-steps li.is-current .user-panel-tracking-marker {
+  box-shadow: 0 0 0 5px rgb(212 175 55 / 16%)
+}
+
+.user-panel-tracking-current {
+  margin: 0;
+  padding-top: 15px;
+  border-top: 1px solid var(--line);
+  color: var(--mut);
+  font-size: .78rem
+}
+
+.user-panel-tracking-current strong {
+  color: var(--gold2)
 }
 
 .user-panel-note {
@@ -805,9 +965,12 @@
     height: 36px
   }
 
-  .user-panel-order-status {
+  .user-panel-track-button {
     grid-column: 2;
     grid-row: 2;
+    justify-self: start;
+    min-width: 62px;
+    padding: 6px 10px;
     font-size: .62rem
   }
 
@@ -824,6 +987,40 @@
 
   .user-panel-order-product small {
     font-size: .58rem
+  }
+
+  .user-panel-tracking-dialog {
+    padding: 24px 18px
+  }
+
+  .user-panel-tracking-steps {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin: 25px 0 20px;
+    padding-left: 4px
+  }
+
+  .user-panel-tracking-steps::before {
+    top: 12px;
+    bottom: 12px;
+    left: 13px;
+    width: 2px;
+    height: auto;
+    right: auto
+  }
+
+  .user-panel-tracking-steps li {
+    min-height: 28px;
+    grid-template-columns: 29px 1fr;
+    align-items: center;
+    justify-items: start;
+    gap: 11px;
+    text-align: left
+  }
+
+  .user-panel-tracking-marker {
+    grid-column: 1;
+    grid-row: 1
   }
 
   .user-panel-note {
