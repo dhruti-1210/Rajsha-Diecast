@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
 import AdminToast from '../common/AdminToast';
-import AdminRichTextEditor from '../common/AdminRichTextEditor';
 import {
   changePackagingTypeStatus,
   createPackagingType,
@@ -126,7 +125,7 @@ export default function PackagingTypePage() {
     setEditingId(item._id);
     setDraft({
       packagingName: item.packagingName,
-      Description: item.Description,
+      Description: richTextToPlainText(item.Description),
       isActive: item.isActive,
     });
     setModalOpen(true);
@@ -286,13 +285,17 @@ export default function PackagingTypePage() {
                   placeholder="e.g. Sealed"
                 />
               </label>
-              <div className="admin-form-field admin-form-wide">
+              <label className="admin-form-field admin-form-wide">
                 <span>Description</span>
-                <AdminRichTextEditor
+                <textarea
+                  required
+                  rows={3}
+                  maxLength={500}
                   value={draft.Description}
-                  onChange={(Description) => setDraft((current) => ({ ...current, Description }))}
+                  onChange={(event) => setDraft((current) => ({ ...current, Description: event.target.value }))}
+                  placeholder="Describe this packaging condition"
                 />
-              </div>
+              </label>
               <label className="admin-status-toggle">
                 <input
                   type="checkbox"

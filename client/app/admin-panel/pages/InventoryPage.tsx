@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent 
 import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
 import AdminSelect from '../common/AdminSelect';
 import AdminToast from '../common/AdminToast';
-import AdminRichTextEditor from '../common/AdminRichTextEditor';
 import Header from '../common/header';
 import Icon from '../common/AdminIcon';
 import AdminDataTable from '../common/AdminDataTable';
@@ -23,6 +22,7 @@ import { getScaleSizeList } from '../api/scaleSize';
 import type { ScaleSize } from '../types/ScaleSize';
 import type { ProductMaster, ProductMasterInput } from '../types/Product';
 import { readImageAsDataUrl } from '../utils/images';
+import { richTextToPlainText } from '@/lib/richText';
 
 type AdminProduct = {
   id: string;
@@ -124,7 +124,7 @@ const mapProduct = (
     packagingTypeId: product.Packagingtype_Id,
     stock: product.TotalStock,
     sku: product.ModelCode,
-    description: product.Description,
+    description: richTextToPlainText(product.Description),
     images: product.Image ?? [],
     isActive: product.isActive,
     isDisplay: product.isDisplay,
@@ -725,13 +725,14 @@ export default function InventoryPage() {
               </label>
               <label className="admin-form-field"><span>Price (INR)</span><input required type="number" min="0" step="1" value={draft.price} onChange={(event) => updateDraft('price', Number(event.target.value))} /></label>
               <label className="admin-form-field"><span>Stock quantity</span><input required type="number" min="0" step="1" value={draft.stock} onChange={(event) => updateDraft('stock', Number(event.target.value))} /></label>
-              <div className="admin-form-field admin-form-wide">
+              <label className="admin-form-field admin-form-wide">
                 <span>Description</span>
-                <AdminRichTextEditor
+                <textarea
+                  rows={3}
                   value={draft.description}
-                  onChange={(description) => updateDraft('description', description)}
+                  onChange={(event) => updateDraft('description', event.target.value)}
                 />
-              </div>
+              </label>
               <div className="admin-form-field admin-form-wide">
                 <span>Product images</span>
                 {draft.images.map((image, index) => (

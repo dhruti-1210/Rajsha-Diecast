@@ -34,7 +34,11 @@ export function sanitizeRichText(html: string): string {
 }
 
 export function richTextToPlainText(html: string): string {
-  return DOMPurify.sanitize(html, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+  const withLineBreaks = html
+    .replace(/<br\b[^>]*>/gi, '\n')
+    .replace(/<\/(?:p|div|li|h[1-6]|tr|blockquote|pre)>/gi, '\n');
+  return DOMPurify.sanitize(withLineBreaks, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
     .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/\n[ \t]*\n+/g, '\n')
     .trim();
 }
