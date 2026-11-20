@@ -78,6 +78,7 @@ const customStyles: TableStyles = {
   noData: {
     style: {
       minHeight: '88px',
+      backgroundColor: '#191611',
       color: '#b6a27d',
       fontSize: '12px',
     },
