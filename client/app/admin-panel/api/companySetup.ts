@@ -1,18 +1,14 @@
 import api from './axios';
-import type { CompanySetup, CompanySetupInput } from '../types/companySetup';
+import type { CompanySetup, CompanySetupInput } from '@/types/CompanySetup';
+import { getCompanySetupList } from '@/api/CompanySetupApi';
 
-export interface CompanySetupApiResponse<T> {
+export { getCompanySetupList };
+
+interface CompanySetupApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
 }
-
-export const getCompanySetupList = async () => {
-  const response = await api.get<CompanySetupApiResponse<CompanySetup[]>>(
-    '/company-setup/list',
-  );
-  return response.data;
-};
 
 export const getCompanySetupById = async (id: string) => {
   const response = await api.get<CompanySetupApiResponse<CompanySetup>>(

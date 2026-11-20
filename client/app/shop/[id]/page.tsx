@@ -10,13 +10,14 @@ import CarImage from '@/components/CarImage';
 import { products } from '@/data/products';
 import { useStore } from '@/context/StoreContext';
 import { money } from '@/lib/format';
+import { getOnlyNLeft } from '@/lib/stock';
 import type { Product } from '@/types';
 import { getProductById, getProductPackagingTypes } from '@/api/ProductApi';
 
 export default function ProductPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { add } = useStore();
+  const { add, onlyNLeft } = useStore();
   const staticProduct = products.find((item) => String(item.id) === params.id);
   const [activeImage, setActiveImage] = useState(0);
   const [added, setAdded] = useState(false);
@@ -60,7 +61,7 @@ export default function ProductPage() {
             (packaging) => packaging._id === record.Packagingtype_Id,
           )?.packagingName || 'Sealed',
           color: '#d4af37',
-          left: record.TotalStock > 0 && record.TotalStock <= 2 ? record.TotalStock : 0,
+          left: record.TotalStock,
           image: record.Image?.[0] || '',
           images: record.Image ?? [],
           stock: record.TotalStock,
@@ -183,7 +184,9 @@ export default function ProductPage() {
         <div className="related-grid">
           {relatedProducts.map((item) => (
             <article className="related-card" key={item.id}>
-              {item.left > 0 && <span className="related-stock">ONLY {item.left} LEFT</span>}
+              {getOnlyNLeft(item.stock ?? item.left, onlyNLeft) > 0 && (
+                <span className="related-stock">ONLY {getOnlyNLeft(item.stock ?? item.left, onlyNLeft)} LEFT</span>
+              )}
               <Link href={`/shop/${item.id}`} className="related-image" aria-label={`View ${item.name}`}>
                 <CarImage p={item} />
               </Link>

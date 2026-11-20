@@ -1,6 +1,7 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createCart, deleteCart, getCartList, updateCartQuantity } from '@/api/Cart';
+import { getCompanySetupList } from '@/api/CompanySetupApi';
 import type { Cart as CartRecord, CartItem } from '@/types/Cart';
 import type { Product } from '@/types';
 import { userAuthUrl } from '@/lib/user-auth';
@@ -44,7 +45,7 @@ function mapCartRecord(record: CartRecord): CartItem | null {
     price: product.Price,
     condition: 'Unknown',
     color: '#d4af37',
-    left: product.TotalStock > 0 && product.TotalStock <= 2 ? product.TotalStock : 0,
+    left: product.TotalStock,
     image: product.Image?.[0] || '',
     stock: product.TotalStock,
     key: record._id,
@@ -70,6 +71,7 @@ interface Store {
   cart: CartItem[];
   total: number;
   cartLoading: boolean;
+  onlyNLeft: number;
   add: (p: Product, quantity?: number) => void;
   remove: (i: number) => void;
   setQuantity: (key: string, quantity: number) => void;
@@ -89,12 +91,34 @@ export function useStore(): Store {
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [onlyNLeft, setOnlyNLeft] = useState(0);
   const [cartHydrated, setCartHydrated] = useState(false);
   const [cartError, setCartError] = useState('');
   const [drawer, setDrawer] = useState<'cart' | null>(null);
   const [modal, setModal] = useState<Product | null>(null);
   const [maxPrice, setMaxPrice] = useState<number>(Infinity);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('checking');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCompanySettings() {
+      try {
+        const response = await getCompanySetupList();
+        if (!response.success) {
+          throw new Error(response.message || 'Could not load company settings.');
+        }
+        const availableSetups = response.data.filter((item) => !item.isDeleted);
+        const setup = availableSetups.find((item) => item.isActive) ?? availableSetups[0];
+        if (active) setOnlyNLeft(setup?.OnlyNLeft ?? 0);
+      } catch (error) {
+        if (active) console.error('Could not load the low-stock warning quantity:', error);
+      }
+    }
+
+    void loadCompanySettings();
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -371,9 +395,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [cart]);
 
   const value = useMemo<Store>(() => ({
-    cart, cartError, cartLoading: !cartHydrated, drawer, setDrawer, modal, setModal, maxPrice, setMaxPrice, authStatus, setAuthStatus,
+    cart, cartError, cartLoading: !cartHydrated, onlyNLeft, drawer, setDrawer, modal, setModal, maxPrice, setMaxPrice, authStatus, setAuthStatus,
     total: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
     add, remove, setQuantity,
-  }), [cart, cartError, cartHydrated, drawer, modal, maxPrice, authStatus, add, remove, setQuantity]);
+  }), [cart, cartError, cartHydrated, onlyNLeft, drawer, modal, maxPrice, authStatus, add, remove, setQuantity]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

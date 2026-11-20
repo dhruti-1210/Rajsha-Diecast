@@ -7,7 +7,7 @@ import {
   getCompanySetupList,
   updateCompanySetup,
 } from '../api/companySetup';
-import type { CompanySetup, CompanySetupInput } from '../types/companySetup';
+import type { CompanySetup, CompanySetupInput } from '@/types/CompanySetup';
 import { readImageAsDataUrl } from '../utils/images';
 
 const MAX_COMPANY_LOGO_FILE_SIZE = 5 * 1024 * 1024;

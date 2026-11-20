@@ -11,6 +11,8 @@ import { getBrandList } from '@/api/BrandApi';
 import { getPackagingTypeList } from '@/api/PackagingApi';
 import { getProductList } from '@/api/ProductApi';
 import { money } from '@/lib/format';
+import { getOnlyNLeft } from '@/lib/stock';
+import { useStore } from '@/context/StoreContext';
 import type { Product as StoreProduct } from '@/types';
 import type { Brand } from '@/types/Brand';
 import type { PackagingType } from '@/types/PackagingType';
@@ -20,6 +22,7 @@ const PAGE_SIZE = 8;
 
 export default function ShopPage() {
   const router = useRouter();
+  const { onlyNLeft } = useStore();
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [conditions, setConditions] = useState<PackagingType[]>([]);
@@ -70,8 +73,9 @@ export default function ShopPage() {
             price: product.Price,
             condition: conditionNamesById.get(product.Packagingtype_Id) || 'Unknown',
             color: '#d4af37',
-            left: product.TotalStock > 0 && product.TotalStock <= 2 ? product.TotalStock : 0,
+            left: product.TotalStock,
             image: product.Image?.[0] || '',
+            stock: product.TotalStock,
           }));
 
         if (active) {
@@ -171,7 +175,9 @@ export default function ShopPage() {
                 <div className="col-6 col-md-4 col-xl-3" key={product.id}>
                   <article className="shop-card">
                     <Link href={`/shop/${product.id}`} className="shop-card-image" aria-label={`View ${product.name}`}>
-                      {product.left > 0 && <span className="shop-stock">ONLY {product.left} LEFT</span>}
+                      {getOnlyNLeft(product.stock, onlyNLeft) > 0 && (
+                        <span className="shop-stock">ONLY {getOnlyNLeft(product.stock, onlyNLeft)} LEFT</span>
+                      )}
                       <CarImage p={product} />
                     </Link>
                     <div className="shop-card-info">
