@@ -5,6 +5,7 @@ export interface IOrderMaster extends Document {
     user_id: mongoose.Types.ObjectId;
     Total: number;
     PaymentStatus: string;
+    RazorpayPaymentId?: string;
     TrackingId: string;
 
     createdAt: Date;
@@ -33,6 +34,11 @@ const OrderMasterSchema: Schema = new Schema(
             type: String,
             required: true,
             default: "Pending"
+        },
+        RazorpayPaymentId: {
+            type: String,
+            unique: true,
+            sparse: true
         },
         TrackingId: {
             type: String,

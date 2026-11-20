@@ -19,6 +19,18 @@ export default function Header() {
   const cartQuantity = cart.reduce((total, item) => total + item.quantity, 0);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const updateSearchQuery = (query: string) => {
+    setSearchQuery(query);
+    if (
+      !query.trim()
+      && window.location.pathname === '/shop'
+      && new URLSearchParams(window.location.search).has('q')
+    ) {
+      window.location.assign('/shop');
+    }
+  };
 
   useEffect(() => {
     const updateScrollState = () => setScrolled(window.scrollY > 60);
@@ -26,16 +38,29 @@ export default function Header() {
     window.addEventListener('scroll', updateScrollState);
     return () => window.removeEventListener('scroll', updateScrollState);
   }, []);
+  useEffect(() => {
+    setSearchQuery(new URLSearchParams(window.location.search).get('q') || '');
+  }, []);
   return (
     <header className={`nav${scrolled ? ' solid' : ''}`} style={{ padding: scrolled ? '10px 5%' : '16px 5%' }}>
       <Logo />
-      <form className="search" onSubmit={(e) => e.preventDefault()}><input type="search" placeholder="Search models, brands, scale..." /></form>
+      <form className="search" action="/shop" method="get" role="search">
+        <input
+          type="search"
+          name="q"
+          aria-label="Search models, brands, or scales"
+          placeholder="Search models, brands, scale..."
+          value={searchQuery}
+          onChange={(event) => updateSearchQuery(event.target.value)}
+        />
+      </form>
       <nav className={open ? 'open' : undefined} onClick={() => setOpen(false)}>
         <Link href="/" className="nav-home">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v11h14V9M9 20v-6h6v6" /></svg>
           <span>Home</span>
         </Link>
-        <Link href="/shop">Shop all</Link><Link href="/#grading">Track</Link>
+        <Link href="/shop">Shop all</Link>
+        {/* <Link href="/#grading">Track</Link> */}
         {authStatus === 'checking' ? (
           <span className="nav-account-pending" role="status" aria-label="Checking account" />
         ) : <Link href={authStatus === 'authenticated' ? '/user-panel' : '/login'} className={authStatus === 'authenticated' ? 'profile-link' : undefined}>

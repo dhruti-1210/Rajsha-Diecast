@@ -29,6 +29,7 @@ export default function ShopPage() {
   const [conditions, setConditions] = useState<PackagingType[]>([]);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [minPrice, setMinPrice] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,6 +86,7 @@ export default function ShopPage() {
           setConditions(availableConditions);
 
           const searchParams = new URLSearchParams(window.location.search);
+          setSearchTerm(searchParams.get('q')?.trim() || '');
           const brandParam = searchParams.get('brand')?.trim().toLowerCase();
           const selectedBrand = availableBrands.find(
             (brand) => brand.brandName.trim().toLowerCase() === brandParam,
@@ -124,12 +126,19 @@ export default function ShopPage() {
 
   const priceLimit = Math.max(0, ...products.map((product) => product.price));
   const effectiveMaxPrice = Math.min(maxPrice ?? priceLimit, priceLimit);
+  const searchTerms = useMemo(
+    () => searchTerm.trim().toLowerCase().split(/\s+/).filter(Boolean),
+    [searchTerm],
+  );
   const filteredProducts = useMemo(() => products.filter((product) =>
     product.price >= (minPrice ?? 0) &&
     product.price <= effectiveMaxPrice &&
     (!selectedBrands.length || selectedBrands.includes(product.brand)) &&
-    (!selectedConditions.length || selectedConditions.some((condition) => condition === product.condition)),
-  ), [products, effectiveMaxPrice, minPrice, selectedBrands, selectedConditions]);
+    (!selectedConditions.length || selectedConditions.some((condition) => condition === product.condition)) &&
+    searchTerms.every((term) => (
+      `${product.name} ${product.brand} ${product.scale}`.toLowerCase().includes(term)
+    )),
+  ), [products, effectiveMaxPrice, minPrice, selectedBrands, selectedConditions, searchTerms]);
   const pageCount = Math.ceil(filteredProducts.length / PAGE_SIZE);
   const pageProducts = filteredProducts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
@@ -169,14 +178,16 @@ export default function ShopPage() {
           </aside>
           <section className="col-12 col-lg-9 col-xl-10" aria-label="Product collection">
             {/* <div className="shop-results-bar"><span>{filteredProducts.length} models</span><span>Curated for collectors</span></div> */}
-            {loading ? <StoreLoader message="Loading models…" className="shop-loader" />
+            {loading ? <p role="status">Loading models…</p>
               : error ? <p role="alert">{error}</p>
                 : filteredProducts.length ? <div className="row g-3 g-xl-4">
               {pageProducts.map((product) => (
                 <div className="col-6 col-md-4 col-xl-3" key={product.id}>
                   <article className="shop-card">
                     <Link href={`/shop/${product.id}`} className="shop-card-image" aria-label={`View ${product.name}`}>
-                      {getOnlyNLeft(product.stock, onlyNLeft) > 0 && (
+                      {product.stock === 0 ? (
+                        <span className="shop-stock">OUT OF STOCK</span>
+                      ) : getOnlyNLeft(product.stock, onlyNLeft) > 0 && (
                         <span className="shop-stock">ONLY {getOnlyNLeft(product.stock, onlyNLeft)} LEFT</span>
                       )}
                       <CarImage p={product} />
@@ -189,8 +200,10 @@ export default function ShopPage() {
                   </article>
                 </div>
               ))}
-            </div> : <div className="shop-empty" role="status">
-              <img src="/images/shop-no-results.png" alt="No models match these filters. Try adjusting your selection." />
+            </div> : <div className="shop-empty">
+              {searchTerm
+                ? `No models found for “${searchTerm}”. Try another model, brand, or scale.`
+                : 'No models match these filters. Try adjusting your selection.'}
             </div>}
             {pageCount > 1 && <div className="shop-pagination" role="navigation" aria-label="Product pages">
               <button type="button" onClick={() => setCurrentPage((page) => page - 1)} disabled={currentPage === 1}>
@@ -226,15 +239,29 @@ export default function ShopPage() {
 function FilterOptions({ title, options, selected, onToggle }: {
   title: string; options: string[]; selected: string[]; onToggle: (value: string) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const visibleOptions = expanded ? options : options.slice(0, 3);
+
   return (
     <section className="filter-group">
       <h3>{title}</h3>
-      {options.map((option) => (
+      {visibleOptions.map((option) => (
         <label className="filter-option" key={option}>
           <input type="checkbox" checked={selected.includes(option)} onChange={() => onToggle(option)} />
           <span>{option}</span>
         </label>
       ))}
+      {options.length > 3 && (
+        <button
+          type="button"
+          className="filter-options-toggle"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((isExpanded) => !isExpanded)}
+        >
+          {expanded ? 'Show less' : 'Show more'}
+          <span aria-hidden="true">{expanded ? ' ↑' : ' ↓'}</span>
+        </button>
+      )}
     </section>
   );
 }

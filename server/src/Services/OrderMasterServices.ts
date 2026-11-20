@@ -26,7 +26,7 @@ export const CreateOrderMaster = async (data: Partial<IOrderMaster>) => {
     }
 };
 
-export const PlaceOrderForUser = async (userId: string) => {
+const getOrderDraftForUser = async (userId: string) => {
     const cartItems = await Cart.find({
         User_Id: userId,
         isDeleted: { $ne: true }
@@ -82,10 +82,30 @@ export const PlaceOrderForUser = async (userId: string) => {
         throw new OrderPlacementError("The order total is invalid.", 409);
     }
 
+    return { cartItems, productsById, orderItems, total };
+};
+
+export const GetCartTotalForUser = async (userId: string) => {
+    const { total } = await getOrderDraftForUser(userId);
+    return total;
+};
+
+export const PlaceOrderForUser = async (
+    userId: string,
+    paymentId: string,
+    expectedAmountPaise: number
+) => {
+    const { cartItems, productsById, orderItems, total } = await getOrderDraftForUser(userId);
+    const totalPaise = Math.round(total * 100);
+    if (!Number.isSafeInteger(totalPaise) || totalPaise !== expectedAmountPaise) {
+        throw new OrderPlacementError("The cart total changed during payment.", 409);
+    }
+
     const order = await OrderMaster.create({
         user_id: userId,
         Total: total,
-        PaymentStatus: "Pending",
+        PaymentStatus: "Paid",
+        RazorpayPaymentId: paymentId,
         TrackingId: `RD-${randomBytes(8).toString("hex").toUpperCase()}`,
         createdBy: userId,
         updatedBy: userId

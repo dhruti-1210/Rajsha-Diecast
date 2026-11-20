@@ -278,6 +278,14 @@
   display: grid
 }
 
+.user-panel-order-list-scroll {
+  max-height: 365px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--gold) var(--bg2);
+  scrollbar-width: thin
+}
+
 .user-panel-review-card {
   display: grid;
   gap: 16px
@@ -355,6 +363,14 @@
 
 .user-panel-review-list-card .user-panel-card-heading {
   margin-bottom: 4px
+}
+
+.user-panel-review-list {
+  max-height: 270px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--gold) var(--bg2);
+  scrollbar-width: thin
 }
 
 .user-panel-review-empty,
@@ -958,6 +974,10 @@
   .user-panel-order-row {
     grid-template-columns: 36px minmax(0, 1fr) auto;
     gap: 9px
+  }
+
+  .user-panel-order-list-scroll {
+    max-height: 505px
   }
 
   .user-panel-order-art {

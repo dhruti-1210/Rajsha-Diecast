@@ -162,9 +162,6 @@ export default function OrderPage({
   return (
     <>
       <div className={compact ? '' : 'user-panel-section'}>
-        {!compact && (
-          <div className="user-panel-section-heading"><div><h2>Orders</h2></div></div>
-        )}
         <section className="user-panel-card">
           <div className="user-panel-card-heading">
             <div>
@@ -177,7 +174,7 @@ export default function OrderPage({
               </button>
             )}
           </div>
-          <div className="user-panel-order-list">
+          <div className={`user-panel-order-list${compact ? '' : ' user-panel-order-list-scroll'}`}>
             {loading && <p role="status">Loading your orders…</p>}
             {!loading && error && <p role="alert">{error}</p>}
             {!loading && !error && orders.length === 0 && (

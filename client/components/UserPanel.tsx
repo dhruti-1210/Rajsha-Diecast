@@ -175,6 +175,9 @@ export default function UserPanel() {
       notify('error', 'Complete your profile before continuing.');
       return;
     }
+    if (section !== activeSection) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     setActiveSection(section);
     updatePanelSectionUrl(section);
     setMobileSidebarOpen(false);
@@ -371,12 +374,11 @@ function Profile({
 
   return (
     <div className="user-panel-section">
-      <div className="user-panel-section-heading">
-        <div>
-          <h2>User profile</h2>
-          {requiredForAccess && <p role="status">Complete your profile to access your garage.</p>}
+      {requiredForAccess && (
+        <div className="user-panel-section-heading">
+          <p role="status">Complete your profile to access your garage.</p>
         </div>
-      </div>
+      )}
       <section className="user-panel-card user-panel-profile-card">
         <div className="user-panel-profile-banner"><div><small>COLLECTOR PROFILE</small><h3>{form.fullName || 'Your profile'}</h3><span>Update your details below</span></div></div>
         <form
@@ -498,7 +500,6 @@ function ReviewsPage() {
 
   return (
     <div className="user-panel-section">
-      <div className="user-panel-section-heading"><div><h2>Reviews</h2></div></div>
       <section className="user-panel-card user-panel-review-card">
         <div>
           <p className="eyebrow">YOUR FEEDBACK</p>
@@ -529,22 +530,24 @@ function ReviewsPage() {
       </section>
       <section className="user-panel-card user-panel-review-list-card" aria-label="Your submitted reviews">
         <div className="user-panel-card-heading">
-          <div><p className="eyebrow">YOUR SUBMISSIONS</p><h3>Submitted reviews</h3></div>
+          <div><h3>Submitted reviews</h3></div>
         </div>
-        {loadingReviews && <p role="status">Loading your reviews…</p>}
-        {!loadingReviews && reviews.length === 0 && !reviewError && (
-          <p className="user-panel-review-empty">You haven’t submitted a review yet.</p>
-        )}
-        {reviews.map((review) => (
-          <article className="user-panel-review-item" key={review._id}>
-            <p>{review.message}</p>
-            <small>
-              {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'Recently submitted'}
-              {' · '}
-              {review.isActive && review.isDisplay ? 'Visible on site' : 'Not visible on site'}
-            </small>
-          </article>
-        ))}
+        <div className="user-panel-review-list" role="region" aria-label="Review entries" tabIndex={0}>
+          {loadingReviews && <p role="status">Loading your reviews…</p>}
+          {!loadingReviews && reviews.length === 0 && !reviewError && (
+            <p className="user-panel-review-empty">You haven’t submitted a review yet.</p>
+          )}
+          {reviews.map((review) => (
+            <article className="user-panel-review-item" key={review._id}>
+              <p>{review.message}</p>
+              <small>
+                {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'Recently submitted'}
+                {' · '}
+                {review.isActive && review.isDisplay ? 'Visible on site' : 'Not visible on site'}
+              </small>
+            </article>
+          ))}
+        </div>
       </section>
     </div>
   );

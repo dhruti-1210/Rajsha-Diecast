@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+import dotenv from "dotenv";
 
 import BannerRoutes from "./Routes/BannerRoutes";
 import BudgetRoutes from "./Routes/BudgetRoutes";
@@ -29,6 +30,9 @@ import FooterLinkGroupRoutes from "./Routes/footerLinkGroupRoutes";
 import FooterLinkMasterRoutes from "./Routes/footerLinkRoutes";
 
 import AdminUserRoutes from "./Routes/AdminRoutes";
+import paymentRoutes from "./Routes/PaymentRoutes";
+
+dotenv.config();
 
 const app = express(); 
 
@@ -40,6 +44,8 @@ app.use(cors({
   origin: clientOrigin,
   credentials: true
 }));
+
+
 app.use("/api/products", express.json({ limit: "20mb" }));
 app.use("/api/banners", express.json({ limit: "20mb" }));
 app.use("/api/company-setup", express.json({ limit: "20mb" }));
@@ -75,6 +81,9 @@ app.use("/api/footer-link-groups", FooterLinkGroupRoutes);
 app.use("/api/footer-links", FooterLinkMasterRoutes);
 
 app.use("/api/admin-users", AdminUserRoutes);
+
+app.use("/api/payment", paymentRoutes);
+
 
 app.get("/health", (_request, response) => {
   response.status(200).json({ status: "ok" });

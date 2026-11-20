@@ -4,7 +4,72 @@ import { useStore } from '@/context/StoreContext';
 import { money } from '@/lib/format';
 import CarImage from './CarImage';
 import Link from 'next/link';
-import { placeOrder, MY_ORDERS_UPDATED_EVENT } from '@/api/orderMasterApi';
+import { MY_ORDERS_UPDATED_EVENT } from '@/api/orderMasterApi';
+import {
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  type RazorpayPaymentResponse,
+} from '@/api/razorpayApi';
+
+interface RazorpayPaymentFailure {
+  error?: {
+    description?: string;
+  };
+}
+
+interface RazorpayCheckoutOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  method: {
+    upi: boolean;
+  };
+  handler: (response: RazorpayPaymentResponse) => void;
+  modal: {
+    ondismiss: () => void;
+  };
+  theme: {
+    color: string;
+  };
+}
+
+interface RazorpayCheckout {
+  open: () => void;
+  on: (event: 'payment.failed', handler: (response: RazorpayPaymentFailure) => void) => void;
+}
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayCheckout;
+  }
+}
+
+const RAZORPAY_CHECKOUT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
+let razorpayScriptPromise: Promise<void> | null = null;
+
+function loadRazorpayScript() {
+  if (window.Razorpay) return Promise.resolve();
+  if (!razorpayScriptPromise) {
+    razorpayScriptPromise = new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = RAZORPAY_CHECKOUT_URL;
+      script.async = true;
+      script.onload = () => {
+        if (window.Razorpay) resolve();
+        else reject(new Error('Razorpay Checkout could not be initialized.'));
+      };
+      script.onerror = () => reject(new Error('Could not load Razorpay Checkout.'));
+      document.body.appendChild(script);
+    }).catch((error: unknown) => {
+      razorpayScriptPromise = null;
+      throw error;
+    });
+  }
+  return razorpayScriptPromise;
+}
 
 export default function CartDrawer() {
   const {
@@ -40,15 +105,63 @@ export default function CartDrawer() {
     setPlacingOrder(true);
     setOrderError('');
     try {
-      const response = await placeOrder();
-      if (!response.success) {
-        throw new Error(response.message || 'Could not place your order.');
+      await loadRazorpayScript();
+      const response = await createRazorpayOrder();
+      if (!response.success || !response.data?.key || !response.data.order?.id) {
+        throw new Error(response.message || 'Could not start payment.');
       }
+      const Razorpay = window.Razorpay;
+      if (!Razorpay) {
+        throw new Error('Razorpay Checkout could not be initialized.');
+      }
+
+      let paymentCallbackStarted = false;
+      const checkout = new Razorpay({
+        key: response.data.key,
+        amount: response.data.order.amount,
+        currency: response.data.order.currency,
+        name: 'Rajsha Diecast',
+        description: 'Complete your order',
+        order_id: response.data.order.id,
+        method: { upi: true },
+        handler: (paymentResponse) => {
+          paymentCallbackStarted = true;
+          void verifyPaymentAndPlaceOrder(paymentResponse);
+        },
+        modal: {
+          ondismiss: () => {
+            if (!paymentCallbackStarted) {
+              setOrderError('Payment was cancelled. No order was placed.');
+              setPlacingOrder(false);
+            }
+          },
+        },
+        theme: { color: '#d4af37' },
+      });
+
+      checkout.on('payment.failed', (failure) => {
+        setOrderError(failure.error?.description || 'Payment failed. Please try again.');
+        setPlacingOrder(false);
+      });
+      checkout.open();
+    } catch (error) {
+      setOrderError(error instanceof Error ? error.message : 'Could not start payment.');
+      setPlacingOrder(false);
+    }
+  }
+
+  async function verifyPaymentAndPlaceOrder(payment: RazorpayPaymentResponse) {
+    try {
+      const response = await verifyRazorpayPayment(payment);
+      if (!response.success || !response.data?._id) {
+        throw new Error(response.message || 'Payment verification failed.');
+      }
+
       clearCart();
       setPlacedOrderId(response.data._id);
       window.dispatchEvent(new Event(MY_ORDERS_UPDATED_EVENT));
     } catch (error) {
-      setOrderError(error instanceof Error ? error.message : 'Could not place your order.');
+      setOrderError(error instanceof Error ? error.message : 'Payment verification failed.');
     } finally {
       setPlacingOrder(false);
     }
@@ -165,7 +278,7 @@ export default function CartDrawer() {
                     onClick={() => void submitOrder()}
                     disabled={placingOrder || authStatus === 'checking'}
                   >
-                    {placingOrder ? 'Placing order…' : 'Place order'}
+                    {placingOrder ? 'Processing payment…' : 'Place order'}
                   </button>
                 )}
               </div>

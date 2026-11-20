@@ -2,8 +2,6 @@
 import { Request, Response } from "express";
 import {
     CreateOrderMaster,
-    PlaceOrderForUser,
-    OrderPlacementError,
     GetAllOrderMaster,
     GetOrderHistoryByUserId,
     GetOrderMasterById,
@@ -12,31 +10,6 @@ import {
     ChangeOrderActiveStatus,
     ChangeOrderDisplayStatus
 } from "../Services/OrderMasterServices";
-
-export const PlaceOrderController = async (req: Request, res: Response) => {
-    const userId = req.user?.id;
-    if (!userId) {
-        return res.status(401).json({
-            success: false,
-            message: "Authentication is required to place an order."
-        });
-    }
-
-    try {
-        const order = await PlaceOrderForUser(userId);
-        return res.status(201).json({
-            success: true,
-            message: "Order placed successfully",
-            data: order
-        });
-    } catch (error: unknown) {
-        const statusCode = error instanceof OrderPlacementError ? error.statusCode : 500;
-        return res.status(statusCode).json({
-            success: false,
-            message: error instanceof Error ? error.message : "Could not place your order."
-        });
-    }
-};
 
 // Create Order
 export const CreateOrderMasterController = async (req: Request, res: Response) => {

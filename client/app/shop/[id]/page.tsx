@@ -99,11 +99,21 @@ export default function ProductPage() {
     );
   }
 
+  const normalize = (value: string) => value.trim().toLowerCase();
+  const productBrand = normalize(product.brand);
+  const productScale = normalize(product.scale);
   const relatedProducts = [...products]
-    .filter((item) => String(item.id) !== String(product.id))
+    .filter((item) => (
+      String(item.id) !== String(product.id)
+      && (
+        normalize(item.brand) === productBrand
+        || normalize(item.scale) === productScale
+      )
+    ))
     .sort((a, b) => {
-      const score = (item: typeof product) =>
-        Number(item.brand === product.brand) * 2 + Number(item.scale === product.scale);
+      const score = (item: Product) =>
+        Number(normalize(item.brand) === productBrand) * 2
+        + Number(normalize(item.scale) === productScale);
       return score(b) - score(a);
     })
     .slice(0, 4);
@@ -190,26 +200,28 @@ export default function ProductPage() {
           <p className="eyebrow">BUILD YOUR COLLECTION</p>
           <h2>You may also <em>like</em></h2>
         </div>
-        <div className="related-grid">
-          {relatedProducts.map((item) => (
-            <article className="related-card" key={item.id}>
-              {getOnlyNLeft(item.stock ?? item.left, onlyNLeft) > 0 && (
-                <span className="related-stock">ONLY {getOnlyNLeft(item.stock ?? item.left, onlyNLeft)} LEFT</span>
-              )}
-              <Link href={`/shop/${item.id}`} className="related-image" aria-label={`View ${item.name}`}>
-                <CarImage p={item} />
-              </Link>
-              <div className="related-info">
-                <small>{item.brand.toUpperCase()} · {item.scale}</small>
-                <Link href={`/shop/${item.id}`} className="related-name">{item.name}</Link>
-                <div className="related-bottom">
-                  <strong>{money(item.price)}</strong>
-                  <span className={`cond ${item.condition}`}>{item.condition}</span>
+        {relatedProducts.length > 0 ? (
+          <div className="related-grid">
+            {relatedProducts.map((item) => (
+              <article className="related-card" key={item.id}>
+                {getOnlyNLeft(item.stock ?? item.left, onlyNLeft) > 0 && (
+                  <span className="related-stock">ONLY {getOnlyNLeft(item.stock ?? item.left, onlyNLeft)} LEFT</span>
+                )}
+                <Link href={`/shop/${item.id}`} className="related-image" aria-label={`View ${item.name}`}>
+                  <CarImage p={item} />
+                </Link>
+                <div className="related-info">
+                  <small>{item.brand.toUpperCase()} · {item.scale}</small>
+                  <Link href={`/shop/${item.id}`} className="related-name">{item.name}</Link>
+                  <div className="related-bottom">
+                    <strong>{money(item.price)}</strong>
+                    <span className={`cond ${item.condition}`}>{item.condition}</span>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        ) : <p>No related models from this brand or scale yet.</p>}
       </section>
       <Footer />
       <CartDrawer />
