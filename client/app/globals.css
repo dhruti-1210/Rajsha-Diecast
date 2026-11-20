@@ -1275,55 +1275,65 @@ cite {
   white-space: nowrap
 }
 
-.order-confirmation-box {
-  display: block;
-  max-width: 560px;
-  padding: 32px;
-  color: var(--text)
+.mbox.order-confirmation-box {
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  max-height: min(85vh, 680px);
+  overflow: hidden;
+  padding: 30px;
+  color: var(--text);
+  border-radius: 12px;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, .45)
 }
 
 .order-confirmation-box h2 {
   margin: 0 38px 8px 0;
   font-family: Cinzel, serif;
-  font-size: 1.4rem
-}
-
-.order-confirmation-intro {
-  margin: 0 0 18px;
-  color: var(--mut);
-  font-size: .9rem
+  font-size: 1.4rem;
+  text-transform: uppercase
 }
 
 .order-confirmation-items {
-  max-height: min(45vh, 360px);
-  overflow: auto;
-  border-top: 1px solid var(--line)
+  display: grid;
+  gap: 12px;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: min(366px, 45vh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 2px 3px 4px 0;
+  scrollbar-gutter: stable
 }
 
 .order-confirmation-item {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) auto;
+  grid-template-columns: 96px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--line);
-  font-size: .82rem
+  gap: 14px;
+  min-height: 112px;
+  padding: 11px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .045);
+  font-size: .84rem
 }
 
 .order-confirmation-image {
   display: grid;
-  width: 52px;
-  height: 46px;
+  width: 96px;
+  height: 90px;
   place-items: center;
   overflow: hidden;
-  background: #171717
+  border-radius: 7px;
+  background: #f0f1f2
 }
 
 .order-confirmation-image img,
 .order-confirmation-image svg {
   width: 100%;
   height: 100%;
-  padding: 4px;
+  padding: 7px;
   object-fit: contain
 }
 
@@ -1331,7 +1341,8 @@ cite {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 4px
+  align-items: flex-start;
+  gap: 6px
 }
 
 .order-confirmation-details strong {
@@ -1339,13 +1350,28 @@ cite {
 }
 
 .order-confirmation-details small {
-  color: var(--mut)
+  color: var(--mut);
+  font-size: .78rem
+}
+
+.order-confirmation-details .order-confirmation-item-price {
+  margin-top: 2px;
+  color: var(--gold2);
+  font-size: .95rem
+}
+
+.order-confirmation-footer {
+  flex: 0 0 auto;
+  margin-top: auto
 }
 
 .order-confirmation-total {
   display: flex;
   justify-content: space-between;
-  margin: 18px 0;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 14px 0 12px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
   font-size: 1rem
 }
 
@@ -1359,8 +1385,10 @@ cite {
 }
 
 .order-confirmation-box > .btn,
+.order-confirmation-footer > .btn,
 .order-confirmation-success .btn {
   display: inline-flex;
+  width: 100%;
   justify-content: center;
   min-height: 42px;
   align-items: center;
@@ -1373,7 +1401,7 @@ cite {
   cursor: pointer
 }
 
-.order-confirmation-box > .btn:disabled {
+.order-confirmation-footer > .btn:disabled {
   cursor: wait;
   opacity: .7
 }
@@ -1455,7 +1483,25 @@ cite {
   }
 
   .order-confirmation-box {
-    padding: 28px 20px
+    max-height: calc(100vh - 40px);
+    overflow: hidden;
+    padding: 14px !important;
+  }
+
+  .order-confirmation-items {
+    max-height: min(318px, 42vh)
+  }
+
+  .order-confirmation-item {
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 11px;
+    min-height: 96px;
+    padding: 9px
+  }
+
+  .order-confirmation-image {
+    width: 78px;
+    height: 76px
   }
 }
 

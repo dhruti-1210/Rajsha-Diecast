@@ -140,7 +140,6 @@ export default function CartDrawer() {
           ) : (
             <>
               <h2 id="order-confirmation-title">Confirm your order</h2>
-              <p className="order-confirmation-intro">Review the models and quantities before placing your order.</p>
               <div className="order-confirmation-items">
                 {cart.map((item) => (
                   <div className="order-confirmation-item" key={item.key}>
@@ -148,26 +147,28 @@ export default function CartDrawer() {
                     <span className="order-confirmation-details">
                       <strong>{item.name}</strong>
                       <small>{item.brand} · {item.scale} · Qty {item.quantity}</small>
+                      <strong className="order-confirmation-item-price">{money(item.price * item.quantity)}</strong>
                     </span>
-                    <strong>{money(item.price * item.quantity)}</strong>
                   </div>
                 ))}
               </div>
-              <div className="order-confirmation-total"><span>Total</span><strong>{money(total)}</strong></div>
-              {orderError && <p className="order-confirmation-error" role="alert">{orderError}</p>}
-              {authStatus === 'unauthenticated' && (
-                <Link className="btn" href="/login" onClick={closeOrderDialog}>Sign in to place order</Link>
-              )}
-              {authStatus !== 'unauthenticated' && (
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => void submitOrder()}
-                  disabled={placingOrder || authStatus === 'checking'}
-                >
-                  {placingOrder ? 'Placing order…' : 'Place order'}
-                </button>
-              )}
+              <div className="order-confirmation-footer">
+                <div className="order-confirmation-total"><span>Total</span><strong>{money(total)}</strong></div>
+                {orderError && <p className="order-confirmation-error" role="alert">{orderError}</p>}
+                {authStatus === 'unauthenticated' && (
+                  <Link className="btn" href="/login" onClick={closeOrderDialog}>Sign in to place order</Link>
+                )}
+                {authStatus !== 'unauthenticated' && (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => void submitOrder()}
+                    disabled={placingOrder || authStatus === 'checking'}
+                  >
+                    {placingOrder ? 'Placing order…' : 'Place order'}
+                  </button>
+                )}
+              </div>
             </>
           )}
         </section>
