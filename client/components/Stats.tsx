@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getCounterList } from '@/api/CounterApi';
 import type { Counter } from '@/types/Counter';
+import StoreLoader from './StoreLoader';
 
 function Count({ to, run, suffix }: { to: number; run: boolean; suffix: string }) {
   const [v, setV] = useState(0);
@@ -57,13 +58,13 @@ export default function Stats() {
   }, []);
   return (
     <section className="stats" id="stats" ref={ref}>
-      {counters.map((counter) => (
+      {!loading && counters.map((counter) => (
         <div key={counter.counterLabel}>
           <Count to={counter.counterValue} run={run} suffix={counter.counterSuffix} />
           <span>{counter.counterLabel}</span>
         </div>
       ))}
-      {loading && <p className="stats-message" role="status">Loading counters…</p>}
+      {loading && <StoreLoader message="Loading counters…" className="stats-message" />}
       {!loading && error && <p className="stats-message" role="alert">{error}</p>}
       {!loading && !error && counters.length === 0 && (
         <p className="stats-message">No counters to display.</p>

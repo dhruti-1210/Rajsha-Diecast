@@ -2,10 +2,12 @@
 import { useEffect, useState } from 'react';
 import { getBannerList } from '@/api/BannerApi';
 import type { Banner } from '@/types/Banner';
+import StoreLoader from './StoreLoader';
 
 export default function Hero() {
   const [i, setI] = useState(0);
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const heroSlides = banners.map((banner) => ({
     img: banner.BannerImg,
@@ -25,6 +27,8 @@ export default function Hero() {
         setI(0);
       } catch {
         setBanners([]);
+      } finally {
+        setLoading(false);
       }
     }
     void loadBanners();
@@ -37,6 +41,7 @@ export default function Hero() {
   }, [heroSlides.length]);
   return (
     <section className="hero" id="home">
+      {loading && <StoreLoader message="Loading featured banners…" className="hero-loader" />}
       {heroSlides.map((s, k) => (
         <div key={k} className={`slide${k === i ? ' on' : ''}`} style={{ '--img': `url('${s.img}')` } as React.CSSProperties}>
           <div className="content">

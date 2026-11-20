@@ -17,6 +17,7 @@ import type { Product as StoreProduct } from '@/types';
 import type { Brand } from '@/types/Brand';
 import type { PackagingType } from '@/types/PackagingType';
 import type { Product as ProductRecord } from '@/types/Product';
+import StoreLoader from '@/components/StoreLoader';
 
 const PAGE_SIZE = 8;
 
@@ -168,7 +169,7 @@ export default function ShopPage() {
           </aside>
           <section className="col-12 col-lg-9 col-xl-10" aria-label="Product collection">
             {/* <div className="shop-results-bar"><span>{filteredProducts.length} models</span><span>Curated for collectors</span></div> */}
-            {loading ? <p role="status">Loading models…</p>
+            {loading ? <StoreLoader message="Loading models…" className="shop-loader" />
               : error ? <p role="alert">{error}</p>
                 : filteredProducts.length ? <div className="row g-3 g-xl-4">
               {pageProducts.map((product) => (
@@ -188,7 +189,9 @@ export default function ShopPage() {
                   </article>
                 </div>
               ))}
-            </div> : <div className="shop-empty">No models match these filters. Try adjusting your selection.</div>}
+            </div> : <div className="shop-empty" role="status">
+              <img src="/images/shop-no-results.png" alt="No models match these filters. Try adjusting your selection." />
+            </div>}
             {pageCount > 1 && <div className="shop-pagination" role="navigation" aria-label="Product pages">
               <button type="button" onClick={() => setCurrentPage((page) => page - 1)} disabled={currentPage === 1}>
                 Previous

@@ -10,6 +10,7 @@ import type { Product as StoreProduct } from '@/types';
 import type { Product as ProductRecord } from '@/types/Product';
 import Slider from './Slider';
 import ProductCard from './ProductCard'; 
+import StoreLoader from './StoreLoader';
 
 interface Props { id: string; mode: 'featured' | 'new'; dark?: boolean }
 
@@ -95,10 +96,10 @@ export default function ProductSection({ id, mode, dark }: Props) {
         {isNew ? <a href="#" className="more">See more →</a>
           : <a href="/shop" className="more" onClick={() => setMaxPrice(Infinity)}>Show all →</a>}
       </div>
-      <Slider className="grid" resetKey={isNew ? 0 : maxPrice}>
-        {items.map((p) => <ProductCard key={p.id} p={p} />)}
-      </Slider>
-      {loading && <p role="status">Loading {isNew ? 'new arrivals' : 'featured collection'}…</p>}
+      {loading ? <StoreLoader message={`Loading ${isNew ? 'new arrivals' : 'featured collection'}…`} />
+        : <Slider className="grid" resetKey={isNew ? 0 : maxPrice}>
+          {items.map((p) => <ProductCard key={p.id} p={p} />)}
+        </Slider>}
       {!loading && error && <p role="alert">{error}</p>}
       {!loading && !error && items.length === 0 && <p>No models in this range yet.</p>}
     </section>

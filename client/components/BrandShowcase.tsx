@@ -38,7 +38,7 @@ export default function BrandShowcase() {
 
   return (
     <>
-      <BrandStrip brands={brands} />
+      {!loading && <BrandStrip brands={brands} />}
       <BrandsSection brands={brands} loading={loading} error={error} />
     </>
   );
