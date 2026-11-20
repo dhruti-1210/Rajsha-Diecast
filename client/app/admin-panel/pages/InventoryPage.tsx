@@ -66,7 +66,7 @@ type ProductReferences = {
   scaleSizes: ScaleSize[];
 };
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_PRODUCT_IMAGE_DATA_SIZE = 12 * 1024 * 1024;
 const filters: Filter[] = ['All products', 'In stock', 'Low stock', 'Out of stock'];
@@ -575,6 +575,7 @@ export default function InventoryPage() {
               keyField="id"
               loading={loading}
               emptyMessage="No products match your search. Try another term or filter."
+              pagination={false}
             />
 
             <div className="admin-table-footer">
