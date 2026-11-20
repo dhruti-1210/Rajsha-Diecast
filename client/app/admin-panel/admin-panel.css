@@ -1282,6 +1282,7 @@ button.admin-reference-status {
 }
 
 .admin-form-wide:has(textarea),
+.admin-form-wide:has(.admin-rich-text-editor),
 .admin-form-wide:has(.company-setup-logo-control),
 .admin-form-wide:has(.admin-banner-image-preview),
 .admin-form-wide:has(.admin-add-image),
@@ -1332,6 +1333,76 @@ button.admin-reference-status {
 .company-setup-field input:focus {
   border-color: var(--admin-gold);
   box-shadow: 0 0 0 3px rgb(211 168 79 / 12%);
+}
+
+.admin-rich-text-editor {
+  width: 100%;
+  min-width: 0;
+  color: #f3efe7;
+}
+
+.admin-rich-text-loading {
+  min-height: 220px;
+  padding: 14px;
+  border: 1px solid var(--admin-line-strong);
+  border-radius: 7px;
+  color: var(--admin-muted);
+  font-size: 12px;
+}
+
+.admin-rich-text-editor .tox {
+  max-width: 100%;
+  border-color: var(--admin-line-strong) !important;
+}
+
+.admin-rich-text-editor .tox .tox-toolbar,
+.admin-rich-text-editor .tox .tox-toolbar__primary,
+.admin-rich-text-editor .tox .tox-toolbar__overflow,
+.admin-rich-text-editor .tox .tox-menubar,
+.admin-rich-text-editor .tox .tox-editor-header,
+.admin-rich-text-editor .tox .tox-toolbar-overlord,
+.admin-rich-text-editor .tox .tox-statusbar {
+  border-color: var(--admin-line) !important;
+  background: var(--admin-surface) !important;
+  color: var(--admin-muted) !important;
+}
+
+.admin-rich-text-editor .tox .tox-editor-header,
+.admin-rich-text-editor .tox .tox-toolbar-overlord {
+  box-shadow: none !important;
+}
+
+.admin-rich-text-editor .tox .tox-tbtn {
+  border-radius: 4px !important;
+  background: var(--admin-surface-raised) !important;
+  color: var(--admin-text) !important;
+}
+
+.admin-rich-text-editor .tox .tox-tbtn:hover,
+.admin-rich-text-editor .tox .tox-tbtn--enabled,
+.admin-rich-text-editor .tox .tox-tbtn--enabled:hover {
+  background: var(--admin-surface-hover) !important;
+  color: var(--admin-gold-bright) !important;
+}
+
+.admin-rich-text-editor .tox .tox-tbtn:focus,
+.admin-rich-text-editor .tox .tox-tbtn:focus-visible {
+  outline: 1px solid var(--admin-gold) !important;
+}
+
+.admin-rich-text-editor .tox .tox-collection__item--active,
+.admin-rich-text-editor .tox .tox-collection__item--enabled {
+  background: var(--admin-surface-hover) !important;
+  color: var(--admin-gold-bright) !important;
+}
+
+.admin-rich-text-editor .tox .tox-tbtn svg {
+  fill: currentColor !important;
+}
+
+.admin-rich-text-editor .tox .tox-edit-area::before {
+  border-color: var(--admin-line-strong) !important;
+  box-shadow: none !important;
 }
 
 .admin-select-control {
@@ -1721,12 +1792,6 @@ button.admin-reference-status {
 .company-setup-banner>span {
   color: var(--admin-muted);
   font-size: 12px;
-}
-
-.company-setup-edit {
-  position: absolute;
-  right: 24px;
-  bottom: 24px;
 }
 
 .company-setup-card form {
@@ -2372,11 +2437,6 @@ button.admin-reference-status {
     max-width: 100%;
     padding-right: 0;
     font-size: 23px;
-  }
-
-  .company-setup-edit {
-    position: static;
-    margin-top: 6px;
   }
 
   .company-setup-card form {

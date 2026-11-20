@@ -5,6 +5,7 @@ import { getPublicReviews } from '@/api/ReviewsApi';
 import type { PackagingType } from '@/types/PackagingType';
 import type { Review } from '@/types/Reviews';
 import StoreLoader from './StoreLoader';
+import { sanitizeRichText } from '@/lib/richText';
 
 export function Grading() {
   const [packagingTypes, setPackagingTypes] = useState<PackagingType[]>([]);
@@ -59,7 +60,7 @@ export function Grading() {
             return (
               <div className={`g${variant ? ` ${variant}` : ''}`} key={packagingType._id}>
                 <h3>{packagingType.packagingName}</h3>
-                <p>{packagingType.Description}</p>
+                <div dangerouslySetInnerHTML={{ __html: sanitizeRichText(packagingType.Description) }} />
               </div>
             );
           })}

@@ -909,17 +909,6 @@ footer a:hover {
     display: none
   }
 
-  nav {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    background: #0a0a0a;
-    padding: 20px;
-    display: none
-  }
-
   nav.open {
     display: flex
   }

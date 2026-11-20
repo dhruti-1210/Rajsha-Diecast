@@ -49,7 +49,6 @@ export default function CompanySetupPage() {
   const [draft, setDraft] = useState<CompanySetupDraft>(emptyDraft);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [formOpen, setFormOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
@@ -138,7 +137,6 @@ export default function CompanySetupPage() {
         : await createCompanySetup({ ...values, createdBy: actor } satisfies CompanySetupInput);
       setSetupId(response.data._id);
       setDraft(toDraft(response.data));
-      setFormOpen(false);
       setNotice('Company settings saved.');
       setNoticeIsError(false);
     } catch (error) {
@@ -156,16 +154,11 @@ export default function CompanySetupPage() {
           <small>STORE SETTINGS</small>
           <h1>{draft.CompanyName || 'Company setup'}</h1>
           <span>Update your company details below</span>
-          {!loading && !formOpen && (
-            <button type="button" className="admin-primary-button company-setup-edit" onClick={() => setFormOpen(true)}>
-              {setupId ? 'Edit company profile' : 'Add company details'}
-            </button>
-          )}
         </div>
 
         {loading ? (
           <p className="company-setup-message" role="status">Loading company settings…</p>
-        ) : formOpen ? (
+        ) : (
           <form onSubmit={saveCompanySetup}>
             <div className="company-setup-grid">
               <label className="company-setup-field">
@@ -271,7 +264,7 @@ export default function CompanySetupPage() {
               </button>
             </div>
           </form>
-        ) : null}
+        )}
       </section>
     </main>
   );

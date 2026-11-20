@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
 import AdminToast from '../common/AdminToast';
+import AdminRichTextEditor from '../common/AdminRichTextEditor';
 import {
   changeCmsDisplayStatus,
   changeCmsStatus,
@@ -16,6 +17,7 @@ import Header from '../common/header';
 import Icon from '../common/AdminIcon';
 import AdminDataTable from '../common/AdminDataTable';
 import type { TableColumn } from 'react-data-table-component';
+import { richTextToPlainText } from '@/lib/richText';
 
 type CmsDraft = {
   Name: string;
@@ -77,7 +79,7 @@ export default function CmsPage() {
   const visibleItems = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return items.filter((item) => (
-      `${item.Name} ${item.Description}`.toLowerCase().includes(normalizedQuery)
+      `${item.Name} ${richTextToPlainText(item.Description)}`.toLowerCase().includes(normalizedQuery)
     ));
   }, [items, query]);
 
@@ -170,7 +172,7 @@ export default function CmsPage() {
 
   const columns: TableColumn<Cms>[] = [
     { name: 'NAME', selector: (item) => item.Name, grow: 1.2, wrap: true },
-    { name: 'DESCRIPTION', selector: (item) => item.Description || '—', grow: 2, wrap: true },
+    { name: 'DESCRIPTION', selector: (item) => richTextToPlainText(item.Description) || '—', grow: 2, wrap: true },
     {
       name: 'STOREFRONT',
       minWidth: '120px',
@@ -298,15 +300,13 @@ export default function CmsPage() {
                   placeholder="Content name"
                 />
               </label>
-              <label className="admin-form-field admin-form-wide">
+              <div className="admin-form-field admin-form-wide">
                 <span>Description</span>
-                <textarea
-                  rows={5}
+                <AdminRichTextEditor
                   value={draft.Description}
-                  onChange={(event) => setDraft((current) => ({ ...current, Description: event.target.value }))}
-                  placeholder="Write the content description"
+                  onChange={(Description) => setDraft((current) => ({ ...current, Description }))}
                 />
-              </label>
+              </div>
               <label className="admin-status-toggle">
                 <input
                   type="checkbox"

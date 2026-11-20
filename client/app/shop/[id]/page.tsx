@@ -13,6 +13,7 @@ import { money } from '@/lib/format';
 import { getOnlyNLeft } from '@/lib/stock';
 import type { Product } from '@/types';
 import { getProductById, getProductPackagingTypes } from '@/api/ProductApi';
+import { sanitizeRichText } from '@/lib/richText';
 
 export default function ProductPage() {
   const params = useParams<{ id: string }>();
@@ -65,6 +66,7 @@ export default function ProductPage() {
           image: record.Image?.[0] || '',
           images: record.Image ?? [],
           stock: record.TotalStock,
+          description: record.Description,
         };
         if (active) setServerProduct(serverProduct);
       } catch (error) {
@@ -158,7 +160,14 @@ export default function ProductPage() {
                 <span className={`cond ${product.condition}`}>{product.condition}</span>
                 <span>Packaging condition</span>
               </div>
-              <p className="purchase-description">A finely detailed diecast model for your collection. Review the model and packaging details before adding it to your garage.</p>
+              <div
+                className="purchase-description"
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeRichText(
+                    product.description || 'A finely detailed diecast model for your collection. Review the model and packaging details before adding it to your garage.',
+                  ),
+                }}
+              />
               <div className="purchase-price">
                 <span>PRICE</span>
                 <strong>{money(product.price)}</strong>
