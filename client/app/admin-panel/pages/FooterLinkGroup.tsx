@@ -301,14 +301,14 @@ export default function FooterLinkGroupPage() {
                 />
                 <span>Active</span>
               </label>
-              <label className="admin-status-toggle">
+              {/* <label className="admin-status-toggle">
                 <input
                   type="checkbox"
                   checked={draft.isDisplay}
                   onChange={(event) => setDraft((current) => ({ ...current, isDisplay: event.target.checked }))}
                 />
                 <span>Display on storefront</span>
-              </label>
+              </label> */}
             </div>
             <div className="admin-modal-actions">
               <button type="button" className="admin-secondary-button" onClick={() => setModalOpen(false)}>Cancel</button>

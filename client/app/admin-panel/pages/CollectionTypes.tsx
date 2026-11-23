@@ -76,15 +76,15 @@ export default function CollectionTypesPage() {
   }, [items, query]);
   const columns: TableColumn<CollectionType>[] = [
     { name: 'NAME', selector: (item) => item.collectionName, grow: 2, wrap: true },
-    {
-      name: 'STOREFRONT',
-      minWidth: '120px',
-      cell: (item) => (
-        <span className={`admin-reference-status ${item.isDisplay ? 'is-active' : 'is-inactive'}`}>
-          {item.isDisplay ? 'Displayed' : 'Hidden'}
-        </span>
-      ),
-    },
+    // {
+    //   name: 'STOREFRONT',
+    //   minWidth: '120px',
+    //   cell: (item) => (
+    //     <span className={`admin-reference-status ${item.isDisplay ? 'is-active' : 'is-inactive'}`}>
+    //       {item.isDisplay ? 'Displayed' : 'Hidden'}
+    //     </span>
+    //   ),
+    // },
     {
       name: 'STATUS',
       minWidth: '100px',
@@ -285,14 +285,14 @@ export default function CollectionTypesPage() {
                 />
                 <span>Active</span>
               </label>
-              <label className="admin-status-toggle">
+              {/* <label className="admin-status-toggle">
                 <input
                   type="checkbox"
                   checked={draft.isDisplay}
                   onChange={(event) => setDraft((current) => ({ ...current, isDisplay: event.target.checked }))}
                 />
                 <span>Display on storefront</span>
-              </label>
+              </label> */}
             </div>
             <div className="admin-modal-actions">
               <button type="button" className="admin-secondary-button" onClick={() => setModalOpen(false)}>Cancel</button>

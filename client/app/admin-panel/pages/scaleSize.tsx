@@ -90,14 +90,14 @@ export default function ScaleSizesPage() {
       right: true,
       cell: (item) => (
         <div className="admin-row-actions">
-          <button
+          {/* <button
             type="button"
             onClick={() => void toggleScaleSize(item)}
             aria-label={`${item.isActive ? 'Deactivate' : 'Activate'} ${item.ScaleSize}`}
             title={item.isActive ? 'Deactivate scale size' : 'Activate scale size'}
           >
             <Icon name="box" size={16} />
-          </button>
+          </button> */}
           <button type="button" onClick={() => openEdit(item)} aria-label={`Edit ${item.ScaleSize}`} title="Edit scale size">
             <Icon name="edit" size={16} />
           </button>

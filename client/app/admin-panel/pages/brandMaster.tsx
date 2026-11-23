@@ -206,14 +206,14 @@ export default function BrandMasterPage() {
       right: true,
       cell: (brand) => (
         <div className="admin-row-actions">
-          <button
+          {/* <button
             type="button"
             onClick={() => void toggleBrandStatus(brand)}
             aria-label={`${brand.isActive ? 'Deactivate' : 'Activate'} ${brand.brandName}`}
             title={brand.isActive ? 'Deactivate brand' : 'Activate brand'}
           >
             <Icon name="box" size={16} />
-          </button>
+          </button> */}
           <button type="button" onClick={() => openEdit(brand)} aria-label={`Edit ${brand.brandName}`} title="Edit brand">
             <Icon name="edit" size={16} />
           </button>

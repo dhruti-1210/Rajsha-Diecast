@@ -144,43 +144,43 @@ export default function ReviewMasterPage() {
       grow: 2,
       cell: (review) => <span className="admin-review-message" title={review.message}>{review.message}</span>,
     },
-    {
-      name: 'STOREFRONT',
-      minWidth: '120px',
-      cell: (review) => (
-        <button
-          type="button"
-          className={`admin-reference-status ${review.isDisplay ? 'is-active' : 'is-inactive'}`}
-          onClick={() => void toggleReviewStatus(review, true)}
-          aria-label={`${review.isDisplay ? 'Hide' : 'Display'} review by ${review.name}`}
-        >
-          {review.isDisplay ? 'Displayed' : 'Hidden'}
-        </button>
-      ),
-    },
-    {
-      name: 'STATUS',
-      minWidth: '100px',
-      cell: (review) => (
-        <button
-          type="button"
-          className={`admin-reference-status ${review.isActive ? 'is-active' : 'is-inactive'}`}
-          onClick={() => void toggleReviewStatus(review, false)}
-          aria-label={`${review.isActive ? 'Deactivate' : 'Activate'} review by ${review.name}`}
-        >
-          {review.isActive ? 'Active' : 'Inactive'}
-        </button>
-      ),
-    },
+    // {
+    //   name: 'STOREFRONT',
+    //   minWidth: '120px',
+    //   cell: (review) => (
+    //     <button
+    //       type="button"
+    //       className={`admin-reference-status ${review.isDisplay ? 'is-active' : 'is-inactive'}`}
+    //       onClick={() => void toggleReviewStatus(review, true)}
+    //       aria-label={`${review.isDisplay ? 'Hide' : 'Display'} review by ${review.name}`}
+    //     >
+    //       {review.isDisplay ? 'Displayed' : 'Hidden'}
+    //     </button>
+    //   ),
+    // },
+    // {
+    //   name: 'STATUS',
+    //   minWidth: '100px',
+    //   cell: (review) => (
+    //     <button
+    //       type="button"
+    //       className={`admin-reference-status ${review.isActive ? 'is-active' : 'is-inactive'}`}
+    //       onClick={() => void toggleReviewStatus(review, false)}
+    //       aria-label={`${review.isActive ? 'Deactivate' : 'Activate'} review by ${review.name}`}
+    //     >
+    //       {review.isActive ? 'Active' : 'Inactive'}
+    //     </button>
+    //   ),
+    // },
     {
       name: 'ACTIONS',
       width: '110px',
       right: true,
       cell: (review) => (
         <div className="admin-row-actions">
-          <button type="button" onClick={() => openEdit(review)} aria-label={`Edit review by ${review.name}`} title="Edit review">
+          {/* <button type="button" onClick={() => openEdit(review)} aria-label={`Edit review by ${review.name}`} title="Edit review">
             <Icon name="edit" size={16} />
-          </button>
+          </button> */}
           <button type="button" onClick={() => setDeleteTarget(review)} aria-label={`Delete review by ${review.name}`} title="Delete review">
             <Icon name="trash" size={16} />
           </button>

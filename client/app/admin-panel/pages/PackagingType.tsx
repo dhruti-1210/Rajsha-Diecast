@@ -96,14 +96,14 @@ export default function PackagingTypePage() {
       right: true,
       cell: (item) => (
         <div className="admin-row-actions">
-          <button
+          {/* <button
             type="button"
             onClick={() => void togglePackagingType(item)}
             aria-label={`${item.isActive ? 'Deactivate' : 'Activate'} ${item.packagingName}`}
             title={item.isActive ? 'Deactivate packaging type' : 'Activate packaging type'}
           >
             <Icon name="box" size={16} />
-          </button>
+          </button> */}
           <button type="button" onClick={() => openEdit(item)} aria-label={`Edit ${item.packagingName}`} title="Edit packaging type">
             <Icon name="edit" size={16} />
           </button>

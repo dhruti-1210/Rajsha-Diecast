@@ -245,14 +245,14 @@ export default function CompanySetupPage() {
                   />
                   <span>Active</span>
                 </label>
-                <label>
+                {/* <label>
                   <input
                     type="checkbox"
                     checked={draft.isDisplay}
                     onChange={(event) => setDraft((current) => ({ ...current, isDisplay: event.target.checked }))}
                   />
                   <span>Display on storefront</span>
-                </label>
+                </label> */}
               </div>
             </div>
 

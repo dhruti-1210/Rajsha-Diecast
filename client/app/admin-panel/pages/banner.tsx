@@ -226,14 +226,14 @@ export default function BannerPage() {
       right: true,
       cell: (banner) => (
         <div className="admin-row-actions">
-          <button
+          {/* <button
             type="button"
             onClick={() => void toggleBannerStatus(banner)}
             aria-label={`${banner.isActive ? 'Deactivate' : 'Activate'} ${banner.BannerTitle}`}
             title={banner.isActive ? 'Deactivate banner' : 'Activate banner'}
           >
             <Icon name="box" size={16} />
-          </button>
+          </button> */}
           <button type="button" onClick={() => openEdit(banner)} aria-label={`Edit ${banner.BannerTitle}`} title="Edit banner">
             <Icon name="edit" size={16} />
           </button>

@@ -173,20 +173,20 @@ export default function CmsPage() {
   const columns: TableColumn<Cms>[] = [
     { name: 'NAME', selector: (item) => item.Name, grow: 1.2, wrap: true },
     { name: 'DESCRIPTION', selector: (item) => richTextToPlainText(item.Description) || '—', grow: 2, wrap: true },
-    {
-      name: 'STOREFRONT',
-      minWidth: '120px',
-      cell: (item) => (
-        <button
-          type="button"
-          className={`admin-reference-status ${item.isDisplay ? 'is-active' : 'is-inactive'}`}
-          onClick={() => void toggleCmsStatus(item, true)}
-          aria-label={`${item.isDisplay ? 'Hide' : 'Display'} ${item.Name} on storefront`}
-        >
-          {item.isDisplay ? 'Displayed' : 'Hidden'}
-        </button>
-      ),
-    },
+    // {
+    //   name: 'STOREFRONT',
+    //   minWidth: '120px',
+    //   cell: (item) => (
+    //     <button
+    //       type="button"
+    //       className={`admin-reference-status ${item.isDisplay ? 'is-active' : 'is-inactive'}`}
+    //       onClick={() => void toggleCmsStatus(item, true)}
+    //       aria-label={`${item.isDisplay ? 'Hide' : 'Display'} ${item.Name} on storefront`}
+    //     >
+    //       {item.isDisplay ? 'Displayed' : 'Hidden'}
+    //     </button>
+    //   ),
+    // },
     {
       name: 'STATUS',
       minWidth: '100px',
@@ -315,14 +315,14 @@ export default function CmsPage() {
                 />
                 <span>Active</span>
               </label>
-              <label className="admin-status-toggle">
+              {/* <label className="admin-status-toggle">
                 <input
                   type="checkbox"
                   checked={draft.isDisplay}
                   onChange={(event) => setDraft((current) => ({ ...current, isDisplay: event.target.checked }))}
                 />
                 <span>Display on storefront</span>
-              </label>
+              </label> */}
             </div>
             <div className="admin-modal-actions">
               <button type="button" className="admin-secondary-button" onClick={() => setModalOpen(false)}>Cancel</button>

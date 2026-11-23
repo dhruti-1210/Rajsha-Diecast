@@ -783,10 +783,7 @@ export default function InventoryPage() {
                 <input type="checkbox" checked={draft.isActive} onChange={(event) => updateDraft('isActive', event.target.checked)} />
                 <span>Active</span>
               </label>
-              <label className="admin-status-toggle">
-                <input type="checkbox" checked={draft.isDisplay} onChange={(event) => updateDraft('isDisplay', event.target.checked)} />
-                <span>Display on storefront</span>
-              </label>
+             
             </div>
             <div className="admin-modal-actions">
               <button type="button" className="admin-secondary-button" onClick={() => setModalOpen(false)}>Cancel</button>
