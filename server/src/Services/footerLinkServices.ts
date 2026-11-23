@@ -1,43 +1,52 @@
+﻿import FooterLinkMaster from "../Models/FooterLinkMaster";
+import { buildMeta, buildSearchFilter, notDeletedFilter, type ListQuery } from "../utils/query";
 
-import FooterLinkMaster from "../Models/FooterLinkMaster";
+export type FooterLinkListResult = {
+    items: any[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+};
 
 // Create Footer Link
 export const CreateFooterLinkMaster = async (data: any) => {
-    try {
-        const footerLink = await FooterLinkMaster.create(data);
-        return footerLink;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+    const footerLink = await FooterLinkMaster.create(data);
+    return footerLink;
 };
 
 // Get All Footer Links
-export const GetAllFooterLinkMaster = async () => {
-    try {
-        const footerLinks = await FooterLinkMaster.find({
-            isDeleted: false
-        })
-            .populate("FooterLinkGroupId")
-            .sort({ createdAt: -1 });
+export const GetAllFooterLinkMaster = async (query?: Partial<ListQuery> & { FooterLinkGroupId?: string } | any) => {
+    const baseFilter: any = { ...notDeletedFilter };
+    if (query?.isActive !== undefined) baseFilter.isActive = query.isActive;
+    if (query?.isDisplay !== undefined) baseFilter.isDisplay = query.isDisplay;
+    if (query?.FooterLinkGroupId) baseFilter.FooterLinkGroupId = query.FooterLinkGroupId;
 
-        return footerLinks;
-    } catch (error: any) {
-        throw new Error(error.message);
+    const search = typeof query?.search === "string" ? query.search.trim() : "";
+    const filter = search
+        ? { $and: [baseFilter, buildSearchFilter(search, ["FooterLinkName", "FooterLinkUrl"])] }
+        : baseFilter;
+    const sort = query?.sort ?? { createdAt: -1 };
+
+    if (query?.paginate) {
+        const page = Number(query.page) > 0 ? Number(query.page) : 1;
+        const limit = Number(query.limit) > 0 ? Number(query.limit) : 20;
+        const skip = Number.isFinite(query.skip) ? Number(query.skip) : (page - 1) * limit;
+        const [items, total] = await Promise.all([
+            FooterLinkMaster.find(filter).populate("FooterLinkGroupId").sort(sort).skip(skip).limit(limit),
+            FooterLinkMaster.countDocuments(filter)
+        ]);
+        return { items, meta: buildMeta(total, page, limit) } as FooterLinkListResult;
     }
+
+    const items = await FooterLinkMaster.find(filter).populate("FooterLinkGroupId").sort(sort);
+    return items;
 };
 
 // Get Footer Link By ID
 export const GetFooterLinkMasterById = async (id: string) => {
-    try {
-        const footerLink = await FooterLinkMaster.findOne({
-            _id: id,
-            isDeleted: false
-        }).populate("FooterLinkGroupId");
-
-        return footerLink;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+    const footerLink = await FooterLinkMaster.findOne({
+        _id: id,
+        isDeleted: false
+    }).populate("FooterLinkGroupId");
+    return footerLink;
 };
 
 // Update Footer Link
@@ -45,38 +54,25 @@ export const UpdateFooterLinkMaster = async (
     id: string,
     data: any
 ) => {
-    try {
-        const footerLink = await FooterLinkMaster.findOneAndUpdate(
-            { _id: id, isDeleted: false },
-            {
-                ...data,
-                updatedAt: new Date()
-            },
-            { new: true, runValidators: true }
-        );
-
-        return footerLink;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+    const footerLink = await FooterLinkMaster.findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { ...data },
+        { new: true, runValidators: true }
+    );
+    return footerLink;
 };
 
 // Soft Delete Footer Link
-export const DeleteFooterLinkMaster = async (id: string) => {
-    try {
-        const footerLink = await FooterLinkMaster.findOneAndUpdate(
-            { _id: id, isDeleted: false },
-            {
-                isDeleted: true,
-                updatedAt: new Date()
-            },
-            { new: true }
-        );
-
-        return footerLink;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+export const DeleteFooterLinkMaster = async (id: string, updatedBy?: string) => {
+    const footerLink = await FooterLinkMaster.findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        {
+            isDeleted: true,
+            ...(updatedBy ? { updatedBy } : {})
+        },
+        { new: true }
+    );
+    return footerLink;
 };
 
 // Change Active Status
@@ -85,21 +81,15 @@ export const ChangeFooterLinkMasterActiveStatus = async (
     isActive: boolean,
     updatedBy?: string
 ) => {
-    try {
-        const footerLink = await FooterLinkMaster.findOneAndUpdate(
-            { _id: id, isDeleted: false },
-            {
-                isActive,
-                updatedBy,
-                updatedAt: new Date()
-            },
-            { new: true }
-        );
-
-        return footerLink;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+    const footerLink = await FooterLinkMaster.findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        {
+            isActive,
+            ...(updatedBy ? { updatedBy } : {})
+        },
+        { new: true }
+    );
+    return footerLink;
 };
 
 // Change Display Status
@@ -108,19 +98,13 @@ export const ChangeFooterLinkMasterDisplayStatus = async (
     isDisplay: boolean,
     updatedBy?: string
 ) => {
-    try {
-        const footerLink = await FooterLinkMaster.findOneAndUpdate(
-            { _id: id, isDeleted: false },
-            {
-                isDisplay,
-                updatedBy,
-                updatedAt: new Date()
-            },
-            { new: true }
-        );
-
-        return footerLink;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+    const footerLink = await FooterLinkMaster.findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        {
+            isDisplay,
+            ...(updatedBy ? { updatedBy } : {})
+        },
+        { new: true }
+    );
+    return footerLink;
 };

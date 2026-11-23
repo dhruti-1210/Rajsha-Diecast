@@ -1,153 +1,65 @@
+﻿import { Request, Response } from "express";
+import { createPackagingType, getAllPackagingTypes, getPackagingTypeById, updatePackagingType, deletePackagingType, changePackagingTypeStatus } from "../Services/PackagingTypeServices";
+import { getRequestActor, pickAllowed } from "../utils/audit";
+import { ApiError, assertFound, sendError, sendSuccess } from "../utils/http";
+import { parseListQuery } from "../utils/query";
 
-import { Request, Response } from "express";
-import {
-    CreatePackagingType,
-    GetAllPackagingTypes,
-    GetPackagingTypeById,
-    UpdatePackagingType,
-    DeletePackagingType,
-    ChangePackagingTypeActiveStatus
-} from "../Services/PackagingTypeServices";
+const createFields = ["packagingName", "packaginName", "Description", "isActive", "createdBy", "updatedBy"];
+const updateFields = ["packagingName", "packaginName", "Description", "isActive", "updatedBy"];
 
-// Create Packaging Type
-export const CreatePackagingTypeController = async (req: Request, res: Response) => {
-    try {
-        const packagingType = await CreatePackagingType(req.body);
+function normalizePayload(payload: any, required: boolean) {
+  if (payload.packagingName === undefined && payload.packaginName !== undefined) payload.packagingName = payload.packaginName;
+  if (payload.packagingName !== undefined) payload.packagingName = String(payload.packagingName).trim();
+  if (payload.packaginName !== undefined) payload.packaginName = String(payload.packaginName).trim();
+  if (payload.packagingName !== undefined) payload.packaginName = payload.packagingName;
+  if (payload.Description !== undefined) payload.Description = String(payload.Description).trim();
+  const name = payload.packagingName ?? payload.packaginName;
+  if (required && !name) throw new ApiError(400, "Packaging name is required");
+  if (!required && Object.prototype.hasOwnProperty.call(payload, "packagingName") && !name) throw new ApiError(400, "Packaging name is required");
+  if (name) { payload.packagingName = name; payload.packaginName = name; }
+}
 
-        return res.status(201).json({
-            success: true,
-            message: "Packaging type created successfully",
-            data: packagingType
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const createPackagingTypeController = async (req: Request, res: Response) => {
+  try {
+    const actor = getRequestActor(req, req.body?.createdBy);
+    const payload = pickAllowed(req.body || {}, createFields);
+    normalizePayload(payload, true);
+    payload.createdBy = actor; payload.updatedBy = actor;
+    return sendSuccess(res, 201, "Packaging type created successfully", await createPackagingType(payload as any));
+  } catch (error) { return sendError(res, error); }
 };
 
-// Get All Packaging Types
-export const GetAllPackagingTypesController = async (req: Request, res: Response) => {
-    try {
-        const packagingTypes = await GetAllPackagingTypes();
-
-        return res.status(200).json({
-            success: true,
-            message: "Packaging types fetched successfully",
-            data: packagingTypes
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const getAllPackagingTypesController = async (req: Request, res: Response) => {
+  try {
+    const result = await getAllPackagingTypes(parseListQuery(req, { sort: { createdAt: -1 } }) as any);
+    if (Array.isArray(result)) return sendSuccess(res, 200, "Packaging types fetched successfully", result);
+    return sendSuccess(res, 200, "Packaging types fetched successfully", result.items, result.meta);
+  } catch (error) { return sendError(res, error); }
 };
 
-// Get Packaging Type By ID
-export const GetPackagingTypeByIdController = async (req: Request, res: Response) => {
-    try {
-        const packagingType = await GetPackagingTypeById(req.params.id);
-
-        if (!packagingType) {
-            return res.status(404).json({
-                success: false,
-                message: "Packaging type not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Packaging type fetched successfully",
-            data: packagingType
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const getPackagingTypeByIdController = async (req: Request, res: Response) => {
+  try { return sendSuccess(res, 200, "Packaging type fetched successfully", assertFound(await getPackagingTypeById(req.params.id), "Packaging type not found")); }
+  catch (error) { return sendError(res, error); }
 };
 
-// Update Packaging Type
-export const UpdatePackagingTypeController = async (req: Request, res: Response) => {
-    try {
-        const packagingType = await UpdatePackagingType(req.params.id, req.body);
-
-        if (!packagingType) {
-            return res.status(404).json({
-                success: false,
-                message: "Packaging type not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Packaging type updated successfully",
-            data: packagingType
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const updatePackagingTypeController = async (req: Request, res: Response) => {
+  try {
+    const actor = getRequestActor(req, req.body?.updatedBy);
+    const payload = pickAllowed(req.body || {}, updateFields);
+    normalizePayload(payload, false);
+    payload.updatedBy = actor;
+    return sendSuccess(res, 200, "Packaging type updated successfully", assertFound(await updatePackagingType(req.params.id, payload as any), "Packaging type not found"));
+  } catch (error) { return sendError(res, error); }
 };
 
-// Soft Delete Packaging Type
-export const DeletePackagingTypeController = async (req: Request, res: Response) => {
-    try {
-        const packagingType = await DeletePackagingType(
-            req.params.id,
-            req.body.updatedBy
-        );
-
-        if (!packagingType) {
-            return res.status(404).json({
-                success: false,
-                message: "Packaging type not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Packaging type deleted successfully",
-            data: packagingType
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const deletePackagingTypeController = async (req: Request, res: Response) => {
+  try { return sendSuccess(res, 200, "Packaging type deleted successfully", assertFound(await deletePackagingType(req.params.id, getRequestActor(req, req.body?.updatedBy)), "Packaging type not found")); }
+  catch (error) { return sendError(res, error); }
 };
 
-// Change Active Status
-export const ChangePackagingTypeActiveStatusController = async (req: Request, res: Response) => {
-    try {
-        const packagingType = await ChangePackagingTypeActiveStatus(
-            req.params.id,
-            req.body.isActive,
-            req.body.updatedBy
-        );
-
-        if (!packagingType) {
-            return res.status(404).json({
-                success: false,
-                message: "Packaging type not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Packaging type active status changed successfully",
-            data: packagingType
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const changePackagingTypeStatusController = async (req: Request, res: Response) => {
+  try {
+    if (typeof req.body?.isActive !== "boolean") throw new ApiError(400, "isActive must be a boolean");
+    return sendSuccess(res, 200, "Packaging type status changed successfully", assertFound(await changePackagingTypeStatus(req.params.id, req.body.isActive, getRequestActor(req, req.body?.updatedBy)), "Packaging type not found"));
+  } catch (error) { return sendError(res, error); }
 };

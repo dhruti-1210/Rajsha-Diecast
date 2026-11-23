@@ -20,7 +20,7 @@
   color: var(--admin-text);
   color-scheme: dark;
   font-family: Poppins, sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
 }
 
@@ -279,7 +279,7 @@
   gap: 9px;
   padding-left: 10px;
   color: #c8b58f;
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .admin-nav-subitem>svg {
@@ -739,7 +739,7 @@
   outline: 0;
   background: transparent;
   color: var(--admin-text);
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .admin-search input::placeholder {

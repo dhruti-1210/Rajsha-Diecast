@@ -1,4 +1,4 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 
 import {
     CreateFooterLinkGroupController,
@@ -6,7 +6,8 @@ import {
     GetFooterLinkGroupByIdController,
     UpdateFooterLinkGroupController,
     DeleteFooterLinkGroupController,
-    ChangeFooterLinkGroupActiveStatusController
+    ChangeFooterLinkGroupActiveStatusController,
+    ChangeFooterLinkGroupDisplayStatusController
 } from "../controller/footerLinkGroupController";
 import { adminSessionMiddleware } from "../middleware/authMiddleWare";
 
@@ -15,7 +16,7 @@ const router = Router();
 // Create Footer Link Group
 router.post("/create", adminSessionMiddleware, CreateFooterLinkGroupController);
 
-// Get All Footer Link Groups
+// Get All Footer Link Groups (supports pagination/search via query params)
 router.get("/list", GetAllFooterLinkGroupController);
 
 // Get Footer Link Group By ID
@@ -29,5 +30,8 @@ router.delete("/delete/:id", adminSessionMiddleware, DeleteFooterLinkGroupContro
 
 // Change Active Status
 router.patch("/status/:id", adminSessionMiddleware, ChangeFooterLinkGroupActiveStatusController);
+
+// Change Display Status
+router.patch("/display-status/:id", adminSessionMiddleware, ChangeFooterLinkGroupDisplayStatusController);
 
 export default router;

@@ -1,49 +1,29 @@
-import mongoose , {Schema , Document} from "mongoose";
+﻿import mongoose, { Schema, Document } from "mongoose";
 
-export interface IBudget extends Document {
-    budgetPrice: string;
-
+export interface IBudgetMaster extends Document {
+    minAmount: number;
+    maxAmount?: number;
     createdAt: Date;
     updatedAt: Date;
-    updatedBy: string;
-    createdBy: string;
+    createdBy?: string;
+    updatedBy?: string;
     isActive: boolean;
     isDeleted: boolean;
 }
 
-const BudgetSchema: Schema = new Schema(
+const BudgetMasterSchema = new Schema<IBudgetMaster>(
     {
-        budgetPrice: {
-            type: String,
-            required: true
-        },
-        createdAt: {
-            type: Date,
-            default: Date.now
-        },
-        updatedAt: {
-            type: Date,
-            default: Date.now
-        },
-        updatedBy: {
-            type: String,
-            required: true
-        },
-        createdBy: {
-            type: String,
-            required: true
-        },
-        isActive: {
-            type: Boolean,
-            default: true
-        },
-        isDeleted: {
-            type: Boolean,
-            default: false
-        }
-    }
-)
+        minAmount: { type: Number, required: true, min: 0 },
+        maxAmount: { type: Number, min: 0 },
+        createdBy: { type: String, trim: true },
+        updatedBy: { type: String, trim: true },
+        isActive: { type: Boolean, default: true },
+        isDeleted: { type: Boolean, default: false }
+    },
+    { timestamps: true }
+);
 
-const Budget = mongoose.model<IBudget>('Budget', BudgetSchema);
+BudgetMasterSchema.index({ isDeleted: 1, isActive: 1, minAmount: 1, maxAmount: 1, createdAt: -1 });
 
-export default Budget;
+const BudgetMaster = mongoose.model<IBudgetMaster>("BudgetMaster", BudgetMasterSchema);
+export default BudgetMaster;

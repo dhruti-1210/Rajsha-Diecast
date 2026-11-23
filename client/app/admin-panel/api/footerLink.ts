@@ -1,28 +1,26 @@
-import api from './axios';
+﻿import api from './axios';
+import type { ApiResponse, ListParams } from './types';
 import type { FooterLink, FooterLinkInput } from '../types/FooterLink';
 
-export interface FooterLinkApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
+export type { ApiResponse };
 
-export const getFooterLinkList = async () => {
-  const response = await api.get<FooterLinkApiResponse<FooterLink[]>>(
+export const getFooterLinkList = async (params?: ListParams & { FooterLinkGroupId?: string }) => {
+  const response = await api.get<ApiResponse<FooterLink[]>>(
     '/footer-links/list',
+    { params },
   );
   return response.data;
 };
 
 export const getFooterLinkById = async (id: string) => {
-  const response = await api.get<FooterLinkApiResponse<FooterLink>>(
+  const response = await api.get<ApiResponse<FooterLink>>(
     `/footer-links/${encodeURIComponent(id)}`,
   );
   return response.data;
 };
 
 export const createFooterLink = async (link: FooterLinkInput) => {
-  const response = await api.post<FooterLinkApiResponse<FooterLink>>(
+  const response = await api.post<ApiResponse<FooterLink>>(
     '/footer-links/create',
     link,
   );
@@ -33,7 +31,7 @@ export const updateFooterLink = async (
   id: string,
   link: Partial<FooterLinkInput>,
 ) => {
-  const response = await api.put<FooterLinkApiResponse<FooterLink>>(
+  const response = await api.put<ApiResponse<FooterLink>>(
     `/footer-links/update/${encodeURIComponent(id)}`,
     link,
   );
@@ -41,7 +39,7 @@ export const updateFooterLink = async (
 };
 
 export const deleteFooterLink = async (id: string) => {
-  const response = await api.delete<FooterLinkApiResponse<FooterLink>>(
+  const response = await api.delete<ApiResponse<FooterLink>>(
     `/footer-links/delete/${encodeURIComponent(id)}`,
   );
   return response.data;
@@ -50,11 +48,10 @@ export const deleteFooterLink = async (id: string) => {
 export const changeFooterLinkStatus = async (
   id: string,
   isActive: boolean,
-  updatedBy: string,
 ) => {
-  const response = await api.patch<FooterLinkApiResponse<FooterLink>>(
+  const response = await api.patch<ApiResponse<FooterLink>>(
     `/footer-links/status/${encodeURIComponent(id)}`,
-    { isActive, updatedBy },
+    { isActive },
   );
   return response.data;
 };
@@ -62,11 +59,10 @@ export const changeFooterLinkStatus = async (
 export const changeFooterLinkDisplayStatus = async (
   id: string,
   isDisplay: boolean,
-  updatedBy: string,
 ) => {
-  const response = await api.patch<FooterLinkApiResponse<FooterLink>>(
+  const response = await api.patch<ApiResponse<FooterLink>>(
     `/footer-links/display-status/${encodeURIComponent(id)}`,
-    { isDisplay, updatedBy },
+    { isDisplay },
   );
   return response.data;
 };

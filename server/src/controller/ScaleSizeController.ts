@@ -1,5 +1,4 @@
-import { Request, Response } from "express";
-
+﻿import type { Request, Response } from "express";
 import {
     CreateScaleSize,
     GetAllScaleSize,
@@ -8,171 +7,81 @@ import {
     DeleteScaleSize,
     ChangeScaleSizeActiveStatus
 } from "../Services/ScaleSizeServices";
+import { getRequestActor, pickAllowed } from "../utils/audit";
+import { ApiError, assertFound, sendError, sendSuccess } from "../utils/http";
+import { parseListQuery } from "../utils/query";
 
-// Create Scale Size
-export const CreateScaleSizeController = async (
-    req: Request,
-    res: Response
-) => {
+const createFields = ["ScaleSize", "isActive", "createdBy", "updatedBy"];
+const updateFields = ["ScaleSize", "isActive", "updatedBy"];
+
+export const CreateScaleSizeController = async (req: Request, res: Response) => {
     try {
-        const scaleSize = await CreateScaleSize(req.body);
-
-        return res.status(201).json({
-            success: true,
-            message: "Scale size created successfully",
-            data: scaleSize
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        const actor = getRequestActor(req, req.body?.createdBy);
+        const payload = pickAllowed(req.body || {}, createFields);
+        if (!payload.ScaleSize || !String(payload.ScaleSize).trim()) throw new ApiError(400, "Scale size is required");
+        payload.ScaleSize = String(payload.ScaleSize).trim();
+        payload.createdBy = actor;
+        payload.updatedBy = actor;
+        const scaleSize = await CreateScaleSize(payload as any);
+        return sendSuccess(res, 201, "Scale size created successfully", scaleSize);
+    } catch (error) {
+        return sendError(res, error);
     }
 };
 
-// Get All Scale Sizes
-export const GetAllScaleSizeController = async (
-    req: Request,
-    res: Response
-) => {
+export const GetAllScaleSizeController = async (req: Request, res: Response) => {
     try {
-        const scaleSizes = await GetAllScaleSize();
-
-        return res.status(200).json({
-            success: true,
-            message: "Scale sizes fetched successfully",
-            data: scaleSizes
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        const query = parseListQuery(req, { sort: { createdAt: -1 } });
+        const result = await GetAllScaleSize(query as any);
+        if (Array.isArray(result)) return sendSuccess(res, 200, "Scale sizes fetched successfully", result);
+        return sendSuccess(res, 200, "Scale sizes fetched successfully", result.items, result.meta);
+    } catch (error) {
+        return sendError(res, error);
     }
 };
 
-// Get Scale Size By ID
-export const GetScaleSizeByIdController = async (
-    req: Request,
-    res: Response
-) => {
+export const GetScaleSizeByIdController = async (req: Request, res: Response) => {
     try {
-        const scaleSize = await GetScaleSizeById(req.params.id);
+        const scaleSize = assertFound(await GetScaleSizeById(req.params.id), "Scale size not found");
+        return sendSuccess(res, 200, "Scale size fetched successfully", scaleSize);
+    } catch (error) {
+        return sendError(res, error);
+    }
+};
 
-        if (!scaleSize) {
-            return res.status(404).json({
-                success: false,
-                message: "Scale size not found"
-            });
+export const UpdateScaleSizeController = async (req: Request, res: Response) => {
+    try {
+        const actor = getRequestActor(req, req.body?.updatedBy);
+        const payload = pickAllowed(req.body || {}, updateFields);
+        if (payload.ScaleSize !== undefined) {
+            if (!String(payload.ScaleSize).trim()) throw new ApiError(400, "Scale size is required");
+            payload.ScaleSize = String(payload.ScaleSize).trim();
         }
-
-        return res.status(200).json({
-            success: true,
-            message: "Scale size fetched successfully",
-            data: scaleSize
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        payload.updatedBy = actor;
+        const scaleSize = assertFound(await UpdateScaleSize(req.params.id, payload as any), "Scale size not found");
+        return sendSuccess(res, 200, "Scale size updated successfully", scaleSize);
+    } catch (error) {
+        return sendError(res, error);
     }
 };
 
-// Update Scale Size
-export const UpdateScaleSizeController = async (
-    req: Request,
-    res: Response
-) => {
+export const DeleteScaleSizeController = async (req: Request, res: Response) => {
     try {
-        const scaleSize = await UpdateScaleSize(
-            req.params.id,
-            req.body
-        );
-
-        if (!scaleSize) {
-            return res.status(404).json({
-                success: false,
-                message: "Scale size not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Scale size updated successfully",
-            data: scaleSize
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        const actor = getRequestActor(req, req.body?.updatedBy);
+        const scaleSize = assertFound(await DeleteScaleSize(req.params.id, actor), "Scale size not found");
+        return sendSuccess(res, 200, "Scale size deleted successfully", scaleSize);
+    } catch (error) {
+        return sendError(res, error);
     }
 };
 
-// Delete Scale Size
-export const DeleteScaleSizeController = async (
-    req: Request,
-    res: Response
-) => {
+export const ChangeScaleSizeActiveStatusController = async (req: Request, res: Response) => {
     try {
-        const { updatedBy } = req.body;
-
-        const scaleSize = await DeleteScaleSize(
-            req.params.id,
-            updatedBy
-        );
-
-        if (!scaleSize) {
-            return res.status(404).json({
-                success: false,
-                message: "Scale size not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Scale size deleted successfully",
-            data: scaleSize
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-};
-
-// Change Active Status
-export const ChangeScaleSizeActiveStatusController = async (
-    req: Request,
-    res: Response
-) => {
-    try {
-        const { isActive, updatedBy } = req.body;
-
-        const scaleSize = await ChangeScaleSizeActiveStatus(
-            req.params.id,
-            isActive,
-            updatedBy
-        );
-
-        if (!scaleSize) {
-            return res.status(404).json({
-                success: false,
-                message: "Scale size not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Scale size active status changed successfully",
-            data: scaleSize
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        const actor = getRequestActor(req, req.body?.updatedBy);
+        if (typeof req.body?.isActive !== "boolean") throw new ApiError(400, "isActive must be a boolean");
+        const scaleSize = assertFound(await ChangeScaleSizeActiveStatus(req.params.id, req.body.isActive, actor), "Scale size not found");
+        return sendSuccess(res, 200, "Scale size active status changed successfully", scaleSize);
+    } catch (error) {
+        return sendError(res, error);
     }
 };

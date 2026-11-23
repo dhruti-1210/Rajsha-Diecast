@@ -1,6 +1,8 @@
-import cors from "cors";
+﻿import cors from "cors";
 import express from "express";
 import dotenv from "dotenv";
+import { sendError } from "./utils/http";
+import { authRateLimiter } from "./middleware/rateLimit";
 
 import BannerRoutes from "./Routes/BannerRoutes";
 import BudgetRoutes from "./Routes/BudgetRoutes";
@@ -45,12 +47,14 @@ app.use(cors({
   credentials: true
 }));
 
-
 app.use("/api/products", express.json({ limit: "20mb" }));
 app.use("/api/banners", express.json({ limit: "20mb" }));
 app.use("/api/company-setup", express.json({ limit: "20mb" }));
 app.use("/api/brands", express.json({ limit: "20mb" }));
 app.use(express.json());
+
+app.use("/api/users", authRateLimiter);
+app.use("/api/admin-users", authRateLimiter);
 
 app.use("/api/banners", BannerRoutes);
 app.use("/api/budgets", BudgetRoutes);
@@ -72,7 +76,6 @@ app.use("/api/transaction-history", TransactionHistoryRoutes);
 app.use("/api/scale-sizes", ScaleSizeRoutes);
 app.use("/api/counters", CounterMasterRoutes);
 
-
 app.use("/api/company-setup", CompanySetupRoutes);
 app.use("/api/cart", CartRoutes);
 
@@ -84,9 +87,16 @@ app.use("/api/admin-users", AdminUserRoutes);
 
 app.use("/api/payment", paymentRoutes);
 
-
 app.get("/health", (_request, response) => {
   response.status(200).json({ status: "ok" });
+});
+
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: "Route not found" });
+});
+
+app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  return sendError(res, error);
 });
 
 export default app;

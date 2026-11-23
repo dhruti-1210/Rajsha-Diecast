@@ -1,60 +1,38 @@
-
-import mongoose, { Schema, Document } from "mongoose";
+﻿import mongoose, { Schema, Document } from "mongoose";
 
 export interface ICollectionType extends Document {
     collectionName: string;
-
+    collectionDescription: string;
+    image: string;
+    sortOrder: number;
+    displayOnHomepage: boolean;
     createdAt: Date;
     updatedAt: Date;
-    createdBy: string;
-    updatedBy: string;
-
+    createdBy?: string;
+    updatedBy?: string;
     isActive: boolean;
     isDisplay: boolean;
     isDeleted: boolean;
 }
 
-const CollectionTypeSchema: Schema = new Schema(
+const CollectionTypeSchema = new Schema<ICollectionType>(
     {
-        collectionName: {
-            type: String,
-            required: true,
-            trim: true
-        },
-        createdAt: {
-            type: Date,
-            default: Date.now
-        },
-        updatedAt: {
-            type: Date,
-            default: Date.now
-        },
-        createdBy: {
-            type: String,
-            required: true
-        },
-        updatedBy: {
-            type: String,
-            required: true
-        },
-        isActive: {
-            type: Boolean,
-            default: true
-        },
-        isDisplay: {
-            type: Boolean,
-            default: true
-        },
-        isDeleted: {
-            type: Boolean,
-            default: false
-        }
-    }
+        collectionName: { type: String, required: true, trim: true },
+        collectionDescription: { type: String, default: "", trim: true },
+        image: { type: String, default: "", trim: true },
+        sortOrder: { type: Number, default: 0 },
+        displayOnHomepage: { type: Boolean, default: false },
+        createdBy: { type: String, trim: true },
+        updatedBy: { type: String, trim: true },
+        isActive: { type: Boolean, default: true },
+        isDisplay: { type: Boolean, default: false },
+        isDeleted: { type: Boolean, default: false }
+    },
+    { timestamps: true }
 );
 
-const CollectionType = mongoose.model<ICollectionType>(
-    "CollectionType",
-    CollectionTypeSchema
-);
+CollectionTypeSchema.index({ isDeleted: 1, isActive: 1, isDisplay: 1, sortOrder: 1, createdAt: -1 });
+CollectionTypeSchema.index({ collectionName: 1 });
 
+const CollectionType = mongoose.model<ICollectionType>("CollectionType", CollectionTypeSchema);
 export default CollectionType;

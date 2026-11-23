@@ -1,118 +1,26 @@
-import ScaleSize, { IScaleSize } from "../Models/ScaleSize";
+﻿import ScaleSize, { IScaleSize } from "../Models/ScaleSize";
+import { findActiveById, listDocuments, setActiveStatusById, softDeleteById, updateActiveById } from "../utils/crudService";
 
-// Create Scale Size
-export const CreateScaleSize = async (
-    data: Partial<IScaleSize>
-) => {
-    try {
-        const scaleSize = await ScaleSize.create(data);
-        return scaleSize;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+export const CreateScaleSize = async (data: Partial<IScaleSize>) => {
+    return await ScaleSize.create(data);
 };
 
-// Get All Scale Sizes
-export const GetAllScaleSize = async () => {
-    try {
-        const scaleSizes = await ScaleSize.find({
-            isDeleted: false
-        }).sort({ createdAt: -1 });
-
-        return scaleSizes;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+export const GetAllScaleSize = async (query?: any) => {
+    return await listDocuments(ScaleSize, query, { searchFields: ["ScaleSize"] });
 };
 
-// Get Scale Size By ID
 export const GetScaleSizeById = async (id: string) => {
-    try {
-        const scaleSize = await ScaleSize.findOne({
-            _id: id,
-            isDeleted: false
-        });
-
-        return scaleSize;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+    return await findActiveById(ScaleSize, id);
 };
 
-// Update Scale Size
-export const UpdateScaleSize = async (
-    id: string,
-    data: Partial<IScaleSize>
-) => {
-    try {
-        const scaleSize = await ScaleSize.findOneAndUpdate(
-            {
-                _id: id,
-                isDeleted: false
-            },
-            {
-                ...data,
-                updatedAt: new Date()
-            },
-            {
-                new: true,
-                runValidators: true
-            }
-        );
-
-        return scaleSize;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+export const UpdateScaleSize = async (id: string, data: Partial<IScaleSize>) => {
+    return await updateActiveById(ScaleSize, id, { ...data });
 };
 
-// Delete Scale Size (Soft Delete)
-export const DeleteScaleSize = async (
-    id: string,
-    updatedBy: string
-) => {
-    try {
-        const scaleSize = await ScaleSize.findOneAndUpdate(
-            {
-                _id: id,
-                isDeleted: false
-            },
-            {
-                isDeleted: true,
-                updatedBy,
-                updatedAt: new Date()
-            },
-            { new: true }
-        );
-
-        return scaleSize;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+export const DeleteScaleSize = async (id: string, updatedBy: string) => {
+    return await softDeleteById(ScaleSize, id, updatedBy);
 };
 
-// Change Active Status
-export const ChangeScaleSizeActiveStatus = async (
-    id: string,
-    isActive: boolean,
-    updatedBy: string
-) => {
-    try {
-        const scaleSize = await ScaleSize.findOneAndUpdate(
-            {
-                _id: id,
-                isDeleted: false
-            },
-            {
-                isActive,
-                updatedBy,
-                updatedAt: new Date()
-            },
-            { new: true }
-        );
-
-        return scaleSize;
-    } catch (error: any) {
-        throw new Error(error.message);
-    }
+export const ChangeScaleSizeActiveStatus = async (id: string, isActive: boolean, updatedBy: string) => {
+    return await setActiveStatusById(ScaleSize, id, isActive, updatedBy);
 };

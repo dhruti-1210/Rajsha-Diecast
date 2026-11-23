@@ -1,28 +1,26 @@
-import api from './axios';
+﻿import api from './axios';
+import type { ApiResponse, ListParams } from './types';
 import type { FooterLinkGroup, FooterLinkGroupInput } from '../types/FooterLinkGroup';
 
-export interface FooterLinkGroupApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
+export type { ApiResponse };
 
-export const getFooterLinkGroupList = async () => {
-  const response = await api.get<FooterLinkGroupApiResponse<FooterLinkGroup[]>>(
+export const getFooterLinkGroupList = async (params?: ListParams) => {
+  const response = await api.get<ApiResponse<FooterLinkGroup[]>>(
     '/footer-link-groups/list',
+    { params },
   );
   return response.data;
 };
 
 export const getFooterLinkGroupById = async (id: string) => {
-  const response = await api.get<FooterLinkGroupApiResponse<FooterLinkGroup>>(
+  const response = await api.get<ApiResponse<FooterLinkGroup>>(
     `/footer-link-groups/${encodeURIComponent(id)}`,
   );
   return response.data;
 };
 
 export const createFooterLinkGroup = async (group: FooterLinkGroupInput) => {
-  const response = await api.post<FooterLinkGroupApiResponse<FooterLinkGroup>>(
+  const response = await api.post<ApiResponse<FooterLinkGroup>>(
     '/footer-link-groups/create',
     group,
   );
@@ -33,17 +31,16 @@ export const updateFooterLinkGroup = async (
   id: string,
   group: Partial<FooterLinkGroupInput>,
 ) => {
-  const response = await api.put<FooterLinkGroupApiResponse<FooterLinkGroup>>(
+  const response = await api.put<ApiResponse<FooterLinkGroup>>(
     `/footer-link-groups/update/${encodeURIComponent(id)}`,
     group,
   );
   return response.data;
 };
 
-export const deleteFooterLinkGroup = async (id: string, updatedBy: string) => {
-  const response = await api.delete<FooterLinkGroupApiResponse<FooterLinkGroup>>(
+export const deleteFooterLinkGroup = async (id: string) => {
+  const response = await api.delete<ApiResponse<FooterLinkGroup>>(
     `/footer-link-groups/delete/${encodeURIComponent(id)}`,
-    { data: { updatedBy } },
   );
   return response.data;
 };
@@ -51,11 +48,21 @@ export const deleteFooterLinkGroup = async (id: string, updatedBy: string) => {
 export const changeFooterLinkGroupStatus = async (
   id: string,
   isActive: boolean,
-  updatedBy: string,
 ) => {
-  const response = await api.patch<FooterLinkGroupApiResponse<FooterLinkGroup>>(
+  const response = await api.patch<ApiResponse<FooterLinkGroup>>(
     `/footer-link-groups/status/${encodeURIComponent(id)}`,
-    { isActive, updatedBy },
+    { isActive },
+  );
+  return response.data;
+};
+
+export const changeFooterLinkGroupDisplayStatus = async (
+  id: string,
+  isDisplay: boolean,
+) => {
+  const response = await api.patch<ApiResponse<FooterLinkGroup>>(
+    `/footer-link-groups/display-status/${encodeURIComponent(id)}`,
+    { isDisplay },
   );
   return response.data;
 };

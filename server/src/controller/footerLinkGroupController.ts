@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+﻿import type { Request, Response } from "express";
 
 import {
     CreateFooterLinkGroup,
@@ -6,8 +6,15 @@ import {
     GetFooterLinkGroupById,
     UpdateFooterLinkGroup,
     DeleteFooterLinkGroup,
-    ChangeFooterLinkGroupActiveStatus
+    ChangeFooterLinkGroupActiveStatus,
+    ChangeFooterLinkGroupDisplayStatus
 } from "../Services/footerLinkGroupServices";
+import { getRequestActor, pickAllowed } from "../utils/audit";
+import { ApiError, assertFound, sendError, sendSuccess } from "../utils/http";
+import { parseListQuery } from "../utils/query";
+
+const createFields = ["FooterLinkGroupName", "isActive", "isDisplay", "createdBy", "updatedBy"];
+const updateFields = ["FooterLinkGroupName", "isActive", "isDisplay", "updatedBy"];
 
 // Create Footer Link Group
 export const CreateFooterLinkGroupController = async (
@@ -15,18 +22,19 @@ export const CreateFooterLinkGroupController = async (
     res: Response
 ) => {
     try {
-        const footerLinkGroup = await CreateFooterLinkGroup(req.body);
+        const actor = getRequestActor(req, req.body?.createdBy);
+        const payload = pickAllowed(req.body || {}, createFields);
+        if (!payload.FooterLinkGroupName || !String(payload.FooterLinkGroupName).trim()) {
+            throw new ApiError(400, "Footer link group name is required");
+        }
+        payload.FooterLinkGroupName = String(payload.FooterLinkGroupName).trim();
+        payload.createdBy = actor;
+        payload.updatedBy = actor;
 
-        return res.status(201).json({
-            success: true,
-            message: "Footer link group created successfully",
-            data: footerLinkGroup
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        const footerLinkGroup = await CreateFooterLinkGroup(payload as any);
+        return sendSuccess(res, 201, "Footer link group created successfully", footerLinkGroup);
+    } catch (error) {
+        return sendError(res, error);
     }
 };
 
@@ -36,18 +44,14 @@ export const GetAllFooterLinkGroupController = async (
     res: Response
 ) => {
     try {
-        const footerLinkGroups = await GetAllFooterLinkGroup();
-
-        return res.status(200).json({
-            success: true,
-            message: "Footer link groups fetched successfully",
-            data: footerLinkGroups
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        const query = parseListQuery(req, { sort: { createdAt: -1 } });
+        const result = await GetAllFooterLinkGroup(query as any);
+        if (Array.isArray(result)) {
+            return sendSuccess(res, 200, "Footer link groups fetched successfully", result);
+        }
+        return sendSuccess(res, 200, "Footer link groups fetched successfully", result.items, result.meta);
+    } catch (error) {
+        return sendError(res, error);
     }
 };
 
@@ -57,27 +61,13 @@ export const GetFooterLinkGroupByIdController = async (
     res: Response
 ) => {
     try {
-        const footerLinkGroup = await GetFooterLinkGroupById(
-            req.params.id
+        const footerLinkGroup = assertFound(
+            await GetFooterLinkGroupById(req.params.id),
+            "Footer link group not found"
         );
-
-        if (!footerLinkGroup) {
-            return res.status(404).json({
-                success: false,
-                message: "Footer link group not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Footer link group fetched successfully",
-            data: footerLinkGroup
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        return sendSuccess(res, 200, "Footer link group fetched successfully", footerLinkGroup);
+    } catch (error) {
+        return sendError(res, error);
     }
 };
 
@@ -87,28 +77,21 @@ export const UpdateFooterLinkGroupController = async (
     res: Response
 ) => {
     try {
-        const footerLinkGroup = await UpdateFooterLinkGroup(
-            req.params.id,
-            req.body
-        );
-
-        if (!footerLinkGroup) {
-            return res.status(404).json({
-                success: false,
-                message: "Footer link group not found"
-            });
+        const actor = getRequestActor(req, req.body?.updatedBy);
+        const payload = pickAllowed(req.body || {}, updateFields);
+        if (payload.FooterLinkGroupName !== undefined) {
+            if (!String(payload.FooterLinkGroupName).trim()) throw new ApiError(400, "Footer link group name is required");
+            payload.FooterLinkGroupName = String(payload.FooterLinkGroupName).trim();
         }
+        payload.updatedBy = actor;
 
-        return res.status(200).json({
-            success: true,
-            message: "Footer link group updated successfully",
-            data: footerLinkGroup
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        const footerLinkGroup = assertFound(
+            await UpdateFooterLinkGroup(req.params.id, payload as any),
+            "Footer link group not found"
+        );
+        return sendSuccess(res, 200, "Footer link group updated successfully", footerLinkGroup);
+    } catch (error) {
+        return sendError(res, error);
     }
 };
 
@@ -118,30 +101,14 @@ export const DeleteFooterLinkGroupController = async (
     res: Response
 ) => {
     try {
-        const { updatedBy } = req.body;
-
-        const footerLinkGroup = await DeleteFooterLinkGroup(
-            req.params.id,
-            updatedBy
+        const actor = getRequestActor(req, req.body?.updatedBy);
+        const footerLinkGroup = assertFound(
+            await DeleteFooterLinkGroup(req.params.id, actor),
+            "Footer link group not found"
         );
-
-        if (!footerLinkGroup) {
-            return res.status(404).json({
-                success: false,
-                message: "Footer link group not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Footer link group deleted successfully",
-            data: footerLinkGroup
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        return sendSuccess(res, 200, "Footer link group deleted successfully", footerLinkGroup);
+    } catch (error) {
+        return sendError(res, error);
     }
 };
 
@@ -151,30 +118,32 @@ export const ChangeFooterLinkGroupActiveStatusController = async (
     res: Response
 ) => {
     try {
-        const { isActive, updatedBy } = req.body;
-
-        const footerLinkGroup = await ChangeFooterLinkGroupActiveStatus(
-            req.params.id,
-            isActive,
-            updatedBy
+        const actor = getRequestActor(req, req.body?.updatedBy);
+        if (typeof req.body?.isActive !== "boolean") throw new ApiError(400, "isActive must be a boolean");
+        const footerLinkGroup = assertFound(
+            await ChangeFooterLinkGroupActiveStatus(req.params.id, req.body.isActive, actor),
+            "Footer link group not found"
         );
+        return sendSuccess(res, 200, "Footer link group status changed successfully", footerLinkGroup);
+    } catch (error) {
+        return sendError(res, error);
+    }
+};
 
-        if (!footerLinkGroup) {
-            return res.status(404).json({
-                success: false,
-                message: "Footer link group not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Footer link group status changed successfully",
-            data: footerLinkGroup
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+// Change Display Status
+export const ChangeFooterLinkGroupDisplayStatusController = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const actor = getRequestActor(req, req.body?.updatedBy);
+        if (typeof req.body?.isDisplay !== "boolean") throw new ApiError(400, "isDisplay must be a boolean");
+        const footerLinkGroup = assertFound(
+            await ChangeFooterLinkGroupDisplayStatus(req.params.id, req.body.isDisplay, actor),
+            "Footer link group not found"
+        );
+        return sendSuccess(res, 200, "Footer link group display status changed successfully", footerLinkGroup);
+    } catch (error) {
+        return sendError(res, error);
     }
 };

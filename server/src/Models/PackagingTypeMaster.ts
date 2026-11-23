@@ -1,54 +1,33 @@
-import mongoose, { Schema, Document } from 'mongoose';
+﻿import mongoose, { Schema, Document } from "mongoose";
 
 export interface IPackagingType extends Document {
-    packagingName: string;
-    Description: string;
-
+    packagingName?: string;
+    packaginName?: string;
+    Description?: string;
     createdAt: Date;
     updatedAt: Date;
-    updatedBy: string;
-    createdBy: string;
+    createdBy?: string;
+    updatedBy?: string;
     isActive: boolean;
     isDeleted: boolean;
-}   
+}
 
-const PackagingTypeSchema: Schema = new Schema(
+const packagingTypeSchema = new Schema<IPackagingType>(
     {
-        packagingName: {
-            type: String,
-            required: true
-        },
-        Description: {
-            type: String,
-            required: true
-        },
-        createdAt: {
-            type: Date,
-            default: Date.now
-        },
-        updatedAt: {
-            type: Date,
-            default: Date.now
-        },
-        updatedBy: {
-            type: String,
-            required: true
-        },
-        createdBy: {
-            type: String,
-            required: true
-        },
-        isActive: {
-            type: Boolean,
-            default: true
-        },
-        isDeleted: {
-            type: Boolean,
-            default: false
-        }
-    }
-)
+        packagingName: { type: String, trim: true },
+        packaginName: { type: String, trim: true },
+        Description: { type: String, trim: true, default: "" },
+        createdBy: { type: String, trim: true },
+        updatedBy: { type: String, trim: true },
+        isActive: { type: Boolean, default: true },
+        isDeleted: { type: Boolean, default: false }
+    },
+    { timestamps: true }
+);
 
-const PackagingType = mongoose.model<IPackagingType>('PackagingType', PackagingTypeSchema);
+packagingTypeSchema.index({ isDeleted: 1, isActive: 1, createdAt: -1 });
+packagingTypeSchema.index({ packagingName: 1 });
+packagingTypeSchema.index({ packaginName: 1 });
 
+const PackagingType = mongoose.model<IPackagingType>("PackagingType", packagingTypeSchema);
 export default PackagingType;

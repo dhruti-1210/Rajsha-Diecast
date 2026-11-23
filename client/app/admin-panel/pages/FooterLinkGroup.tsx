@@ -1,19 +1,21 @@
-'use client';
+﻿'use client';
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
 import AdminToast from '../common/AdminToast';
+import AdminDataTable from '../common/AdminDataTable';
+import Header from '../common/header';
+import Icon from '../common/AdminIcon';
 import {
+  changeFooterLinkGroupDisplayStatus,
   changeFooterLinkGroupStatus,
   createFooterLinkGroup,
   deleteFooterLinkGroup,
   getFooterLinkGroupList,
   updateFooterLinkGroup,
 } from '../api/footerLinkGroup';
+import { useAdminList } from '../hooks/useAdminList';
 import type { FooterLinkGroup, FooterLinkGroupInput } from '../types/FooterLinkGroup';
-import Header from '../common/header';
-import Icon from '../common/AdminIcon';
-import AdminDataTable from '../common/AdminDataTable';
 import type { TableColumn } from 'react-data-table-component';
 
 type FooterLinkGroupDraft = {
@@ -29,52 +31,21 @@ const emptyDraft: FooterLinkGroupDraft = {
 };
 
 export default function FooterLinkGroupPage() {
-  const [items, setItems] = useState<FooterLinkGroup[]>([]);
-  const [query, setQuery] = useState('');
+  const list = useAdminList<FooterLinkGroup>(getFooterLinkGroupList, { pageSize: 10 });
   const [draft, setDraft] = useState<FooterLinkGroupDraft>(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<FooterLinkGroup | null>(null);
 
-  async function loadGroups() {
-    setLoading(true);
-    try {
-      const response = await getFooterLinkGroupList();
-      setItems(response.data.filter((group) => !group.isDeleted));
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    let active = true;
-
-    async function load() {
-      try {
-        const response = await getFooterLinkGroupList();
-        if (active) setItems(response.data.filter((group) => !group.isDeleted));
-      } catch (error) {
-        if (active) {
-          setNotice(error instanceof Error ? error.message : 'Could not load footer link groups.');
-          setNoticeIsError(true);
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
+    if (list.error) {
+      setNotice(list.error);
+      setNoticeIsError(true);
     }
-
-    void load();
-    return () => { active = false; };
-  }, []);
-
-  const visibleItems = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    return items.filter((group) => group.FooterLinkGroupName.toLowerCase().includes(normalizedQuery));
-  }, [items, query]);
+  }, [list.error]);
 
   function openCreate() {
     setEditingId(null);
@@ -97,10 +68,8 @@ export default function FooterLinkGroupPage() {
     const FooterLinkGroupName = draft.FooterLinkGroupName.trim();
     if (!FooterLinkGroupName) return;
 
-    const actor = 'admin';
     const payload: FooterLinkGroupInput = {
       FooterLinkGroupName,
-      updatedBy: actor,
       isActive: draft.isActive,
       isDisplay: draft.isDisplay,
     };
@@ -110,20 +79,12 @@ export default function FooterLinkGroupPage() {
       if (editingId) {
         await updateFooterLinkGroup(editingId, payload);
       } else {
-        await createFooterLinkGroup({ ...payload, createdBy: actor });
+        await createFooterLinkGroup(payload);
       }
-
       setModalOpen(false);
       setNotice(`Footer link group ${editingId ? 'updated' : 'added'}.`);
       setNoticeIsError(false);
-      try {
-        await loadGroups();
-      } catch (error) {
-        setNotice(error instanceof Error
-          ? `Saved the group, but could not refresh the list: ${error.message}`
-          : 'Saved the group, but could not refresh the list.');
-        setNoticeIsError(true);
-      }
+      await list.refresh();
     } catch (error) {
       setNotice(error instanceof Error ? error.message : 'Could not save the footer link group.');
       setNoticeIsError(true);
@@ -135,17 +96,12 @@ export default function FooterLinkGroupPage() {
   async function toggleGroupStatus(group: FooterLinkGroup, isDisplay: boolean) {
     try {
       const response = isDisplay
-        ? await updateFooterLinkGroup(group._id, {
-          isDisplay: !group.isDisplay,
-          updatedBy: 'admin',
-        })
-        : await changeFooterLinkGroupStatus(group._id, !group.isActive, 'admin');
-      setItems((current) => current.map((item) => (
-        item._id === group._id ? response.data : item
-      )));
+        ? await changeFooterLinkGroupDisplayStatus(group._id, !group.isDisplay)
+        : await changeFooterLinkGroupStatus(group._id, !group.isActive);
       const enabled = isDisplay ? response.data.isDisplay : response.data.isActive;
       setNotice(`Footer link group ${isDisplay ? 'display' : 'active'} status ${enabled ? 'enabled' : 'disabled'}.`);
       setNoticeIsError(false);
+      await list.refresh();
     } catch (error) {
       setNotice(error instanceof Error ? error.message : 'Could not update footer link group status.');
       setNoticeIsError(true);
@@ -154,10 +110,10 @@ export default function FooterLinkGroupPage() {
 
   async function removeGroup(group: FooterLinkGroup) {
     try {
-      await deleteFooterLinkGroup(group._id, 'admin');
-      setItems((current) => current.filter((item) => item._id !== group._id));
+      await deleteFooterLinkGroup(group._id);
       setNotice('Footer link group removed.');
       setNoticeIsError(false);
+      await list.refresh();
     } catch (error) {
       setNotice(error instanceof Error ? error.message : 'Could not remove the footer link group.');
       setNoticeIsError(true);
@@ -246,25 +202,30 @@ export default function FooterLinkGroupPage() {
         </div>
         <div className="admin-toolbar">
           <span className="admin-reference-summary">
-            {visibleItems.length} {visibleItems.length === 1 ? 'group' : 'groups'}
+            {list.total} {list.total === 1 ? 'group' : 'groups'}
           </span>
           <label className="admin-search">
             <Icon name="search" size={17} />
             <input
               type="search"
               placeholder="Search footer groups..."
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              value={list.search}
+              onChange={(event) => list.setSearch(event.target.value)}
               aria-label="Search footer link groups"
             />
           </label>
         </div>
         <AdminDataTable
           columns={columns}
-          data={visibleItems}
+          data={list.items}
           keyField="_id"
-          loading={loading}
-          emptyMessage={items.length ? 'No groups match your search.' : 'No footer link groups yet. Add one to get started.'}
+          loading={list.loading}
+          emptyMessage={list.search ? 'No groups match your search.' : 'No footer link groups yet. Add one to get started.'}
+          serverPagination
+          totalRows={list.total}
+          currentPage={list.page}
+          onPageChange={list.setPage}
+          paginationPerPage={list.pageSize}
         />
       </section>
 
@@ -301,14 +262,6 @@ export default function FooterLinkGroupPage() {
                 />
                 <span>Active</span>
               </label>
-              {/* <label className="admin-status-toggle">
-                <input
-                  type="checkbox"
-                  checked={draft.isDisplay}
-                  onChange={(event) => setDraft((current) => ({ ...current, isDisplay: event.target.checked }))}
-                />
-                <span>Display on storefront</span>
-              </label> */}
             </div>
             <div className="admin-modal-actions">
               <button type="button" className="admin-secondary-button" onClick={() => setModalOpen(false)}>Cancel</button>

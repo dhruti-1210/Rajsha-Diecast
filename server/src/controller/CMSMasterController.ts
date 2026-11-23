@@ -1,214 +1,63 @@
+﻿import { Request, Response } from "express";
+import { createCms, getAllCms, getCmsById, updateCms, deleteCms, changeCmsStatus, changeCmsDisplayStatus } from "../Services/CMSMasterServices";
+import { getRequestActor, pickAllowed } from "../utils/audit";
+import { ApiError, assertFound, sendError, sendSuccess } from "../utils/http";
+import { parseListQuery } from "../utils/query";
 
-import { Request, Response } from "express";
+const createFields = ["Name", "Description", "isActive", "isDisplay", "createdBy", "updatedBy"];
+const updateFields = ["Name", "Description", "isActive", "isDisplay", "updatedBy"];
 
-import {
-    createCms,
-    getAllCms,
-    getCmsById,
-    updateCms,
-    deleteCms,
-    changeCmsStatus,
-    changeCmsDisplayStatus
-} from "../Services/CMSMasterServices";
-
-// Create CMS
-export const createCmsController = async (
-    req: Request,
-    res: Response
-) => {
-    try {
-        const cms = await createCms(req.body);
-
-        return res.status(201).json({
-            success: true,
-            message: "CMS created successfully",
-            data: cms
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const createCmsController = async (req: Request, res: Response) => {
+  try {
+    const actor = getRequestActor(req, req.body?.createdBy);
+    const payload = pickAllowed(req.body || {}, createFields);
+    if (!payload.Name || !String(payload.Name).trim()) throw new ApiError(400, "Name is required");
+    payload.Name = String(payload.Name).trim();
+    if (payload.Description !== undefined) payload.Description = String(payload.Description);
+    payload.createdBy = actor; payload.updatedBy = actor;
+    return sendSuccess(res, 201, "CMS created successfully", await createCms(payload as any));
+  } catch (error) { return sendError(res, error); }
 };
 
-// Get All CMS
-export const getAllCmsController = async (
-    req: Request,
-    res: Response
-) => {
-    try {
-        const cms = await getAllCms();
-
-        return res.status(200).json({
-            success: true,
-            message: "CMS fetched successfully",
-            data: cms
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const getAllCmsController = async (req: Request, res: Response) => {
+  try {
+    const result = await getAllCms(parseListQuery(req, { sort: { createdAt: -1 } }) as any);
+    if (Array.isArray(result)) return sendSuccess(res, 200, "CMS fetched successfully", result);
+    return sendSuccess(res, 200, "CMS fetched successfully", result.items, result.meta);
+  } catch (error) { return sendError(res, error); }
 };
 
-// Get CMS By ID
-export const getCmsByIdController = async (
-    req: Request,
-    res: Response
-) => {
-    try {
-        const cms = await getCmsById(req.params.id);
-
-        if (!cms) {
-            return res.status(404).json({
-                success: false,
-                message: "CMS not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "CMS fetched successfully",
-            data: cms
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const getCmsByIdController = async (req: Request, res: Response) => {
+  try { return sendSuccess(res, 200, "CMS fetched successfully", assertFound(await getCmsById(req.params.id), "CMS not found")); }
+  catch (error) { return sendError(res, error); }
 };
 
-// Update CMS
-export const updateCmsController = async (
-    req: Request,
-    res: Response
-) => {
-    try {
-        const cms = await updateCms(
-            req.params.id,
-            req.body
-        );
-
-        if (!cms) {
-            return res.status(404).json({
-                success: false,
-                message: "CMS not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "CMS updated successfully",
-            data: cms
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const updateCmsController = async (req: Request, res: Response) => {
+  try {
+    const actor = getRequestActor(req, req.body?.updatedBy);
+    const payload = pickAllowed(req.body || {}, updateFields);
+    if (payload.Name !== undefined) { payload.Name = String(payload.Name).trim(); if (!payload.Name) throw new ApiError(400, "Name is required"); }
+    if (payload.Description !== undefined) payload.Description = String(payload.Description);
+    payload.updatedBy = actor;
+    return sendSuccess(res, 200, "CMS updated successfully", assertFound(await updateCms(req.params.id, payload as any), "CMS not found"));
+  } catch (error) { return sendError(res, error); }
 };
 
-// Soft Delete CMS
-export const deleteCmsController = async (
-    req: Request,
-    res: Response
-) => {
-    try {
-        const { updatedBy } = req.body;
-
-        const cms = await deleteCms(
-            req.params.id,
-            updatedBy
-        );
-
-        if (!cms) {
-            return res.status(404).json({
-                success: false,
-                message: "CMS not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "CMS deleted successfully",
-            data: cms
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const deleteCmsController = async (req: Request, res: Response) => {
+  try { return sendSuccess(res, 200, "CMS deleted successfully", assertFound(await deleteCms(req.params.id, getRequestActor(req, req.body?.updatedBy)), "CMS not found")); }
+  catch (error) { return sendError(res, error); }
 };
 
-// Change CMS Status
-export const changeCmsStatusController = async (
-    req: Request,
-    res: Response
-) => {
-    try {
-        const { isActive, updatedBy } = req.body;
-
-        const cms = await changeCmsStatus(
-            req.params.id,
-            isActive,
-            updatedBy
-        );
-
-        if (!cms) {
-            return res.status(404).json({
-                success: false,
-                message: "CMS not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "CMS status changed successfully",
-            data: cms
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const changeCmsStatusController = async (req: Request, res: Response) => {
+  try {
+    if (typeof req.body?.isActive !== "boolean") throw new ApiError(400, "isActive must be a boolean");
+    return sendSuccess(res, 200, "CMS status changed successfully", assertFound(await changeCmsStatus(req.params.id, req.body.isActive, getRequestActor(req, req.body?.updatedBy)), "CMS not found"));
+  } catch (error) { return sendError(res, error); }
 };
 
-// Change CMS Display Status
-export const changeCmsDisplayStatusController = async (
-    req: Request,
-    res: Response
-) => {
-    try {
-        const { isDisplay, updatedBy } = req.body;
-
-        const cms = await changeCmsDisplayStatus(
-            req.params.id,
-            isDisplay,
-            updatedBy
-        );
-
-        if (!cms) {
-            return res.status(404).json({
-                success: false,
-                message: "CMS not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "CMS display status changed successfully",
-            data: cms
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+export const changeCmsDisplayStatusController = async (req: Request, res: Response) => {
+  try {
+    if (typeof req.body?.isDisplay !== "boolean") throw new ApiError(400, "isDisplay must be a boolean");
+    return sendSuccess(res, 200, "CMS display status changed successfully", assertFound(await changeCmsDisplayStatus(req.params.id, req.body.isDisplay, getRequestActor(req, req.body?.updatedBy)), "CMS not found"));
+  } catch (error) { return sendError(res, error); }
 };

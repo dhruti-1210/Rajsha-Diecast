@@ -533,8 +533,8 @@ export default function InventoryPage() {
           <section className="admin-inventory-card">
             <div className="admin-inventory-header">
               <div>
-                <h2>Product inventory</h2>
-                <p>Manage your diecast collection and availability.</p>
+                {/* <h2>Product inventory</h2> */}
+                {/* <p>Manage your diecast collection and availability.</p> */}
               </div>
               <button type="button" className="admin-primary-button" onClick={openCreate}>
                 <Icon name="plus" size={17} /> Add product

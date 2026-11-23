@@ -1,15 +1,12 @@
-
-import mongoose, { Schema, Document } from "mongoose";
+﻿import mongoose, { Schema, Document } from "mongoose";
 
 export interface ICmsMaster extends Document {
     Name: string;
     Description: string;
-
     createdAt: Date;
     updatedAt: Date;
-    createdBy: string;
-    updatedBy: string;
-
+    createdBy?: string;
+    updatedBy?: string;
     isActive: boolean;
     isDisplay: boolean;
     isDeleted: boolean;
@@ -17,49 +14,19 @@ export interface ICmsMaster extends Document {
 
 const CmsMasterSchema: Schema = new Schema(
     {
-        Name: {
-            type: String,
-            required: true,
-            trim: true
-        },
-        Description: {
-            type: String,
-            default: ""
-        },
-        createdAt: {
-            type: Date,
-            default: Date.now
-        },
-        updatedAt: {
-            type: Date,
-            default: Date.now
-        },
-        createdBy: {
-            type: String,
-            required: true
-        },
-        updatedBy: {
-            type: String,
-            required: true
-        },
-        isActive: {
-            type: Boolean,
-            default: true
-        },
-        isDisplay: {
-            type: Boolean,
-            default: true
-        },
-        isDeleted: {
-            type: Boolean,
-            default: false
-        }
-    }
+        Name: { type: String, required: true, trim: true },
+        Description: { type: String, default: "" },
+        createdBy: { type: String, trim: true },
+        updatedBy: { type: String, trim: true },
+        isActive: { type: Boolean, default: true },
+        isDisplay: { type: Boolean, default: true },
+        isDeleted: { type: Boolean, default: false }
+    },
+    { timestamps: true }
 );
 
-const CmsMaster = mongoose.model<ICmsMaster>(
-    "CmsMaster",
-    CmsMasterSchema
-);
+CmsMasterSchema.index({ isDeleted: 1, isActive: 1, isDisplay: 1, createdAt: -1 });
+CmsMasterSchema.index({ Name: 1 });
 
+const CmsMaster = mongoose.model<ICmsMaster>("CmsMaster", CmsMasterSchema);
 export default CmsMaster;

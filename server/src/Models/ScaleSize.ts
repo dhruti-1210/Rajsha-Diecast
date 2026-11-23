@@ -1,13 +1,11 @@
-import mongoose, { Schema, Document } from "mongoose";
+﻿import mongoose, { Schema, Document } from "mongoose";
 
 export interface IScaleSize extends Document {
     ScaleSize: string;
-
     createdAt: Date;
     updatedAt: Date;
     createdBy: string;
     updatedBy: string;
-
     isActive: boolean;
     isDeleted: boolean;
 }
@@ -19,21 +17,15 @@ const ScaleSizeSchema: Schema = new Schema(
             required: true,
             trim: true
         },
-        createdAt: {
-            type: Date,
-            default: Date.now
-        },
-        updatedAt: {
-            type: Date,
-            default: Date.now
-        },
         createdBy: {
             type: String,
-            required: true
+            required: true,
+            trim: true
         },
         updatedBy: {
             type: String,
-            required: true
+            required: true,
+            trim: true
         },
         isActive: {
             type: Boolean,
@@ -43,12 +35,12 @@ const ScaleSizeSchema: Schema = new Schema(
             type: Boolean,
             default: false
         }
-    }
+    },
+    { timestamps: true }
 );
 
-const ScaleSize = mongoose.model<IScaleSize>(
-    "ScaleSize",
-    ScaleSizeSchema
-);
+ScaleSizeSchema.index({ isDeleted: 1, isActive: 1, createdAt: -1 });
+ScaleSizeSchema.index({ ScaleSize: 1 });
 
+const ScaleSize = mongoose.model<IScaleSize>("ScaleSize", ScaleSizeSchema);
 export default ScaleSize;
