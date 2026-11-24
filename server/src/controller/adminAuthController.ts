@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { AdminAuthError, authenticateAdmin } from "../Services/AdminAuthServices";
 
 const ADMIN_SESSION_COOKIE = "rajshaAdminSession";
-const ADMIN_SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
+const ADMIN_SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
 const setAdminSessionCookie = (res: Response, token: string) => {
     const secure = process.env.NODE_ENV === "production";

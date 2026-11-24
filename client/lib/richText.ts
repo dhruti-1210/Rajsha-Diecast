@@ -1,6 +1,7 @@
-import DOMPurify from 'isomorphic-dompurify';
+import DOMPurify, { addHook, removeHook } from 'isomorphic-dompurify';
+import type { Config, UponSanitizeAttributeHookEvent } from 'dompurify';
 
-const richTextOptions = {
+const richTextOptions: Config = {
   ALLOWED_TAGS: [
     'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's',
     'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -14,23 +15,29 @@ const richTextOptions = {
   ],
 };
 
+const safeColor = /^color:\s*(?:#[\da-f]{3,8}|[a-z]{3,20}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\))\s*;?$/i;
+const safeEmbedSrc = /^https:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/embed\/|player\.vimeo\.com\/video\/)[a-z\d_-]+(?:[/?#?][^\s]*)?$/i;
+
+function uponSanitizeAttribute(node: Element, data: UponSanitizeAttributeHookEvent): void {
+  if (data.attrName === 'style' && !safeColor.test(data.attrValue)) {
+    data.keepAttr = false;
+  }
+  if (
+    node.nodeName === 'IFRAME' &&
+    data.attrName === 'src' &&
+    !safeEmbedSrc.test(data.attrValue)
+  ) {
+    data.keepAttr = false;
+  }
+}
+
 export function sanitizeRichText(html: string): string {
-  return DOMPurify.sanitize(html, {
-    ...richTextOptions,
-    uponSanitizeAttribute: (node, data) => {
-      const safeColor = /^color:\s*(?:#[\da-f]{3,8}|[a-z]{3,20}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\))\s*;?$/i;
-      if (data.attrName === 'style' && !safeColor.test(data.attrValue)) {
-        data.keepAttr = false;
-      }
-      if (
-        node.nodeName === 'IFRAME'
-        && data.attrName === 'src'
-        && !/^https:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/embed\/|player\.vimeo\.com\/video\/)[a-z\d_-]+(?:[/?#?][^\s]*)?$/i.test(data.attrValue)
-      ) {
-        data.keepAttr = false;
-      }
-    },
-  });
+  addHook('uponSanitizeAttribute', uponSanitizeAttribute);
+  try {
+    return DOMPurify.sanitize(html, richTextOptions);
+  } finally {
+    removeHook('uponSanitizeAttribute', uponSanitizeAttribute);
+  }
 }
 
 export function richTextToPlainText(html: string): string {

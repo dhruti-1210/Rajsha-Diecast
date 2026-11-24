@@ -35,7 +35,7 @@ export const authenticateAdmin = async (email: string, password: string) => {
                 role: "admin"
             },
             secret,
-            { expiresIn: "8h" }
+            { expiresIn: "7d" }
         );
         return {
             token,
