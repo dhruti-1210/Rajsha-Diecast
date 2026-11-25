@@ -1358,13 +1358,25 @@ cite {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0 0 12px;
-  padding: 14px 0 12px;
-  border-top: 1px solid rgba(255, 255, 255, .1);
-  font-size: 1rem
+  margin: 0 0 8px;
+  padding: 0;
+  font-size: .95rem;
+  color: var(--mut)
 }
 
 .order-confirmation-total strong {
+  color: #fff
+}
+
+.order-confirmation-grand-total {
+  margin: 8px 0 12px;
+  padding: 14px 0 12px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+  font-size: 1rem;
+  color: #fff
+}
+
+.order-confirmation-grand-total strong {
   color: var(--gold2)
 }
 

@@ -4,6 +4,7 @@ import OrderMaster, { IOrderMaster } from "../Models/OrderMaster";
 import OrderLineMaster from "../Models/OrderLineMaster";
 import Checkout from "../Models/CheckoutModel";
 import Cart from "../Models/Cart";
+import CompanySetup from "../Models/CompanySetup";
 import ProductMaster from "../Models/ProductMaster";
 
 export class OrderPlacementError extends Error {
@@ -31,6 +32,22 @@ const getAvailableStock = (product: { TotalStock?: number; stockRemaining?: numb
         return product.stockRemaining;
     }
     return Number(product.TotalStock ?? 0);
+};
+
+const getActiveCompanySetup = async () => {
+    const setups = await CompanySetup.find({ isDeleted: { $ne: true } }).sort({ createdAt: -1 }).lean();
+    return setups.find((setup) => setup.isActive) ?? setups[0] ?? null;
+};
+
+const calculateShippingCharge = (
+    subtotal: number,
+    setup: { ShippingCharges?: number; FreeShippingCharge?: number } | null
+) => {
+    const shippingCharges = Number(setup?.ShippingCharges ?? 0);
+    const freeShippingFrom = Number(setup?.FreeShippingCharge ?? 0);
+    if (!Number.isFinite(shippingCharges) || shippingCharges < 0) return 0;
+    if (freeShippingFrom > 0 && subtotal >= freeShippingFrom) return 0;
+    return shippingCharges;
 };
 
 const getOrderDraftForUser = async (userId: string) => {
@@ -85,12 +102,19 @@ const getOrderDraftForUser = async (userId: string) => {
             lineTotal: product.Price * Quantity
         };
     });
-    const total = orderItems.reduce((sum, item) => sum + item.lineTotal, 0);
+    const subtotal = orderItems.reduce((sum, item) => sum + item.lineTotal, 0);
+    if (!Number.isFinite(subtotal)) {
+        throw new OrderPlacementError("The order total is invalid.", 409);
+    }
+
+    const companySetup = await getActiveCompanySetup();
+    const shippingCharge = calculateShippingCharge(subtotal, companySetup);
+    const total = subtotal + shippingCharge;
     if (!Number.isFinite(total)) {
         throw new OrderPlacementError("The order total is invalid.", 409);
     }
 
-    return { cartItems, productsById, orderItems, quantitiesByProduct, total };
+    return { cartItems, productsById, orderItems, quantitiesByProduct, subtotal, shippingCharge, total };
 };
 
 export const GetCartTotalForUser = async (userId: string) => {
@@ -103,7 +127,7 @@ export const PlaceOrderForUser = async (
     paymentId: string,
     expectedAmountPaise: number
 ) => {
-    const { cartItems, productsById, orderItems, quantitiesByProduct, total } = await getOrderDraftForUser(userId);
+    const { cartItems, productsById, orderItems, quantitiesByProduct, subtotal, shippingCharge, total } = await getOrderDraftForUser(userId);
     const totalPaise = Math.round(total * 100);
     if (!Number.isSafeInteger(totalPaise) || totalPaise !== expectedAmountPaise) {
         throw new OrderPlacementError("The cart total changed during payment.", 409);
@@ -163,6 +187,8 @@ export const PlaceOrderForUser = async (
 
     const order = await OrderMaster.create({
         user_id: userId,
+        SubTotal: subtotal,
+        ShippingCharge: shippingCharge,
         Total: total,
         PaymentStatus: "Paid",
         RazorpayPaymentId: paymentId,

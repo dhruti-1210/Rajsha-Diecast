@@ -5,9 +5,7 @@ export interface ITransactionHistory extends Document {
     order_Master_id: mongoose.Types.ObjectId;
     txnAmount: number;
 
-    customerName?: string;
-    customerEmail?: string;
-    customerMobile?: string;
+    user_id?: mongoose.Types.ObjectId;
     checksumHash?: string;
     transactionStatus?: string;
 
@@ -42,17 +40,9 @@ const TransactionHistorySchema: Schema = new Schema(
             required: true,
             default: 0
         },
-        customerName: {
-            type: String,
-            default: ""
-        },
-        customerEmail: {
-            type: String,
-            default: ""
-        },
-        customerMobile: {
-            type: String,
-            default: ""
+        user_id: {
+            type: Schema.Types.ObjectId,
+            ref: "userMaster"
         },
         checksumHash: {
             type: String,

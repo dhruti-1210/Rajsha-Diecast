@@ -19,6 +19,7 @@ import CmsPage from './pages/cms';
 import CheckoutPage from './pages/checkout';
 import BrandMasterPage from './pages/brandMaster';
 import ReviewMasterPage from './pages/reviewMaster';
+import UserDetailsPage from './pages/userDetails';
 import FooterLinkGroupPage from './pages/FooterLinkGroup';
 import FooterLinkPage from './pages/FooterLink';
 import './admin-panel.css';
@@ -127,6 +128,8 @@ export default function AdminPanelPage() {
                           ? <CheckoutPage />
                           : activePage === 'review-master'
                             ? <ReviewMasterPage />
+                            : activePage === 'user-details'
+                              ? <UserDetailsPage />
                             : activePage === 'footer-link-groups'
                               ? <FooterLinkGroupPage />
                               : activePage === 'footer-links'

@@ -1,6 +1,8 @@
 import api from './axiosApi';
 import type { CompanySetup } from '@/types/CompanySetup';
 
+export const COMPANY_SETUP_UPDATED_EVENT = 'company-setup-updated';
+
 export interface CompanySetupApiResponse<T> {
   success: boolean;
   message: string;

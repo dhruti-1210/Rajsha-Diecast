@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createCart, deleteCart, getCartList, updateCartQuantity } from '@/api/Cart';
-import { getCompanySetupList } from '@/api/CompanySetupApi';
+import { COMPANY_SETUP_UPDATED_EVENT, getCompanySetupList } from '@/api/CompanySetupApi';
 import type { Cart as CartRecord, CartItem } from '@/types/Cart';
 import type { Product } from '@/types';
 import { userAuthUrl } from '@/lib/user-auth';
@@ -70,8 +70,14 @@ function mergeDuplicateItems(items: CartItem[]) {
 interface Store {
   cart: CartItem[];
   total: number;
+  shippingCharge: number;
+  grandTotal: number;
   cartLoading: boolean;
   onlyNLeft: number;
+  companyName: string;
+  companyLogo: string;
+  shippingCharges: number;
+  freeShippingCharge: number;
   clearCart: () => void;
   add: (p: Product, quantity?: number) => void;
   remove: (i: number) => void;
@@ -93,6 +99,10 @@ export function useStore(): Store {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [onlyNLeft, setOnlyNLeft] = useState(0);
+  const [companyName, setCompanyName] = useState('Rajsha Diecast');
+  const [companyLogo, setCompanyLogo] = useState('');
+  const [shippingCharges, setShippingCharges] = useState(0);
+  const [freeShippingCharge, setFreeShippingCharge] = useState(0);
   const [cartHydrated, setCartHydrated] = useState(false);
   const [cartError, setCartError] = useState('');
   const [drawer, setDrawer] = useState<'cart' | null>(null);
@@ -111,14 +121,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         const availableSetups = response.data.filter((item) => !item.isDeleted);
         const setup = availableSetups.find((item) => item.isActive) ?? availableSetups[0];
-        if (active) setOnlyNLeft(setup?.OnlyNLeft ?? 0);
+        if (active) {
+          setOnlyNLeft(setup?.OnlyNLeft ?? 0);
+          setCompanyName(setup?.CompanyName?.trim() || 'Rajsha Diecast');
+          setCompanyLogo(setup?.companyLogo?.trim() || '');
+          setShippingCharges(Number(setup?.ShippingCharges ?? 0));
+          setFreeShippingCharge(Number(setup?.FreeShippingCharge ?? 0));
+        }
       } catch (error) {
         if (active) console.error('Could not load the low-stock warning quantity:', error);
       }
     }
 
     void loadCompanySettings();
-    return () => { active = false; };
+    window.addEventListener(COMPANY_SETUP_UPDATED_EVENT, loadCompanySettings);
+    return () => {
+      active = false;
+      window.removeEventListener(COMPANY_SETUP_UPDATED_EVENT, loadCompanySettings);
+    };
   }, []);
 
   useEffect(() => {
@@ -400,10 +420,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCartError('');
   }, []);
 
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const shippingCharge = cart.length === 0
+    ? 0
+    : (freeShippingCharge > 0 && total >= freeShippingCharge ? 0 : Math.max(0, shippingCharges));
+  const grandTotal = total + shippingCharge;
+
   const value = useMemo<Store>(() => ({
-    cart, cartError, cartLoading: !cartHydrated, onlyNLeft, clearCart, drawer, setDrawer, modal, setModal, maxPrice, setMaxPrice, authStatus, setAuthStatus,
-    total: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    cart, cartError, cartLoading: !cartHydrated, onlyNLeft, companyName, companyLogo, shippingCharges, freeShippingCharge, clearCart, drawer, setDrawer, modal, setModal, maxPrice, setMaxPrice, authStatus, setAuthStatus,
+    total,
+    shippingCharge,
+    grandTotal,
     add, remove, setQuantity,
-  }), [cart, cartError, cartHydrated, onlyNLeft, clearCart, drawer, modal, maxPrice, authStatus, add, remove, setQuantity]);
+  }), [cart, cartError, cartHydrated, onlyNLeft, companyName, companyLogo, shippingCharges, freeShippingCharge, clearCart, drawer, modal, maxPrice, authStatus, total, shippingCharge, grandTotal, add, remove, setQuantity]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

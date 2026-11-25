@@ -75,6 +75,8 @@ export default function CartDrawer() {
   const {
     cart,
     total,
+    shippingCharge,
+    grandTotal,
     remove,
     setQuantity,
     clearCart,
@@ -229,7 +231,7 @@ export default function CartDrawer() {
         </div>
         <div className="df">
           <div className="cart-checkout-row">
-            <div className="cart-total"><span>Total</span><b>{money(total)}</b></div>
+            <div className="cart-total"><span>Total</span><b>{money(grandTotal)}</b></div>
             <button
               className="btn"
               type="button"
@@ -280,7 +282,9 @@ export default function CartDrawer() {
                 ))}
               </div>
               <div className="order-confirmation-footer">
-                <div className="order-confirmation-total"><span>Total</span><strong>{money(total)}</strong></div>
+                <div className="order-confirmation-total"><span>Subtotal</span><strong>{money(total)}</strong></div>
+                <div className="order-confirmation-total"><span>Shipping</span><strong>{shippingCharge > 0 ? money(shippingCharge) : 'Free'}</strong></div>
+                <div className="order-confirmation-total order-confirmation-grand-total"><span>Total</span><strong>{money(grandTotal)}</strong></div>
                 {orderError && <p className="order-confirmation-error" role="alert">{orderError}</p>}
                 {authStatus === 'unauthenticated' && (
                   <Link className="btn" href="/login" onClick={closeOrderDialog}>Sign in to place order</Link>

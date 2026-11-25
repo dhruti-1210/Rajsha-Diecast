@@ -13,7 +13,8 @@ export type AdminView =
   | 'brands'
   | 'review-master'
   | 'footer-link-groups'
-  | 'footer-links';
+  | 'footer-links'
+  | 'user-details';
 
 export type AdminNavSection = {
   title: string;
@@ -63,6 +64,7 @@ const navConfig: AdminNavSection[] = [
         label: 'User orders',
         icon: 'cart',
         items: [
+          { label: 'User details', href: '/admin-panel/user-details', id: 'user-details', icon: 'user' },
           { label: 'Reviews', href: '/admin-panel/review-master', id: 'review-master', icon: 'star' },
           { label: 'Checkout', href: '/admin-panel/checkout', id: 'checkout', icon: 'cart' },
         ],

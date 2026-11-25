@@ -7,6 +7,7 @@ import {
   getCompanySetupList,
   updateCompanySetup,
 } from '../api/companySetup';
+import { COMPANY_SETUP_UPDATED_EVENT } from '@/api/CompanySetupApi';
 import type { CompanySetup, CompanySetupInput } from '@/types/CompanySetup';
 import { readImageAsDataUrl } from '../utils/images';
 
@@ -137,6 +138,7 @@ export default function CompanySetupPage() {
         : await createCompanySetup({ ...values, createdBy: actor } satisfies CompanySetupInput);
       setSetupId(response.data._id);
       setDraft(toDraft(response.data));
+      window.dispatchEvent(new Event(COMPANY_SETUP_UPDATED_EVENT));
       setNotice('Company settings saved.');
       setNoticeIsError(false);
     } catch (error) {

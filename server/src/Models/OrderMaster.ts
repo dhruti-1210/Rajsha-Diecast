@@ -3,6 +3,8 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IOrderMaster extends Document {
     user_id: mongoose.Types.ObjectId;
+    SubTotal: number;
+    ShippingCharge: number;
     Total: number;
     PaymentStatus: string;
     RazorpayPaymentId?: string;
@@ -24,6 +26,16 @@ const OrderMasterSchema: Schema = new Schema(
             type: Schema.Types.ObjectId,
             required: true,
             ref: "UserMaster"
+        },
+        SubTotal: {
+            type: Number,
+            required: true,
+            default: 0
+        },
+        ShippingCharge: {
+            type: Number,
+            required: true,
+            default: 0
         },
         Total: {
             type: Number,

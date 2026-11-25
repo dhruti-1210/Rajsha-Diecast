@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import razorpay from "../config/razorpay";
 import crypto from "crypto";
 import OrderMaster from "../Models/OrderMaster";
+import UserMaster from "../Models/userMaster";
+import { sendOrderPlacedEmail, sendPaymentReceiptEmail } from "../Services/EmailService";
 import {
     GetCartTotalForUser,
     OrderPlacementError,
@@ -15,6 +17,53 @@ const refundPayment = async (paymentId: string, amount: number) => {
     } catch (error) {
         console.error("Could not refund a verified payment:", error);
         return false;
+    }
+};
+
+const sendOrderEmails = async (userId: string, order: any) => {
+    try {
+        const user = await UserMaster.findById(userId).select("email name");
+        const email = user?.email?.trim();
+        if (!email) return;
+
+        const items = Array.isArray(order?.items)
+            ? order.items.map((item: any) => {
+                const product = item?.product_ID && typeof item.product_ID === "object" ? item.product_ID : null;
+                return {
+                    name: String(product?.Name || "Product"),
+                    quantity: Number(item?.Quantity) || 0,
+                    price: Number(item?.Price) || 0
+                };
+            })
+            : [];
+
+        const details = {
+            email,
+            customerName: user?.name || undefined,
+            userId: String(userId),
+            orderId: String(order?._id || ""),
+            trackingId: order?.TrackingId ? String(order.TrackingId) : undefined,
+            paymentId: order?.RazorpayPaymentId ? String(order.RazorpayPaymentId) : undefined,
+            subtotal: Number(order?.SubTotal) || 0,
+            shippingCharge: Number(order?.ShippingCharge) || 0,
+            total: Number(order?.Total) || 0,
+            items,
+            placedAt: order?.createdAt
+        };
+
+        const results = await Promise.allSettled([
+            sendOrderPlacedEmail(details),
+            sendPaymentReceiptEmail(details)
+        ]);
+
+        results.forEach((result, index) => {
+            if (result.status === "rejected") {
+                const label = index === 0 ? "order confirmation" : "payment receipt";
+                console.error(`Could not send ${label} email:`, result.reason);
+            }
+        });
+    } catch (error) {
+        console.error("Could not send order emails:", error);
     }
 };
 
@@ -246,6 +295,8 @@ export const verifyPayment = async (
                     : `Payment was received but the order could not be placed or refunded automatically. Contact support with payment ID ${razorpay_payment_id}.`
             });
         }
+
+        await sendOrderEmails(userId, order);
 
         return res.status(200).json({
             success: true,

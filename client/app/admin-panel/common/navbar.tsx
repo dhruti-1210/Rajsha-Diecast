@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import { useStore } from '@/context/StoreContext';
 import Icon, { type IconName } from './AdminIcon';
 import navConfig, { type AdminView } from '../data/navConfig';
 
@@ -13,8 +13,10 @@ type NavbarProps = {
 };
 
 export default function Navbar({ activePage, onNavigate, onSignOut }: NavbarProps) {
+  const { companyLogo, companyName } = useStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const logoSrc = companyLogo || '/images/logo.png';
 
   useEffect(() => {
     const activeGroup = navConfig
@@ -55,8 +57,9 @@ export default function Navbar({ activePage, onNavigate, onSignOut }: NavbarProp
   return (
     <>
       <header className={`admin-mobile-header d-lg-none${sidebarOpen ? ' admin-mobile-header-open' : ''}`}>
-        <Link className={`admin-mobile-brand${sidebarOpen ? ' d-none' : ''}`} href="/" onClick={onSignOut} aria-label="Rajsha Diecast home">
-          <Image src="/images/logo.png" alt="Rajsha Diecast" width={140} height={100} priority />
+        <Link className={`admin-mobile-brand${sidebarOpen ? ' d-none' : ''}`} href="/" onClick={onSignOut} aria-label={`${companyName} home`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoSrc} alt={companyName} width={140} height={100} />
         </Link>
         <button
           type="button"
@@ -81,8 +84,9 @@ export default function Navbar({ activePage, onNavigate, onSignOut }: NavbarProp
 
       <aside id="admin-sidebar" className={`admin-sidebar${sidebarOpen ? ' admin-sidebar-open' : ''}`}>
         <div className="admin-sidebar-header">
-          <Link className="admin-brand" href="/" onClick={onSignOut} aria-label="Rajsha Diecast home">
-            <Image src="/images/logo.png" alt="Rajsha Diecast" width={140} height={100} priority />
+          <Link className="admin-brand" href="/" onClick={onSignOut} aria-label={`${companyName} home`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logoSrc} alt={companyName} width={140} height={100} />
           </Link>
           <button
             type="button"
@@ -122,7 +126,7 @@ export default function Navbar({ activePage, onNavigate, onSignOut }: NavbarProp
         </nav>
         <div className="admin-sidebar-bottom">
           <span className="admin-avatar">RD</span>
-          <span><strong>Store admin</strong><small>Rajsha Diecast</small></span>
+          <span><strong>Store admin</strong><small>{companyName}</small></span>
           <button type="button" className="admin-logout" onClick={onSignOut} aria-label="Sign out" title="Sign out">
             <Icon name="logout" size={16} />
           </button>

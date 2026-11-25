@@ -16,7 +16,7 @@ import {
     saveUserProfileController,
     verifyUserOtpController
 } from "../controller/UserAuthController";
-import { authMiddleware } from "../middleware/authMiddleWare";
+import { adminSessionMiddleware, authMiddleware } from "../middleware/authMiddleWare";
 
 const router = Router();
 
@@ -51,7 +51,7 @@ router.put(
 
 router.post("/create", createUserController);
 
-router.get("/list", getAllUsersController);
+router.get("/list", adminSessionMiddleware, getAllUsersController);
 
 router.get("/:id", getUserByIdController);
 
@@ -59,6 +59,6 @@ router.put("/update/:id", updateUserController);
 
 router.delete("/delete/:id", deleteUserController);
 
-router.patch("/status/:id", changeUserStatusController);
+router.patch("/status/:id", adminSessionMiddleware, changeUserStatusController);
 
 export default router;

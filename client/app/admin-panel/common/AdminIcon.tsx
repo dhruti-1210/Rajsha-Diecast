@@ -17,7 +17,8 @@ export type IconName =
   | 'collection'
   | 'ruler'
   | 'menu'
-  | 'chevron';
+  | 'chevron'
+  | 'user';
 
 const iconPaths: Record<IconName, string[]> = {
   box: [
@@ -57,6 +58,7 @@ const iconPaths: Record<IconName, string[]> = {
   ruler: ['M21.3 8.7 15.3 2.7a1 1 0 0 0-1.4 0L2.7 13.9a1 1 0 0 0 0 1.4l6 6a1 1 0 0 0 1.4 0L21.3 10a1 1 0 0 0 0-1.3Z', 'm7.5 10.5 2 2', 'm10.5 7.5 2 2', 'm13.5 4.5 2 2'],
   menu: ['M4 6h16', 'M4 12h16', 'M4 18h16'],
   chevron: ['m6 9 6 6 6-6'],
+  user: ['M20 21a8 8 0 0 0-16 0', 'M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z'],
 };
 
 export default function AdminIcon({ name, size = 18 }: { name: IconName; size?: number }) {

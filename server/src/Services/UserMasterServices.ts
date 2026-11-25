@@ -34,7 +34,9 @@ export const getAllUsers = async () => {
     try {
         return await UserMaster.find({
             isDeleted: false
-        }).sort({ createdAt: -1 });
+        })
+            .select("-password -otpHash -otpExpiresAt -otpResendAvailableAt -otpAttempts -authSessionTokenHash -authSessionExpiresAt")
+            .sort({ createdAt: -1 });
     } catch (error) {
         throw error;
     }

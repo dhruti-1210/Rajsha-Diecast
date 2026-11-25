@@ -4,12 +4,16 @@ import Link from 'next/link';
 import { useStore } from '@/context/StoreContext';
 
 export function Logo() {
-  const [failed, setFailed] = useState(false);
+  const { companyLogo, companyName } = useStore();
+  const [failedSrc, setFailedSrc] = useState('');
+  const logoSrc = companyLogo || '/images/logo.png';
+  const hasFailed = failedSrc === logoSrc;
+
   return (
-    <Link href="/" className="logo logo-mark" aria-label="Rajsha Diecast home">
-      {failed ? <>RAJSHA<span>DIECAST</span></> :
+    <Link href="/" className="logo logo-mark" aria-label={`${companyName} home`}>
+      {hasFailed ? <>{companyName}</> :
         // eslint-disable-next-line @next/next/no-img-element
-        <img src="/images/logo.png" alt="Rajsha Diecast" onError={() => setFailed(true)} />}
+        <img src={logoSrc} alt={companyName} onError={() => setFailedSrc(logoSrc)} />}
     </Link>
   );
 }
