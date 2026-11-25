@@ -2,8 +2,8 @@
 
 import dynamic from 'next/dynamic';
 
-const TinyMceEditor = dynamic(
-  () => import('@tinymce/tinymce-react').then((module) => module.Editor),
+const Editor = dynamic(
+  () => import('@/components/BundledEditor'),
   {
     ssr: false,
     loading: () => <div className="admin-rich-text-loading" role="status">Loading editor…</div>,
@@ -18,7 +18,7 @@ type AdminRichTextEditorProps = {
 export default function AdminRichTextEditor({ value, onChange }: AdminRichTextEditorProps) {
   return (
     <div className="admin-rich-text-editor">
-      <TinyMceEditor
+      <Editor
         apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
         value={value}
         onEditorChange={onChange}

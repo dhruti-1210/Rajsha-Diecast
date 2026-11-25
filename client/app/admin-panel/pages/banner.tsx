@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import AdminDeleteConfirm from '../common/AdminDeleteConfirm';
@@ -149,9 +149,9 @@ export default function BannerPage() {
     {
       name: 'ACTIONS', width: '150px', right: true, cell: (banner) => (
         <div className="admin-row-actions">
-          <button type="button" onClick={() => void toggleBannerStatus(banner)} aria-label={`${banner.isActive ? 'Deactivate' : 'Activate'} ${banner.BannerTitle}`} title={banner.isActive ? 'Deactivate banner' : 'Activate banner'}>
+          {/* <button type="button" onClick={() => void toggleBannerStatus(banner)} aria-label={`${banner.isActive ? 'Deactivate' : 'Activate'} ${banner.BannerTitle}`} title={banner.isActive ? 'Deactivate banner' : 'Activate banner'}>
             <Icon name="box" size={16} />
-          </button>
+          </button> */}
           <button type="button" onClick={() => openEdit(banner)} aria-label={`Edit ${banner.BannerTitle}`} title="Edit banner"><Icon name="edit" size={16} /></button>
           <button type="button" onClick={() => setDeleteTarget(banner)} aria-label={`Delete ${banner.BannerTitle}`} title="Delete banner"><Icon name="trash" size={16} /></button>
         </div>
@@ -198,10 +198,14 @@ export default function BannerPage() {
               <div className="admin-form-field admin-form-wide">
                 <span>Banner image</span>
                 {draft.BannerImg ? (
-                  <div className="admin-banner-image-preview">
-                    <img src={draft.BannerImg} alt="Banner preview" />
-                    <button type="button" className="admin-secondary-button" onClick={() => imageFileInputRef.current?.click()}>Change image</button>
-                  </div>
+                  <>
+                    <div className="admin-banner-image-preview">
+                      <img src={draft.BannerImg} alt="Banner preview" />
+                    </div>
+                    <div className="admin-banner-image-actions">
+                      <button type="button" className="admin-secondary-button" onClick={() => imageFileInputRef.current?.click()}>Change image</button>
+                    </div>
+                  </>
                 ) : (
                   <button type="button" className="admin-add-image" onClick={() => imageFileInputRef.current?.click()}><Icon name="plus" size={15} /> Choose image</button>
                 )}

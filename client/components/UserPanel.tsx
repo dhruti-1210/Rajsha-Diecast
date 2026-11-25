@@ -397,7 +397,7 @@ function Profile({
             <ProfileField label="Full name" name="fullName" value={form.fullName} onChange={updateField} required />
             <ProfileField label="Email address" name="email" type="email" value={form.email} onChange={updateField} required disabled />
             <ProfileField label="Phone number" name="phone" type="tel" value={form.phone} onChange={updateField} required />
-            <ProfileField label="Default address" name="address" value={form.address} onChange={updateField} />
+            <ProfileField label="Address" name="address" value={form.address} onChange={updateField} />
           </div>
           {saveError && <p role="alert">{saveError}</p>}
           <div className="user-panel-profile-actions">
