@@ -37,6 +37,8 @@ type AdminProduct = {
   condition: string;
   packagingTypeId: string;
   stock: number;
+  totalStock: number;
+  stockRemaining: number;
   sku: string;
   description: string;
   images: string[];
@@ -51,7 +53,8 @@ type ProductDraft = {
   scale: string;
   price: number;
   packagingTypeId: string;
-  stock: number;
+  totalStock: number;
+  stockRemaining: number;
   sku: string;
   description: string;
   images: string[];
@@ -78,7 +81,8 @@ const emptyDraft: ProductDraft = {
   scale: '',
   price: 0,
   packagingTypeId: '',
-  stock: 0,
+  totalStock: 0,
+  stockRemaining: 0,
   sku: '',
   description: '',
   images: [''],
@@ -122,7 +126,9 @@ const mapProduct = (
       (packaging) => packaging._id === product.Packagingtype_Id,
     )?.packagingName ?? product.Packagingtype_Id,
     packagingTypeId: product.Packagingtype_Id,
-    stock: product.TotalStock,
+    stock: product.stockRemaining ?? product.TotalStock,
+    totalStock: product.TotalStock ?? product.stockRemaining ?? 0,
+    stockRemaining: product.stockRemaining ?? product.TotalStock ?? 0,
     sku: product.ModelCode,
     description: richTextToPlainText(product.Description),
     images: product.Image ?? [],
@@ -289,7 +295,8 @@ export default function InventoryPage() {
       scale: product.scale,
       price: product.price,
       packagingTypeId: product.packagingTypeId,
-      stock: product.stock,
+      totalStock: product.totalStock,
+      stockRemaining: product.stockRemaining,
       sku: product.sku,
       description: product.description,
       images: product.images.length ? [...product.images] : [''],
@@ -354,7 +361,8 @@ export default function InventoryPage() {
         Name: draft.name.trim(),
         BrandName: selectedBrand?.brandName ?? existingProduct?.brand ?? '',
         Company_Id: selectedBrand?._id ?? existingProduct?.companyId,
-        TotalStock: draft.stock,
+        TotalStock: draft.totalStock,
+        stockRemaining: draft.stockRemaining,
         Price: draft.price,
         ModelCode: draft.sku.trim(),
         Size: scale,
@@ -724,7 +732,8 @@ export default function InventoryPage() {
                 />
               </label>
               <label className="admin-form-field"><span>Price (INR)</span><input required type="number" min="0" step="1" value={draft.price} onChange={(event) => updateDraft('price', Number(event.target.value))} /></label>
-              <label className="admin-form-field"><span>Stock quantity</span><input required type="number" min="0" step="1" value={draft.stock} onChange={(event) => updateDraft('stock', Number(event.target.value))} /></label>
+              <label className="admin-form-field"><span>Total stock</span><input required type="number" min="0" step="1" value={draft.totalStock} onChange={(event) => updateDraft('totalStock', Number(event.target.value))} /></label>
+              <label className="admin-form-field"><span>Stock remaining</span><input required type="number" min="0" step="1" value={draft.stockRemaining} onChange={(event) => updateDraft('stockRemaining', Number(event.target.value))} /></label>
               <label className="admin-form-field admin-form-wide">
                 <span>Description</span>
                 <textarea

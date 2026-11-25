@@ -96,6 +96,20 @@ export default function CartDrawer() {
     setOrderError('');
   }
 
+  function getApiErrorMessage(error: unknown, fallback: string) {
+    if (typeof error === 'object' && error !== null) {
+      const response = (error as { response?: { data?: { message?: unknown } } }).response;
+      const message = response?.data?.message;
+      if (typeof message === 'string' && message.trim()) {
+        return message;
+      }
+    }
+    if (error instanceof Error && error.message.trim()) {
+      return error.message;
+    }
+    return fallback;
+  }
+
   async function submitOrder() {
     if (authStatus !== 'authenticated') {
       setOrderError('Sign in to place your order.');
@@ -145,7 +159,7 @@ export default function CartDrawer() {
       });
       checkout.open();
     } catch (error) {
-      setOrderError(error instanceof Error ? error.message : 'Could not start payment.');
+      setOrderError(getApiErrorMessage(error, 'Could not start payment.'));
       setPlacingOrder(false);
     }
   }
@@ -161,7 +175,7 @@ export default function CartDrawer() {
       setPlacedOrderId(response.data._id);
       window.dispatchEvent(new Event(MY_ORDERS_UPDATED_EVENT));
     } catch (error) {
-      setOrderError(error instanceof Error ? error.message : 'Payment verification failed.');
+      setOrderError(getApiErrorMessage(error, 'Payment verification failed.'));
     } finally {
       setPlacingOrder(false);
     }

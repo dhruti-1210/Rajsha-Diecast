@@ -10,6 +10,7 @@ import {
     ChangeProductDisplayStatus
 } from "../Services/ProductServices";
 import { ProductMasterInput } from "../Models/ProductMaster";
+import { parseListQuery } from "../utils/query";
 
 const normalizeProductImageField = (body: unknown): ProductMasterInput | null => {
     if (typeof body !== "object" || body === null || Array.isArray(body)) {
@@ -61,12 +62,34 @@ export const CreateProductMasterController = async (req: Request, res: Response)
 // Get All Products
 export const GetAllProductMasterController = async (req: Request, res: Response) => {
     try {
-        const products = await GetAllProductMaster();
+        const query = parseListQuery(req, { sort: { createdAt: -1 } });
+        if (query.paginate) {
+            query.limit = 8;
+            query.skip = (query.page - 1) * 8;
+        }
+        const shop = req.query.shop;
+        const result = await GetAllProductMaster({
+            ...query,
+            brandId: req.query.brandId as string | string[] | undefined,
+            packagingTypeId: req.query.packagingTypeId as string | string[] | undefined,
+            minPrice: req.query.minPrice !== undefined ? Number(req.query.minPrice) : undefined,
+            maxPrice: req.query.maxPrice !== undefined ? Number(req.query.maxPrice) : undefined,
+            shop: typeof shop === "string" ? shop : undefined
+        });
+
+        if (Array.isArray(result)) {
+            return res.status(200).json({
+                success: true,
+                message: "Products fetched successfully",
+                data: result
+            });
+        }
 
         return res.status(200).json({
             success: true,
             message: "Products fetched successfully",
-            data: products
+            data: result.items,
+            meta: result.meta
         });
     } catch (error: any) {
         return res.status(500).json({

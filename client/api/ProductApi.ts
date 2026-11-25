@@ -6,8 +6,27 @@ import type {
   ProductPackagingType,
 } from '@/types/Product';
 
-export const getProductList = async () => {
-  const response = await api.get<ProductApiResponse<Product[]>>('/products/list');
+export interface ProductListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  brandId?: string[];
+  packagingTypeId?: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  shop?: boolean;
+}
+
+export const getProductList = async (params?: ProductListParams) => {
+  const response = await api.get<ProductApiResponse<Product[]>>('/products/list', {
+    params: params
+      ? {
+          ...params,
+          brandId: params.brandId?.length ? params.brandId.join(',') : undefined,
+          packagingTypeId: params.packagingTypeId?.length ? params.packagingTypeId.join(',') : undefined,
+        }
+      : undefined,
+  });
   return response.data;
 };
 

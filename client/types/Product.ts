@@ -4,6 +4,7 @@ export interface Product {
   BrandName?: string;
   Company_Id?: string;
   TotalStock: number;
+  stockRemaining?: number;
   Price: number;
   ModelCode: string;
   Size: string;
@@ -36,8 +37,17 @@ export interface ProductCollectionType extends ProductReference {
   isDisplay?: boolean;
 }
 
+export interface ApiMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  priceMax?: number;
+}
+
 export interface ProductApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
+  meta?: ApiMeta;
 }

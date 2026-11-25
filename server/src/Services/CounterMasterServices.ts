@@ -28,13 +28,15 @@ export const GetCounterMaster = async (): Promise<CounterData[]> => {
                         isDeleted: false,
                         isActive: true,
                         isDisplay: true,
-                        TotalStock: { $gt: 0 }
+                        $expr: {
+                            $gt: [{ $ifNull: ["$stockRemaining", "$TotalStock"] }, 0]
+                        }
                     }
                 },
                 {
                     $group: {
                         _id: null,
-                        total: { $sum: "$TotalStock" }
+                        total: { $sum: { $ifNull: ["$stockRemaining", "$TotalStock"] } }
                     }
                 }
             ]),

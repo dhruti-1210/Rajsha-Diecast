@@ -26,6 +26,13 @@ export const CreateOrderMaster = async (data: Partial<IOrderMaster>) => {
     }
 };
 
+const getAvailableStock = (product: { TotalStock?: number; stockRemaining?: number }) => {
+    if (typeof product.stockRemaining === "number" && Number.isFinite(product.stockRemaining)) {
+        return product.stockRemaining;
+    }
+    return Number(product.TotalStock ?? 0);
+};
+
 const getOrderDraftForUser = async (userId: string) => {
     const cartItems = await Cart.find({
         User_Id: userId,
@@ -56,9 +63,10 @@ const getOrderDraftForUser = async (userId: string) => {
         }
 
         const quantity = (quantitiesByProduct.get(productId) ?? 0) + item.Quantity;
-        if (quantity > product.TotalStock) {
+        const availableStock = getAvailableStock(product);
+        if (quantity > availableStock) {
             throw new OrderPlacementError(
-                `Only ${product.TotalStock} of ${product.Name} are currently available.`,
+                `Only ${availableStock} of ${product.Name} are currently available.`,
                 409
             );
         }
@@ -82,7 +90,7 @@ const getOrderDraftForUser = async (userId: string) => {
         throw new OrderPlacementError("The order total is invalid.", 409);
     }
 
-    return { cartItems, productsById, orderItems, total };
+    return { cartItems, productsById, orderItems, quantitiesByProduct, total };
 };
 
 export const GetCartTotalForUser = async (userId: string) => {
@@ -95,10 +103,62 @@ export const PlaceOrderForUser = async (
     paymentId: string,
     expectedAmountPaise: number
 ) => {
-    const { cartItems, productsById, orderItems, total } = await getOrderDraftForUser(userId);
+    const { cartItems, productsById, orderItems, quantitiesByProduct, total } = await getOrderDraftForUser(userId);
     const totalPaise = Math.round(total * 100);
     if (!Number.isSafeInteger(totalPaise) || totalPaise !== expectedAmountPaise) {
         throw new OrderPlacementError("The cart total changed during payment.", 409);
+    }
+
+    const decrementedStocks: Array<{ productId: string; quantity: number }> = [];
+    for (const [productId, quantity] of quantitiesByProduct.entries()) {
+        const updated = await ProductMaster.findOneAndUpdate(
+            {
+                _id: productId,
+                isActive: true,
+                isDeleted: false,
+                $or: [
+                    { stockRemaining: { $gte: quantity } },
+                    { stockRemaining: { $exists: false }, TotalStock: { $gte: quantity } }
+                ]
+            },
+            [
+                {
+                    $set: {
+                        stockRemaining: {
+                            $subtract: [
+                                { $ifNull: ["$stockRemaining", "$TotalStock"] },
+                                quantity
+                            ]
+                        },
+                        TotalStock: {
+                            $ifNull: ["$TotalStock", "$stockRemaining"]
+                        },
+                        updatedAt: new Date()
+                    }
+                }
+            ],
+            { new: true, updatePipeline: true }
+        );
+
+        if (!updated) {
+            if (decrementedStocks.length) {
+                await Promise.all(decrementedStocks.map((entry) =>
+                    ProductMaster.updateOne(
+                        { _id: entry.productId },
+                        {
+                            $inc: { stockRemaining: entry.quantity },
+                            $set: { updatedAt: new Date() }
+                        }
+                    )
+                ));
+            }
+            const product = productsById.get(productId);
+            throw new OrderPlacementError(
+                `${product?.Name || "A product"} does not have enough stock available.`,
+                409
+            );
+        }
+        decrementedStocks.push({ productId, quantity });
     }
 
     const order = await OrderMaster.create({
@@ -155,6 +215,28 @@ export const PlaceOrderForUser = async (
             throw new Error(
                 `Order placement failed (${originalMessage}) and cleanup failed (${rollbackMessage}).`
             );
+        }
+
+        if (decrementedStocks.length) {
+            try {
+                await Promise.all(decrementedStocks.map((entry) =>
+                    ProductMaster.updateOne(
+                        { _id: entry.productId },
+                        {
+                            $inc: { stockRemaining: entry.quantity },
+                            $set: { updatedAt: new Date() }
+                        }
+                    )
+                ));
+            } catch (restoreError) {
+                const originalMessage = error instanceof Error ? error.message : "Unknown order error.";
+                const restoreMessage = restoreError instanceof Error
+                    ? restoreError.message
+                    : "Unknown stock restore error.";
+                throw new Error(
+                    `Order placement failed (${originalMessage}) and stock restore failed (${restoreMessage}).`
+                );
+            }
         }
         throw error;
     }

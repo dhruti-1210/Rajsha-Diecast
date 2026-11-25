@@ -64,10 +64,10 @@ export default function ProductSection({ id, mode, dark }: Props) {
             price: product.Price,
             condition: packagingNames.get(product.Packagingtype_Id) || 'Sealed',
             color: '#d4af37',
-            left: product.TotalStock,
+            left: product.stockRemaining ?? product.TotalStock,
             image: product.Image?.[0] || '',
             images: product.Image ?? [],
-            stock: product.TotalStock,
+            stock: product.stockRemaining ?? product.TotalStock,
           }));
 
         if (active) setCollectionProducts(productsForCollection);

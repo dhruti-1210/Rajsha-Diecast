@@ -4,6 +4,7 @@ export interface ProductMaster {
   BrandName?: string;
   Company_Id?: string;
   TotalStock: number;
+  stockRemaining?: number;
   Price: number;
   ModelCode: string;
   Size: string;
@@ -26,6 +27,7 @@ export interface ProductMasterInput {
   BrandName: string;
   Company_Id?: string;
   TotalStock?: number;
+  stockRemaining?: number;
   Price: number;
   ModelCode: string;
   Size?: string;

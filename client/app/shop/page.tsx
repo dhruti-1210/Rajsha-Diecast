@@ -17,7 +17,6 @@ import type { Product as StoreProduct } from '@/types';
 import type { Brand } from '@/types/Brand';
 import type { PackagingType } from '@/types/PackagingType';
 import type { Product as ProductRecord } from '@/types/Product';
-import StoreLoader from '@/components/StoreLoader';
 
 const PAGE_SIZE = 8;
 
@@ -27,26 +26,29 @@ export default function ShopPage() {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [conditions, setConditions] = useState<PackagingType[]>([]);
+  const [priceLimit, setPriceLimit] = useState(0);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
+  const [filtersReady, setFiltersReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
 
-    async function loadShopData() {
+    async function loadFilters() {
       try {
-        const [productResponse, packagingResponse, brandResponse] = await Promise.all([
-          getProductList(),
+        const [packagingResponse, brandResponse] = await Promise.all([
           getPackagingTypeList(),
           getBrandList(),
         ]);
-        if (!productResponse.success || !packagingResponse.success || !brandResponse.success) {
+        if (!packagingResponse.success || !brandResponse.success) {
           throw new Error('Could not load the product collection.');
         }
 
@@ -56,32 +58,8 @@ export default function ShopPage() {
         const availableConditions = packagingResponse.data.filter(
           (condition) => condition.isActive && !condition.isDeleted,
         );
-        const brandNamesById = new Map(
-          availableBrands.map((brand) => [brand._id, brand.brandName]),
-        );
-        const conditionNamesById = new Map(
-          availableConditions.map((condition) => [condition._id, condition.packagingName]),
-        );
-        const availableProducts = productResponse.data
-          .filter((product) => product.isActive && product.isDisplay && !product.isDeleted)
-          .map((product: ProductRecord): StoreProduct => ({
-            id: product._id,
-            name: product.Name,
-            brand: product.BrandName?.trim()
-              || brandNamesById.get(product.Company_Id || '')
-              || product.Company_Id
-              || 'Unknown brand',
-            scale: product.Size,
-            price: product.Price,
-            condition: conditionNamesById.get(product.Packagingtype_Id) || 'Unknown',
-            color: '#d4af37',
-            left: product.TotalStock,
-            image: product.Image?.[0] || '',
-            stock: product.TotalStock,
-          }));
 
         if (active) {
-          setProducts(availableProducts);
           setBrands(availableBrands);
           setConditions(availableConditions);
 
@@ -108,6 +86,91 @@ export default function ShopPage() {
               : null,
           );
           setCurrentPage(1);
+          setFiltersReady(true);
+        }
+      } catch (loadError) {
+        if (active) {
+          setError(loadError instanceof Error
+            ? loadError.message
+            : 'Could not load the product collection.');
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadFilters();
+    return () => { active = false; };
+  }, []);
+
+  const brandIdsByName = useMemo(
+    () => new Map(brands.map((brand) => [brand.brandName, brand._id])),
+    [brands],
+  );
+  const conditionIdsByName = useMemo(
+    () => new Map(conditions.map((condition) => [condition.packagingName, condition._id])),
+    [conditions],
+  );
+  const brandNamesById = useMemo(
+    () => new Map(brands.map((brand) => [brand._id, brand.brandName])),
+    [brands],
+  );
+  const conditionNamesById = useMemo(
+    () => new Map(conditions.map((condition) => [condition._id, condition.packagingName])),
+    [conditions],
+  );
+
+  const effectiveMaxPrice = Math.min(maxPrice ?? priceLimit, Math.max(priceLimit, 0));
+
+  useEffect(() => {
+    if (!filtersReady) return;
+    let active = true;
+
+    async function loadProducts() {
+      setLoading(true);
+      try {
+        const selectedBrandIds = selectedBrands
+          .map((name) => brandIdsByName.get(name))
+          .filter((id): id is string => Boolean(id));
+        const selectedPackagingTypeIds = selectedConditions
+          .map((name) => conditionIdsByName.get(name))
+          .filter((id): id is string => Boolean(id));
+
+        const productResponse = await getProductList({
+          page: currentPage,
+          limit: PAGE_SIZE,
+          search: searchTerm.trim() || undefined,
+          brandId: selectedBrandIds.length ? selectedBrandIds : undefined,
+          packagingTypeId: selectedPackagingTypeIds.length ? selectedPackagingTypeIds : undefined,
+          minPrice: minPrice ?? undefined,
+          maxPrice: maxPrice ?? undefined,
+          shop: true,
+        });
+        if (!productResponse.success) {
+          throw new Error('Could not load the product collection.');
+        }
+
+        const availableProducts = productResponse.data.map((product: ProductRecord): StoreProduct => ({
+          id: product._id,
+          name: product.Name,
+          brand: product.BrandName?.trim()
+            || brandNamesById.get(product.Company_Id || '')
+            || product.Company_Id
+            || 'Unknown brand',
+          scale: product.Size,
+          price: product.Price,
+          condition: conditionNamesById.get(product.Packagingtype_Id) || 'Unknown',
+          color: '#d4af37',
+          left: product.stockRemaining ?? product.TotalStock,
+          image: product.Image?.[0] || '',
+          stock: product.stockRemaining ?? product.TotalStock,
+        }));
+
+        if (active) {
+          setProducts(availableProducts);
+          setPageCount(productResponse.meta?.totalPages ?? 1);
+          setTotalResults(productResponse.meta?.total ?? availableProducts.length);
+          setPriceLimit(Math.max(0, productResponse.meta?.priceMax ?? 0));
+          setError('');
         }
       } catch (loadError) {
         if (active) {
@@ -120,27 +183,21 @@ export default function ShopPage() {
       }
     }
 
-    void loadShopData();
+    void loadProducts();
     return () => { active = false; };
-  }, []);
-
-  const priceLimit = Math.max(0, ...products.map((product) => product.price));
-  const effectiveMaxPrice = Math.min(maxPrice ?? priceLimit, priceLimit);
-  const searchTerms = useMemo(
-    () => searchTerm.trim().toLowerCase().split(/\s+/).filter(Boolean),
-    [searchTerm],
-  );
-  const filteredProducts = useMemo(() => products.filter((product) =>
-    product.price >= (minPrice ?? 0) &&
-    product.price <= effectiveMaxPrice &&
-    (!selectedBrands.length || selectedBrands.includes(product.brand)) &&
-    (!selectedConditions.length || selectedConditions.some((condition) => condition === product.condition)) &&
-    searchTerms.every((term) => (
-      `${product.name} ${product.brand} ${product.scale}`.toLowerCase().includes(term)
-    )),
-  ), [products, effectiveMaxPrice, minPrice, selectedBrands, selectedConditions, searchTerms]);
-  const pageCount = Math.ceil(filteredProducts.length / PAGE_SIZE);
-  const pageProducts = filteredProducts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  }, [
+    filtersReady,
+    currentPage,
+    searchTerm,
+    selectedBrands,
+    selectedConditions,
+    minPrice,
+    maxPrice,
+    brandIdsByName,
+    conditionIdsByName,
+    brandNamesById,
+    conditionNamesById,
+  ]);
 
   const toggle = (values: string[], value: string, update: (next: string[]) => void) => {
     setCurrentPage(1);
@@ -177,11 +234,11 @@ export default function ShopPage() {
             </div>
           </aside>
           <section className="col-12 col-lg-9 col-xl-10" aria-label="Product collection">
-            {/* <div className="shop-results-bar"><span>{filteredProducts.length} models</span><span>Curated for collectors</span></div> */}
+            {/* <div className="shop-results-bar"><span>{totalResults} models</span><span>Curated for collectors</span></div> */}
             {loading ? <p role="status">Loading models…</p>
               : error ? <p role="alert">{error}</p>
-                : filteredProducts.length ? <div className="row g-3 g-xl-4">
-              {pageProducts.map((product) => (
+                : products.length ? <div className="row g-3 g-xl-4">
+              {products.map((product) => (
                 <div className="col-6 col-md-4 col-xl-3" key={product.id}>
                   <article className="shop-card">
                     <Link href={`/shop/${product.id}`} className="shop-card-image" aria-label={`View ${product.name}`}>

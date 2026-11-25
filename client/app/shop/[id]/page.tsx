@@ -62,10 +62,10 @@ export default function ProductPage() {
             (packaging) => packaging._id === record.Packagingtype_Id,
           )?.packagingName || 'Sealed',
           color: '#d4af37',
-          left: record.TotalStock,
+          left: record.stockRemaining ?? record.TotalStock,
           image: record.Image?.[0] || '',
           images: record.Image ?? [],
-          stock: record.TotalStock,
+          stock: record.stockRemaining ?? record.TotalStock,
           description: record.Description,
         };
         if (active) setServerProduct(serverProduct);

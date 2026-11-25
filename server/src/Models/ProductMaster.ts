@@ -6,6 +6,7 @@ export interface IProductMaster extends Document {
     BrandName?: string;
     Company_Id?: mongoose.Types.ObjectId;
     TotalStock: number;
+    stockRemaining: number;
     Price: number;
     ModelCode: string;
     Size: string;
@@ -44,6 +45,10 @@ const ProductMasterSchema: Schema = new Schema(
             required: false
         },
         TotalStock: {
+            type: Number,
+            default: 0
+        },
+        stockRemaining: {
             type: Number,
             default: 0
         },
