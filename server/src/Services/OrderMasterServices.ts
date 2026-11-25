@@ -6,6 +6,7 @@ import Checkout from "../Models/CheckoutModel";
 import Cart from "../Models/Cart";
 import CompanySetup from "../Models/CompanySetup";
 import ProductMaster from "../Models/ProductMaster";
+import TransactionHistory from "../Models/TransactionHistoryMaster";
 
 export class OrderPlacementError extends Error {
     constructor(
@@ -212,6 +213,18 @@ export const PlaceOrderForUser = async (
             createdBy: userId,
             updatedBy: userId
         });
+        const transactionHistory = await TransactionHistory.create({
+            order_Master_id: order._id,
+            user_id: userId,
+            txnAmount: total,
+            transactionStatus: "Success",
+            gatewayName: "Razorpay",
+            checksumHash: paymentId,
+            initiatedAt: new Date(),
+            completedAt: new Date(),
+            createdBy: userId,
+            updatedBy: userId
+        });
 
         await Cart.updateMany(
             { _id: { $in: cartItems.map((item) => item._id) }, User_Id: userId },
@@ -224,11 +237,13 @@ export const PlaceOrderForUser = async (
                 ...line.toObject(),
                 product_ID: productsById.get(line.product_ID.toString()) ?? line.product_ID
             })),
-            checkout: checkout.toObject()
+            checkout: checkout.toObject(),
+            transactionHistory: transactionHistory.toObject()
         };
     } catch (error) {
         try {
             await Promise.all([
+                TransactionHistory.deleteMany({ order_Master_id: order._id }),
                 Checkout.deleteMany({ order_Master_id: order._id }),
                 OrderLineMaster.deleteMany({ order_Master_id: order._id }),
                 OrderMaster.deleteOne({ _id: order._id })

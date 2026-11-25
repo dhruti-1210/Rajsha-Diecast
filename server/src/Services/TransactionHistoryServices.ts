@@ -17,7 +17,10 @@ export const GetAllTransactionHistory = async () => {
     try {
         const transactions = await TransactionHistory.find({
             isDeleted: false
-        }).sort({ createdAt: -1 });
+        })
+            .populate("user_id", "name email mobile address _id")
+            .populate("order_Master_id", "_id TrackingId Total PaymentStatus")
+            .sort({ createdAt: -1 });
 
         return transactions;
     } catch (error: any) {
@@ -31,7 +34,9 @@ export const GetTransactionHistoryById = async (id: string) => {
         const transaction = await TransactionHistory.findOne({
             _id: id,
             isDeleted: false
-        });
+        })
+            .populate("user_id", "name email mobile address _id")
+            .populate("order_Master_id", "_id TrackingId Total PaymentStatus");
 
         return transaction;
     } catch (error: any) {

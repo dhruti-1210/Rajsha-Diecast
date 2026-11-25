@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminToast from '../common/AdminToast';
 import AdminSelect from '../common/AdminSelect';
+import CheckoutViewModal from '../common/CheckoutViewModal';
 import { getCheckoutList, updateCheckoutStatus } from '../api/checkout';
 import type { Checkout, CheckoutStage } from '../types/checkout';
 import Header from '../common/header';
@@ -42,17 +43,6 @@ function getOrderEmail(checkout: Checkout) {
   return typeof user === 'object' && user ? user.email : '—';
 }
 
-function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
-}
-
-function formatTotal(value?: number) {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value)
-    : '—';
-}
-
 function getOrderItems(checkout: Checkout) {
   const items = getOrder(checkout)?.items ?? [];
   return items
@@ -73,6 +63,7 @@ export default function CheckoutPage() {
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(() => new Set());
   const [notice, setNotice] = useState('');
   const [noticeIsError, setNoticeIsError] = useState(false);
+  const [viewCheckout, setViewCheckout] = useState<Checkout | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -83,7 +74,8 @@ export default function CheckoutPage() {
         if (active) setItems(response.data);
       } catch (error) {
         if (active) {
-          setNotice(error instanceof Error ? error.message : 'Could not load checkout records.');
+          const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+          setNotice(message || (error instanceof Error ? error.message : 'Could not load checkout records.'));
           setNoticeIsError(true);
         }
       } finally {
@@ -145,10 +137,7 @@ export default function CheckoutPage() {
   const columns: TableColumn<Checkout>[] = [
     { name: 'USER', selector: (checkout) => getOrderEmail(checkout), minWidth: '180px', wrap: true },
     { name: 'PRODUCTS', selector: (checkout) => getOrderItems(checkout), minWidth: '220px', wrap: true },
-    { name: 'DATE', selector: (checkout) => checkout.createdAt, format: (checkout) => formatDate(checkout.createdAt), minWidth: '100px' },
-    { name: 'TOTAL', selector: (checkout) => getOrder(checkout)?.Total ?? 0, format: (checkout) => formatTotal(getOrder(checkout)?.Total), minWidth: '110px' },
-    { name: 'PAYMENT', selector: (checkout) => getOrder(checkout)?.PaymentStatus ?? '—', minWidth: '110px', wrap: true },
-    { name: 'TRACKING', selector: (checkout) => getOrder(checkout)?.TrackingId || '—', minWidth: '120px', wrap: true },
+    { name: 'PAYMENT STATUS', selector: (checkout) => getOrder(checkout)?.PaymentStatus || '—', minWidth: '130px', wrap: true },
     {
       name: 'STATUS',
       minWidth: '150px',
@@ -173,6 +162,26 @@ export default function CheckoutPage() {
         );
       },
     },
+    {
+      name: 'ACTION',
+      width: '100px',
+      right: true,
+      cell: (checkout) => (
+        <div className="admin-row-actions">
+          <button
+            type="button"
+            onClick={() => {
+              setViewCheckout(checkout);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            aria-label={`View order ${getOrderId(checkout)}`}
+            title="View order details"
+          >
+            <Icon name="eye" size={16} />
+          </button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -185,6 +194,12 @@ export default function CheckoutPage() {
       />
 
       <AdminToast message={notice} isError={noticeIsError} />
+      {viewCheckout && (
+        <CheckoutViewModal
+          checkout={viewCheckout}
+          onClose={() => setViewCheckout(null)}
+        />
+      )}
 
       <section className="admin-inventory-card admin-reference-card">
         <div className="admin-inventory-header">
@@ -202,7 +217,7 @@ export default function CheckoutPage() {
             <Icon name="search" size={17} />
             <input
               type="search"
-              placeholder="Search user, product, tracking, or payment..."
+              placeholder="Search user, product, payment, or status..."
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               aria-label="Search checkout orders"

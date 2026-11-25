@@ -1658,7 +1658,7 @@ button.admin-reference-status {
 .admin-image-gallery-item img {
   display: block;
   width: 100%;
-  height: 180px;
+  height: 100%;
   object-fit: contain;
   background: #0e0c09;
 }
@@ -1704,6 +1704,7 @@ button.admin-reference-status {
 .admin-form-field:has(.admin-add-image)>.admin-add-image {
   width: 100%;
   margin-top: 0;
+  
 }
 
 .admin-image-file-input,

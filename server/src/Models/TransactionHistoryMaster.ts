@@ -42,7 +42,7 @@ const TransactionHistorySchema: Schema = new Schema(
         },
         user_id: {
             type: Schema.Types.ObjectId,
-            ref: "userMaster"
+            ref: "UserMaster"
         },
         checksumHash: {
             type: String,

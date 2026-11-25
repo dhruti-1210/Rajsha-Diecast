@@ -5,16 +5,54 @@ export type CheckoutStage =
   | 'isTransist'
   | 'isDELIVERED';
 
+export interface CheckoutUser {
+  _id?: string;
+  name?: string;
+  email?: string;
+  mobile?: string;
+  address?: string;
+}
+
+export interface CheckoutProduct {
+  _id?: string;
+  Name?: string;
+  ModelCode?: string;
+  BrandName?: string;
+  Image?: string;
+}
+
+export interface CheckoutOrderItem {
+  _id?: string;
+  Quantity?: number;
+  Price?: number;
+  product_ID: string | CheckoutProduct | null;
+}
+
+export interface CheckoutTransaction {
+  _id: string;
+  order_Master_id?: string;
+  user_id?: string | CheckoutUser | null;
+  txnAmount?: number;
+  transactionStatus?: string;
+  gatewayName?: string;
+  checksumHash?: string;
+  initiatedAt?: string;
+  completedAt?: string;
+  createdAt?: string;
+}
+
 export interface CheckoutOrderSummary {
   _id: string;
+  SubTotal?: number;
+  ShippingCharge?: number;
   Total?: number;
   PaymentStatus?: string;
   TrackingId?: string;
-  user_id?: string | { email: string } | null;
-  items?: {
-    Quantity?: number;
-    product_ID: string | { Name: string } | null;
-  }[];
+  RazorpayPaymentId?: string;
+  createdAt?: string;
+  user_id?: string | CheckoutUser | null;
+  items?: CheckoutOrderItem[];
+  transactions?: CheckoutTransaction[];
 }
 
 export interface Checkout {
