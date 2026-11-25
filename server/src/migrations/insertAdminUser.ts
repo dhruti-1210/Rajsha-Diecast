@@ -10,7 +10,7 @@ const getArg = (name: string): string | undefined => {
   return arg ? arg.slice(prefix.length) : undefined;
 };
 
-export async function main() {
+export async function insertAdminUser() {
   const email = (process.env.ADMIN_EMAIL?.trim() || getArg("email") || "")
     .trim()
     .toLowerCase();
@@ -23,7 +23,7 @@ export async function main() {
     );
   }
 
-  // await connectDB();
+  await connectDB();
 
   const hashedPassword = await hash(password, 10);
 
@@ -44,7 +44,7 @@ export async function main() {
   }
 }
 
-main()
+insertAdminUser()
   .catch((error) => {
     console.error(
       "Failed to insert admin credentials:",

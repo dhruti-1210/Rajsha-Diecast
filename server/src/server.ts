@@ -4,7 +4,7 @@ import { createServer } from "http";
 
 import app from "./app";
 import connectDB from "./config/database";
-import { main } from "./migrations/insertAdminUser";
+// import { insertAdminUser } from "./migrations/insertAdminUser";
 
 const port = Number(process.env.PORT) || 5000;
 
